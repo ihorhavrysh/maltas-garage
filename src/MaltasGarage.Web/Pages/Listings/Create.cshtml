@@ -1,0 +1,546 @@
+@page
+@model MaltasGarage.Web.Pages.Listings.CreateModel
+@{
+    ViewData["Title"] = Model.IsRelist ? "Relist Item" : "Create Listing";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Progress Steps -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between position-relative" style="z-index: 1;">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        var isActive = i == Model.CurrentStep;
+                        var isCompleted = i < Model.CurrentStep;
+                        <div class="text-center" style="width: 20%;">
+                            <div class="step-circle @(isActive ? "active" : "") @(isCompleted ? "completed" : "") mx-auto">
+                                @if (isCompleted)
+                                {
+                                    <i class="bi bi-check"></i>
+                                }
+                                else
+                                {
+                                    @i
+                                }
+                            </div>
+                            <small class="d-none d-md-block text-muted mt-1">
+                                @(i switch { 1 => "Basics", 2 => "Details", 3 => "Pricing", 4 => "Location", 5 => "Photos", _ => "" })
+                            </small>
+                        </div>
+                    }
+                </div>
+                <div class="progress mt-3" style="height: 4px;">
+                    <div class="progress-bar bg-primary" style="width: @((Model.CurrentStep - 1) * 25)%"></div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" id="listingForm">
+                        <input type="hidden" asp-for="CurrentStep" />
+                        <input type="hidden" asp-for="Input.Id" />
+                        <input type="hidden" asp-for="IsRelist" />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        @* Persist data from previous steps as hidden fields *@
+                        @if (Model.CurrentStep > 1)
+                        {
+                            <input type="hidden" asp-for="Input.Title" />
+                            <input type="hidden" asp-for="Input.CategoryId" />
+                            <input type="hidden" asp-for="Input.IsNew" />
+                        }
+                        @if (Model.CurrentStep != 2)
+                        {
+                            <input type="hidden" asp-for="Input.Description" />
+                        }
+                        @if (Model.CurrentStep != 3)
+                        {
+                            <input type="hidden" asp-for="Input.DesiredPrice" />
+                            <input type="hidden" asp-for="Input.MinPrice" />
+                            <input type="hidden" asp-for="Input.AuctionEnabled" />
+                            <input type="hidden" asp-for="Input.SellByDate" />
+                        }
+                        @if (Model.CurrentStep != 4)
+                        {
+                            <input type="hidden" asp-for="Input.PickupCity" />
+                            <input type="hidden" asp-for="Input.PickupAddress" />
+                        }
+                        @* Step 1: Title & Category *@
+                        @if (Model.CurrentStep == 1)
+                        {
+                            <h4 class="mb-4"><i class="bi bi-1-circle me-2"></i>What are you selling?</h4>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.Title" class="form-label">Title *</label>
+                                <input asp-for="Input.Title" class="form-control form-control-lg" placeholder="e.g., IKEA MALM Bed Frame, Queen Size" maxlength="200" />
+                                <span asp-validation-for="Input.Title" class="text-danger small"></span>
+                                <small class="text-muted">Be specific - include brand, model, size if relevant</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.CategoryId" class="form-label">Category *</label>
+                                <select asp-for="Input.CategoryId" class="form-select form-select-lg" asp-items="Model.Categories">
+                                    <option value="">Select a category...</option>
+                                </select>
+                                <span asp-validation-for="Input.CategoryId" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Item Condition</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" asp-for="Input.IsNew" id="isNewCheck" />
+                                    <label class="form-check-label" for="isNewCheck">New item (unused)</label>
+                                </div>
+                                <small class="text-muted">Leave unchecked if the item is used or second-hand</small>
+                            </div>
+                        }
+
+                        @* Step 2: Description *@
+                        @if (Model.CurrentStep == 2)
+                        {
+                            <h4 class="mb-4"><i class="bi bi-2-circle me-2"></i>Describe your item</h4>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.Description" class="form-label">Description *</label>
+                                <textarea asp-for="Input.Description" class="form-control" rows="8" placeholder="Include condition, defects if any, dimensions, what's included..."></textarea>
+                                <span asp-validation-for="Input.Description" class="text-danger small"></span>
+                                <small class="text-muted">Include condition, defects if any, dimensions, what's included</small>
+                            </div>
+                        }
+
+                        @* Step 3: Pricing & Deadline *@
+                        @if (Model.CurrentStep == 3)
+                        {
+                            <h4 class="mb-4"><i class="bi bi-3-circle me-2"></i>Set your prices</h4>
+
+                            <p class="text-muted small mb-4"><i class="bi bi-info-circle me-1"></i><strong>How pricing works:</strong> Set your desired price and minimum price. Buyers can purchase immediately at desired price. 7 days before your deadline, an auction starts from your minimum price.</p>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="Input.DesiredPrice" class="form-label">Desired Price (€) *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">€</span>
+                                        <input asp-for="Input.DesiredPrice" type="number" step="0.01" min="1" class="form-control form-control-lg" placeholder="100.00" />
+                                    </div>
+                                    <span asp-validation-for="Input.DesiredPrice" class="text-danger small d-block"></span>
+                                    <small class="text-muted d-block">The price you'd like to get</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3" id="minPriceGroup">
+                                    <label asp-for="Input.MinPrice" class="form-label" id="minPriceLabel">Minimum Price (€) *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">€</span>
+                                        <input asp-for="Input.MinPrice" type="number" step="0.01" min="1" class="form-control form-control-lg" placeholder="50.00" id="minPriceInput" />
+                                    </div>
+                                    <span asp-validation-for="Input.MinPrice" class="text-danger small d-block"></span>
+                                    <small class="text-muted d-block">Auction starts from this price (max 80% of desired price)</small>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" asp-for="Input.AuctionEnabled" id="auctionEnabledCheck" />
+                                    <label class="form-check-label fw-semibold" for="auctionEnabledCheck">Enable auction in the final 7 days</label>
+                                </div>
+                                <small class="text-muted">If disabled, the listing stays at Buy Now price until the deadline then expires</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.SellByDate" class="form-label">Sell By Date *</label>
+                                <input asp-for="Input.SellByDate" type="date" class="form-control form-control-lg" min="@DateTime.Now.AddDays(8).ToString("yyyy-MM-dd")" max="@DateTime.Now.AddDays(90).ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="Input.SellByDate" class="text-danger small d-block"></span>
+                                <small class="text-muted d-block">When do you need to sell by? (min. 8 days from now)</small>
+                            </div>
+
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-calendar-event me-2"></i>Your Timeline</h6>
+                                    <ul class="mb-0 small">
+                                        <li><strong>Today:</strong> Listing goes live at €<span id="desiredPriceDisplay">--</span></li>
+                                        <li id="auctionTimelineLine"><strong>7 days before deadline:</strong> Auction starts at €<span id="minPriceDisplay">--</span></li>
+                                        <li id="auctionDisabledLine" style="display:none;">
+                                            <strong>Auction disabled</strong><br>
+                                            <i class="bi bi-info-circle text-warning me-1"></i>Enabling auction guarantees a sale before your deadline even if no one buys at full price
+                                        </li>
+                                        <li><strong>Sell by date:</strong> <span id="sellByDisplay">--</span></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        }
+
+                        @* Step 4: Location *@
+                        @if (Model.CurrentStep == 4)
+                        {
+                            <h4 class="mb-4"><i class="bi bi-4-circle me-2"></i>Pickup location</h4>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.PickupCity" class="form-label">City *</label>
+                                <select asp-for="Input.PickupCity" class="form-select form-select-lg" id="pickupCitySelect">
+                                    <option value="">Select city...</option>
+                                    <optgroup label="Malta">
+                                        <option>Attard</option>
+                                        <option>Balzan</option>
+                                        <option>Birkirkara</option>
+                                        <option>Birzebbuga</option>
+                                        <option>Birgu (Vittoriosa)</option>
+                                        <option>Bormla (Cospicua)</option>
+                                        <option>Dingli</option>
+                                        <option>Fgura</option>
+                                        <option>Floriana</option>
+                                        <option>Ghaxaq</option>
+                                        <option>Gharghur</option>
+                                        <option>Gudja</option>
+                                        <option>Gzira</option>
+                                        <option>Hamrun</option>
+                                        <option>Iklin</option>
+                                        <option>Isla (Senglea)</option>
+                                        <option>Kalkara</option>
+                                        <option>Kirkop</option>
+                                        <option>Lija</option>
+                                        <option>Luqa</option>
+                                        <option>Marsa</option>
+                                        <option>Marsascala</option>
+                                        <option>Marsaxlokk</option>
+                                        <option>Mdina</option>
+                                        <option>Mellieha</option>
+                                        <option>Mgarr</option>
+                                        <option>Mqabba</option>
+                                        <option>Msida</option>
+                                        <option>Mosta</option>
+                                        <option>Mtarfa</option>
+                                        <option>Naxxar</option>
+                                        <option>Paola</option>
+                                        <option>Pembroke</option>
+                                        <option>Pieta</option>
+                                        <option>Qormi</option>
+                                        <option>Qrendi</option>
+                                        <option>Rabat</option>
+                                        <option>Safi</option>
+                                        <option>San Gwann</option>
+                                        <option>Santa Lucija</option>
+                                        <option>Santa Venera</option>
+                                        <option>Siggiewi</option>
+                                        <option>Sliema</option>
+                                        <option>St Julian's</option>
+                                        <option>St Paul's Bay</option>
+                                        <option>Swieqi</option>
+                                        <option>Ta' Xbiex</option>
+                                        <option>Tarxien</option>
+                                        <option>Valletta</option>
+                                        <option>Xghajra</option>
+                                        <option>Zabbar</option>
+                                        <option>Zebbug</option>
+                                        <option>Zejtun</option>
+                                        <option>Zurrieq</option>
+                                    </optgroup>
+                                    <optgroup label="Gozo">
+                                        <option>Fontana</option>
+                                        <option>Gharb</option>
+                                        <option>Ghajnsielem</option>
+                                        <option>Kercem</option>
+                                        <option>Munxar</option>
+                                        <option>Nadur</option>
+                                        <option>Qala</option>
+                                        <option>San Lawrenz</option>
+                                        <option>Sannat</option>
+                                        <option>Victoria</option>
+                                        <option>Xaghra</option>
+                                        <option>Zebbug (Gozo)</option>
+                                    </optgroup>
+                                    <option value="Other">Other...</option>
+                                </select>
+                                <input type="text" id="pickupCityOtherInput" class="form-control form-control-lg mt-2 d-none"
+                                       placeholder="Enter your city or town..." maxlength="100">
+                                <span asp-validation-for="Input.PickupCity" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.PickupAddress" class="form-label">Address (optional)</label>
+                                <input asp-for="Input.PickupAddress" class="form-control form-control-lg"
+                                       placeholder="Street address (shown only to buyer after purchase)" />
+                                <small class="text-muted">Only visible to buyer after purchase</small>
+                            </div>
+                        }
+
+                        @* Step 5: Photos *@
+                        @if (Model.CurrentStep == 5)
+                        {
+                            <h4 class="mb-4"><i class="bi bi-5-circle me-2"></i>Add photos</h4>
+
+                            @if (Model.ExistingImages.Any())
+                            {
+                                <p class="small text-muted mb-2">Current photos (click to remove):</p>
+                                <div class="row g-2 mb-3">
+                                    @foreach (var img in Model.ExistingImages)
+                                    {
+                                        <div class="col-4 col-md-3">
+                                            <div class="position-relative existing-photo-wrapper">
+                                                <img src="@(img.ThumbnailUrl ?? img.Url)" alt=""
+                                                     class="img-fluid rounded existing-photo"
+                                                     style="aspect-ratio: 4/3; object-fit: cover; width: 100%;">
+                                                <label class="existing-photo-remove" title="Remove">
+                                                    <input type="checkbox" name="RemoveImageIds" value="@img.Id"
+                                                           class="d-none remove-checkbox">
+                                                    <i class="bi bi-x-circle-fill"></i>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <p class="small text-muted mb-2">Add more photos:</p>
+                            }
+
+                            <div id="dropZone" class="drop-zone mb-3">
+                                <i class="bi bi-cloud-upload fs-1 text-muted mb-2"></i>
+                                <p class="mb-1">Drag & drop photos here</p>
+                                <p class="text-muted small mb-2">or <label for="photosInput" class="text-primary fw-semibold" style="cursor:pointer">click to browse</label></p>
+                                <small class="text-muted">JPG, PNG, WEBP · max 5MB each · up to 8 photos</small>
+                                <input type="file" id="photosInput" asp-for="Input.Photos" multiple
+                                       accept="image/jpeg,image/png,image/webp" class="d-none">
+                            </div>
+
+                            <div id="previewGrid" class="row g-2 mb-3"></div>
+
+                            <p class="text-muted small mt-2"><i class="bi bi-lightbulb me-1"></i><strong>Tips:</strong> natural light, multiple angles, close-ups of any defects. First photo is the main image.</p>
+                        }
+
+                        <!-- Navigation Buttons -->
+                        <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                            @if (Model.CurrentStep > 1)
+                            {
+                                <button type="submit" name="action" value="prev" formnovalidate class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Back
+                                </button>
+                            }
+                            else
+                            {
+                                <div></div>
+                            }
+
+                            @if (Model.CurrentStep < 5)
+                            {
+                                <button type="submit" name="action" value="next" class="btn btn-primary">
+                                    Next<i class="bi bi-arrow-right ms-2"></i>
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="submit" name="action" value="publish" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-check-circle me-2"></i>Publish Listing
+                                </button>
+                            }
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: #6c757d;
+    }
+    .step-circle.active {
+        background: var(--color-primary);
+        color: white;
+    }
+    .step-circle.completed {
+        background: var(--color-primary);
+        color: white;
+    }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(function () {
+            $('form').each(function () {
+                var v = $(this).data('validator');
+                if (v) {
+                    v.settings.onfocusout = false;
+                    v.settings.onkeyup = false;
+                    v.settings.onclick = false;
+                }
+            });
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // ── Step 4: city "Other" handling ─────────────────────────────
+            const pickupCitySelect = document.getElementById('pickupCitySelect');
+            const pickupCityOther = document.getElementById('pickupCityOtherInput');
+            if (pickupCitySelect) {
+                pickupCitySelect.addEventListener('change', function () {
+                    pickupCityOther.classList.toggle('d-none', this.value !== 'Other');
+                    if (this.value === 'Other') pickupCityOther.focus();
+                });
+                pickupCitySelect.closest('form').addEventListener('submit', function () {
+                    if (pickupCitySelect.value === 'Other' && pickupCityOther.value.trim()) {
+                        const val = pickupCityOther.value.trim();
+                        const opt = new Option(val, val, true, true);
+                        pickupCitySelect.add(opt);
+                        pickupCitySelect.value = val;
+                    }
+                });
+            }
+
+            // ── Step 3: pricing timeline display ──────────────────────────
+            const desiredInput = document.querySelector('[name="Input.DesiredPrice"]');
+            const minInput = document.getElementById('minPriceInput');
+            const sellByInput = document.querySelector('[name="Input.SellByDate"]');
+            const auctionCheck = document.getElementById('auctionEnabledCheck');
+            const minPriceGroup = document.getElementById('minPriceGroup');
+            const auctionTimelineLine = document.getElementById('auctionTimelineLine');
+
+            const auctionDisabledLine = document.getElementById('auctionDisabledLine');
+
+            function toggleAuction() {
+                if (!auctionCheck) return;
+                const enabled = auctionCheck.checked;
+                if (minInput) minInput.disabled = !enabled;
+                if (minPriceGroup) minPriceGroup.style.opacity = enabled ? '1' : '0.5';
+                if (auctionTimelineLine) auctionTimelineLine.style.display = enabled ? '' : 'none';
+                if (auctionDisabledLine) auctionDisabledLine.style.display = enabled ? 'none' : '';
+            }
+            if (auctionCheck) {
+                auctionCheck.addEventListener('change', toggleAuction);
+                toggleAuction();
+            }
+
+            function updateDisplay() {
+                if (desiredInput) document.getElementById('desiredPriceDisplay').textContent = desiredInput.value || '--';
+                if (minInput) document.getElementById('minPriceDisplay').textContent = minInput.value || '--';
+                if (sellByInput) document.getElementById('sellByDisplay').textContent = sellByInput.value || '--';
+            }
+            if (desiredInput) desiredInput.addEventListener('input', updateDisplay);
+            if (minInput) minInput.addEventListener('input', updateDisplay);
+            if (sellByInput) sellByInput.addEventListener('input', updateDisplay);
+            updateDisplay();
+
+        });
+
+        // ── Step 5: drag-and-drop photos (runs after DOM ready via section Scripts) ──
+        (function () {
+            const dropZone = document.getElementById('dropZone');
+            const photosInput = document.getElementById('photosInput');
+            if (!dropZone || !photosInput) return;
+
+            let selectedFiles = [];
+
+            // Click anywhere on drop zone opens file picker
+            dropZone.addEventListener('click', e => {
+                if (e.target !== photosInput && !e.target.closest('label')) photosInput.click();
+            });
+
+            dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+            dropZone.addEventListener('drop', e => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                addFiles([...e.dataTransfer.files]);
+            });
+
+            photosInput.addEventListener('change', () => {
+                addFiles([...photosInput.files]);
+            });
+
+            function addFiles(files) {
+                files.filter(f => f.type.startsWith('image/')).forEach(file => {
+                    if (selectedFiles.length >= 8) return;
+                    selectedFiles.push(file);
+                });
+                renderAllPreviews();
+                syncInput();
+            }
+
+            window.removeNewFile = function (idx) {
+                selectedFiles.splice(idx, 1);
+                renderAllPreviews();
+                syncInput();
+            };
+
+            function renderAllPreviews() {
+                const grid = document.getElementById('previewGrid');
+                grid.innerHTML = '';
+                selectedFiles.forEach((file, i) => {
+                    const col = document.createElement('div');
+                    col.className = 'col-4 col-md-3 preview-item';
+                    col.dataset.index = i;
+                    grid.appendChild(col);
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        col.innerHTML = `
+                            <div class="position-relative">
+                                <img src="${e.target.result}" class="img-fluid rounded"
+                                     style="aspect-ratio:4/3;object-fit:cover;width:100%">
+                                <button type="button" onclick="removeNewFile(${i})"
+                                        class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle p-0"
+                                        style="width:24px;height:24px;line-height:1">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>`;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            function syncInput() {
+                const dt = new DataTransfer();
+                selectedFiles.forEach(f => dt.items.add(f));
+                photosInput.files = dt.files;
+            }
+        })();
+
+        // Existing photo remove toggle (relist)
+        document.querySelectorAll('.existing-photo-wrapper').forEach(wrapper => {
+            wrapper.addEventListener('click', () => {
+                const cb = wrapper.querySelector('.remove-checkbox');
+                cb.checked = !cb.checked;
+            });
+        });
+    </script>
+}
+
+<style>
+    .drop-zone {
+        display: block;
+        border: 2px dashed var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+        border-color: var(--color-primary);
+        background: #f0f7e6;
+    }
+    .existing-photo-wrapper { cursor: pointer; }
+    .existing-photo-remove {
+        position: absolute; top: 4px; right: 4px;
+        color: white; font-size: 1.25rem; cursor: pointer;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+        opacity: 0; transition: opacity 0.15s;
+    }
+    .existing-photo-wrapper:hover .existing-photo-remove { opacity: 1; }
+    .existing-photo-wrapper:has(.remove-checkbox:checked) .existing-photo {
+        opacity: 0.35;
+        outline: 2px solid var(--color-urgent);
+        outline-offset: -2px;
+    }
+    .existing-photo-wrapper:has(.remove-checkbox:checked) .existing-photo-remove {
+        color: var(--color-urgent); opacity: 1;
+    }
+</style>

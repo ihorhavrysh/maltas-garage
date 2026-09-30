@@ -1,0 +1,132 @@
+@using Microsoft.EntityFrameworkCore
+@inject MaltasGarage.Infrastructure.Data.ApplicationDbContext DbContext
+@{
+    var openDisputeCount = await DbContext.Disputes
+        .CountAsync(d => d.Status == "Open" || d.Status == "UnderReview");
+    var active = ViewData["ActivePage"]?.ToString();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - @ViewData["Title"] - Malta's Garage</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        /* ── Site primary colour ── */
+        :root {
+            --color-primary:      #7CB342;
+            --color-primary-dark: #689F38;
+            /* Override Bootstrap 5 CSS variables so bg-primary, text-primary, badges etc. use site green */
+            --bs-primary:         #7CB342;
+            --bs-primary-rgb:     124, 179, 66;
+            --bs-link-color:      #7CB342;
+            --bs-link-color-rgb:  124, 179, 66;
+            --bs-link-hover-color:#689F38;
+        }
+
+        /* btn-primary → green */
+        .btn-primary {
+            --bs-btn-bg:                #7CB342;
+            --bs-btn-border-color:      #7CB342;
+            --bs-btn-hover-bg:          #689F38;
+            --bs-btn-hover-border-color:#689F38;
+            --bs-btn-active-bg:         #689F38;
+            --bs-btn-active-border-color:#689F38;
+            --bs-btn-disabled-bg:       #7CB342;
+            --bs-btn-disabled-border-color:#7CB342;
+        }
+        .btn-outline-primary {
+            --bs-btn-color:             #7CB342;
+            --bs-btn-border-color:      #7CB342;
+            --bs-btn-hover-bg:          #7CB342;
+            --bs-btn-hover-border-color:#7CB342;
+            --bs-btn-active-bg:         #689F38;
+            --bs-btn-active-border-color:#689F38;
+        }
+
+        /* Nav tabs → active tab uses primary colour, inactive tabs are gray/borderless */
+        .nav-tabs .nav-link {
+            color: #6c757d;
+            border-color: transparent;
+        }
+        .nav-tabs .nav-link.active,
+        .nav-tabs .nav-item.show .nav-link {
+            color: #7CB342;
+            border-top-color:    transparent;
+            border-left-color:   transparent;
+            border-right-color:  transparent;
+            border-bottom-color: #7CB342;
+            font-weight: 600;
+        }
+        .nav-tabs .nav-link:hover { color: #7CB342; }
+
+        /* Table links → primary colour */
+        .table a { color: #7CB342; }
+        .table a:hover { color: #689F38; }
+
+        /* ── Admin layout ── */
+        .admin-wrapper { height: 100vh; overflow: hidden; }
+        .admin-sidebar { width: 220px; height: 100vh; background: #212529; flex-shrink: 0; overflow-y: auto; }
+        .admin-main { flex: 1; height: 100vh; overflow-y: auto; }
+        .admin-nav-link { color: rgba(255,255,255,.55); border-radius: 6px; padding: .5rem .75rem; display: flex; align-items: center; gap: .5rem; text-decoration: none; font-size: .9rem; transition: background .15s, color .15s; }
+        .admin-nav-link:hover { color: #fff; background: rgba(255,255,255,.08); }
+        .admin-nav-link.active { background: var(--color-primary); color: #fff !important; }
+    </style>
+</head>
+<body class="bg-light">
+    <partial name="_DemoBanner" />
+<div class="d-flex admin-wrapper">
+
+    <!-- Sidebar -->
+    <nav class="admin-sidebar d-flex flex-column py-4 px-3">
+        <a href="/Admin" class="text-decoration-none fw-bold text-white mb-4 d-flex align-items-center gap-2" style="font-size:1rem;">
+            <i class="bi bi-shield-check" style="color:var(--color-primary);font-size:1.3rem;"></i>
+            Admin Panel
+        </a>
+
+        <div class="d-flex flex-column gap-1">
+            @if (User.IsInRole("Admin"))
+            {
+                <a href="/Admin" class="admin-nav-link @(active == "Dashboard" ? "active" : "")">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+            }
+            <a href="/Admin/Disputes" class="admin-nav-link @(active == "Disputes" ? "active" : "")">
+                <i class="bi bi-exclamation-triangle"></i> Disputes
+                @if (openDisputeCount > 0)
+                {
+                    <span class="badge bg-danger ms-auto">@openDisputeCount</span>
+                }
+            </a>
+            <a href="/Admin/Users" class="admin-nav-link @(active == "Users" ? "active" : "")">
+                <i class="bi bi-people"></i> Users
+            </a>
+            <a href="/Admin/Listings" class="admin-nav-link @(active == "Listings" ? "active" : "")">
+                <i class="bi bi-grid"></i> Listings
+            </a>
+            @if (User.IsInRole("Admin"))
+            {
+                <a href="/Admin/Staff" class="admin-nav-link @(active == "Staff" ? "active" : "")">
+                    <i class="bi bi-person-gear"></i> Staff
+                </a>
+            }
+        </div>
+
+        <div class="mt-4 pt-3 border-top border-secondary">
+            <a href="/" class="admin-nav-link">
+                <i class="bi bi-arrow-left"></i> Back to site
+            </a>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <main class="admin-main p-4">
+        @RenderBody()
+    </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+@RenderSection("Scripts", required: false)
+</body>
+</html>

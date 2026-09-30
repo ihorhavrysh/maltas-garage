@@ -1,0 +1,122 @@
+@page "{orderId:guid}"
+@model MaltasGarage.Web.Pages.Orders.LeaveReviewModel
+@{
+    ViewData["Title"] = "Leave a Review";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/Orders">My Orders</a></li>
+                    <li class="breadcrumb-item"><a href="/Orders/Details/@Model.Order?.Id">Order Details</a></li>
+                    <li class="breadcrumb-item active">Leave a Review</li>
+                </ol>
+            </nav>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-star me-2"></i>Leave a Review</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Order Info -->
+                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                        @if (!string.IsNullOrEmpty(Model.Order?.ImageUrl))
+                        {
+                            <img src="@Model.Order.ImageUrl" class="rounded me-3"
+                                 style="width: 60px; height: 60px; object-fit: cover;" alt="@Model.Order.Title">
+                        }
+                        <div>
+                            <h6 class="mb-1">@Model.Order?.Title</h6>
+                            <small class="text-muted">
+                                @(Model.IsBuyer ? "Sold by" : "Bought by") @Model.Order?.OtherPartyName
+                            </small>
+                        </div>
+                    </div>
+
+                    @if (Model.AlreadyReviewed)
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-check-circle me-2"></i>
+                            You have already left a review for this order.
+                        </div>
+                        <a href="/Orders/Details/@Model.Order?.Id" class="btn btn-outline-secondary w-100">
+                            Back to Order
+                        </a>
+                    }
+                    else
+                    {
+                        <form method="post">
+                            <!-- Star Rating -->
+                            <div class="mb-4 text-center">
+                                <label class="form-label d-block fw-semibold mb-3">How was your experience?</label>
+                                <input type="hidden" name="Rating" id="ratingInput" value="5" />
+                                <div id="starRating">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <i class="bi bi-star-fill star-btn"
+                                           data-value="@i"
+                                           title="@i star@(i > 1 ? "s" : "")"></i>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Comment -->
+                            <div class="mb-4">
+                                <label asp-for="Comment" class="form-label fw-semibold">Your review (optional)</label>
+                                <textarea asp-for="Comment" class="form-control" rows="4"
+                                          placeholder="Share your experience with the community..."></textarea>
+                                <span asp-validation-for="Comment" class="text-danger small"></span>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-send me-2"></i>Submit Review
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #starRating .star-btn {
+        font-size: 2.5rem;
+        cursor: pointer;
+        color: #ddd;
+        margin: 0 0.1rem;
+        transition: color 0.1s;
+    }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const stars = Array.from(document.querySelectorAll('#starRating .star-btn'));
+            const input = document.getElementById('ratingInput');
+
+            function paint(value) {
+                stars.forEach(s => {
+                    s.style.color = parseInt(s.dataset.value) <= value ? '#ffc107' : '#ddd';
+                });
+            }
+
+            stars.forEach(s => {
+                s.addEventListener('click', () => {
+                    input.value = s.dataset.value;
+                    paint(parseInt(s.dataset.value));
+                });
+                s.addEventListener('mouseenter', () => paint(parseInt(s.dataset.value)));
+            });
+
+            document.getElementById('starRating').addEventListener('mouseleave', () => {
+                paint(parseInt(input.value));
+            });
+
+            paint(parseInt(input.value)); // initial state
+        })();
+    </script>
+}

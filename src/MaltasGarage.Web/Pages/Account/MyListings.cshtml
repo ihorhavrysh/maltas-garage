@@ -1,0 +1,173 @@
+@page
+@model MaltasGarage.Web.Pages.Account.MyListingsModel
+@using MaltasGarage.Domain.Enums
+@{
+    ViewData["Title"] = "My Listings";
+    var totalActive = Model.ActiveListings.Count + Model.AuctionListings.Count;
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="container pt-3">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="container pt-3">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </div>
+}
+
+<div class="container py-5">
+    <div class="row">
+
+        <!-- Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    @if (!string.IsNullOrEmpty(Model.Profile?.AvatarUrl))
+                    {
+                        <img src="@Model.Profile.AvatarUrl" alt="Avatar"
+                             class="rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover;">
+                    }
+                    else
+                    {
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                             style="width: 80px; height: 80px; font-size: 2rem;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                    }
+                    <h6 class="mb-1">@(Model.Profile?.DisplayName ?? "User")</h6>
+                    <small class="text-muted">Member since @Model.Profile?.CreatedAt.ToString("MMM yyyy")</small>
+                </div>
+            </div>
+
+            <div class="list-group mt-3">
+                <a href="/Account/Profile" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person me-2"></i>Profile
+                </a>
+                <a href="/Account/MyListings" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-collection me-2"></i>My Listings
+                </a>
+                <a href="/Account/Sales" class="list-group-item list-group-item-action">
+                    <i class="bi bi-graph-up me-2"></i>My Sales
+                </a>
+                <a href="/Orders" class="list-group-item list-group-item-action">
+                    <i class="bi bi-bag me-2"></i>My Orders
+                </a>
+                <a href="/Account/Favourites" class="list-group-item list-group-item-action">
+                    <i class="bi bi-heart me-2"></i>Favourites
+                </a>
+                <a href="/Account/Settings" class="list-group-item list-group-item-action">
+                    <i class="bi bi-gear me-2"></i>Settings
+                </a>
+            </div>
+        </div>
+
+        <!-- Main -->
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0 fw-bold">My Listings</h4>
+                <a href="/Listings/Create" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>New Listing
+                </a>
+            </div>
+
+            @if (totalActive == 0 && !Model.SoldListings.Any() && !Model.OtherListings.Any())
+            {
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-collection text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">No listings yet</h5>
+                        <p class="text-muted">Create your first listing and start selling.</p>
+                        <a href="/Listings/Create" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Create Listing
+                        </a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- Active -->
+                @if (Model.ActiveListings.Any())
+                {
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">Active (@Model.ActiveListings.Count)</h6>
+                    <div class="card mb-4">
+                        @foreach (var listing in Model.ActiveListings)
+                        {
+                            <partial name="_ListingRow" model="listing" />
+                        }
+                    </div>
+                }
+
+                <!-- Auction -->
+                @if (Model.AuctionListings.Any())
+                {
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">
+                        <i class="bi bi-fire text-urgent me-1"></i>In Auction (@Model.AuctionListings.Count)
+                    </h6>
+                    <div class="card mb-4">
+                        @foreach (var listing in Model.AuctionListings)
+                        {
+                            <partial name="_ListingRow" model="listing" />
+                        }
+                    </div>
+                }
+
+                <!-- Sold -->
+                @if (Model.SoldListings.Any())
+                {
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">Sold (@Model.SoldListings.Count)</h6>
+                    <div class="card mb-4">
+                        @foreach (var listing in Model.SoldListings)
+                        {
+                            <partial name="_ListingRow" model="listing" />
+                        }
+                    </div>
+                }
+
+                <!-- Draft / Expired / Cancelled -->
+                @if (Model.OtherListings.Any())
+                {
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">Other (@Model.OtherListings.Count)</h6>
+                    <div class="card mb-4">
+                        @foreach (var listing in Model.OtherListings)
+                        {
+                            <partial name="_ListingRow" model="listing" />
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function confirmDelete(id, title) {
+            Swal.fire({
+                title: 'Delete listing?',
+                text: title + ' will be permanently deleted.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete it',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then(result => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-form-' + id).submit();
+                }
+            });
+        }
+    </script>
+}

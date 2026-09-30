@@ -1,0 +1,76 @@
+## .NET
+bin/
+obj/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+.vs/
+*.csproj.user
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+bld/
+
+## NuGet
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+## IDE
+.idea/
+*.swp
+*~
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+## User-specific files
+*.db
+*.db-shm
+*.db-wal
+
+## Local SQL Server databases
+*.mdf
+*.ldf
+
+## Azure
+publish/
+*.publishsettings
+*.pubxml
+*.PublishSettings
+**/PublishProfiles/
+
+## Node (if used)
+node_modules/
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Secrets
+## appsettings*.json are committed and hold no secrets. Secrets live in User Secrets
+## (local) or App Service application settings (Azure). A *.local.json file is for
+## anything you do not want to commit.
+secrets.json
+appsettings.*.local.json
+.env
+.env.*
+*.pfx
+*.key
+
+## Planning & implementation docs (local only)
+implementation/
+
+## User uploads (runtime files, not source)
+src/MaltasGarage.Web/wwwroot/uploads/
+
+## Windows artifacts
+nul
+/.claude/settings.local.json
+/TODO.md

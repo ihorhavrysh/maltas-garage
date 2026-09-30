@@ -1,0 +1,339 @@
+@page "{orderId:guid}"
+@model MaltasGarage.Web.Pages.Orders.DisputeViewModel
+@{
+    ViewData["Title"] = "Dispute Details";
+}
+
+<div class="container py-5" style="max-width: 720px;">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/Orders">My Orders</a></li>
+            <li class="breadcrumb-item"><a href="/Orders/Details/@Model.OrderId">Order #@Model.OrderId.ToString()[..8]</a></li>
+            <li class="breadcrumb-item active">Dispute</li>
+        </ol>
+    </nav>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success mb-4"><i class="bi bi-check-circle me-2"></i>@TempData["Success"]</div>
+    }
+
+    @if (Model.Dispute != null)
+    {
+        <!-- Status banner -->
+        <div class="alert @(Model.Dispute.Status == "Resolved" ? "alert-success" : Model.Dispute.Status == "UnderReview" ? "alert-primary" : "alert-warning") mb-4">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-@(Model.Dispute.Status == "Resolved" ? "check-circle-fill" : "clock-history") fs-5"></i>
+                <div>
+                    <strong>
+                        @(Model.Dispute.Status switch {
+                            "Open" => "Dispute Submitted",
+                            "UnderReview" => "Under Review",
+                            "Resolved" => "Dispute Resolved",
+                            _ => Model.Dispute.Status
+                        })
+                    </strong>
+                    <div class="small">
+                        @(Model.Dispute.Status switch {
+                            "Open" => "Your dispute has been submitted and is awaiting review by our team.",
+                            "UnderReview" => "Our team is actively reviewing this dispute.",
+                            "Resolved" => $"Resolved on {Model.Dispute.ResolvedAt?.ToString("dd MMM yyyy")}.",
+                            _ => ""
+                        })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dispute details -->
+        <div class="card mb-4">
+            <div class="card-header"><i class="bi bi-exclamation-triangle me-2"></i>Dispute Details</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Order</dt>
+                    <dd class="col-sm-8">
+                        <a href="/Orders/Details/@Model.OrderId">@Model.OrderTitle</a>
+                    </dd>
+
+                    <dt class="col-sm-4">Opened by</dt>
+                    <dd class="col-sm-8">@Model.Dispute.OpenedBy?.DisplayName</dd>
+
+                    <dt class="col-sm-4">Date opened</dt>
+                    <dd class="col-sm-8">@Model.Dispute.CreatedAt.ToString("dd MMM yyyy, HH:mm")</dd>
+
+                    <dt class="col-sm-4">Reason</dt>
+                    <dd class="col-sm-8">
+                        @(Model.Dispute.Reason switch {
+                            MaltasGarage.Domain.Enums.DisputeReason.ItemNotReceived    => "Item not received",
+                            MaltasGarage.Domain.Enums.DisputeReason.ItemNotAsDescribed => "Item not as described",
+                            MaltasGarage.Domain.Enums.DisputeReason.Other             => "Other",
+                            _ => Model.Dispute.Reason.ToString()
+                        })
+                    </dd>
+
+                    @if (!string.IsNullOrEmpty(Model.Dispute.Description))
+                    {
+                        <dt class="col-sm-4">Description</dt>
+                        <dd class="col-sm-8">@Model.Dispute.Description</dd>
+                    }
+
+                    @if (Model.Dispute.Status == "Resolved" && Model.Dispute.Resolution.HasValue)
+                    {
+                        <dt class="col-sm-4">Resolution</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-success">
+                                @(Model.Dispute.Resolution switch {
+                                    MaltasGarage.Domain.Enums.DisputeResolution.RefundBuyer    => "Full refund issued to buyer",
+                                    MaltasGarage.Domain.Enums.DisputeResolution.PaySeller      => "Payment released to seller",
+                                    MaltasGarage.Domain.Enums.DisputeResolution.PartialRefund  => "Partial refund issued",
+                                    _ => Model.Dispute.Resolution.ToString()
+                                })
+                            </span>
+                            @if (Model.Dispute.Resolution == MaltasGarage.Domain.Enums.DisputeResolution.PartialRefund && Model.Dispute.PartialRefundAmount.HasValue)
+                            {
+                                <p class="small mt-1 mb-0">
+                                    <i class="bi bi-arrow-return-left me-1 text-warning"></i>
+                                    <strong>€@Model.Dispute.PartialRefundAmount.Value.ToString("N2")</strong> refunded to buyer ·
+                                    <strong>€@((Model.Dispute.Order.FinalPrice - Model.Dispute.PartialRefundAmount.Value).ToString("N2"))</strong> released to seller
+                                </p>
+                            }
+                            @if (Model.IsBuyer && (Model.Dispute.Resolution == MaltasGarage.Domain.Enums.DisputeResolution.RefundBuyer ||
+                                                   Model.Dispute.Resolution == MaltasGarage.Domain.Enums.DisputeResolution.PartialRefund))
+                            {
+                                <p class="text-muted small mt-1 mb-0">
+                                    <i class="bi bi-clock me-1"></i>Refunds typically appear on your statement within 5–10 business days, depending on your bank.
+                                </p>
+                            }
+                        </dd>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Dispute.AdminNotes))
+                    {
+                        <dt class="col-sm-4">Admin notes</dt>
+                        <dd class="col-sm-8 text-muted">@Model.Dispute.AdminNotes</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+
+        @* Attachments *@
+        @if (Model.Dispute.Attachments.Any())
+        {
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-images me-2"></i>Attachments</div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var att in Model.Dispute.Attachments)
+                        {
+                            <a href="@att.Url" target="_blank" title="@att.FileName">
+                                <img src="@att.Url" alt="@att.FileName"
+                                     class="rounded border" style="width:100px;height:100px;object-fit:cover;">
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Actions -->
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/Orders/Details/@Model.OrderId" class="btn btn-primary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Order
+            </a>
+            @if (!Model.IsAdminOrManager)
+            {
+                <a href="/Messages?orderId=@Model.OrderId" class="btn btn-outline-warning">
+                    <i class="bi bi-chat me-1"></i>Contact @(Model.IsBuyer ? "Seller" : "Buyer")
+                </a>
+            }
+            @if (Model.IsBuyer && (Model.Dispute?.Status == "Open" || Model.Dispute?.Status == "UnderReview"))
+            {
+                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#withdrawModal">
+                    <i class="bi bi-x-circle me-1"></i>Close Dispute
+                </button>
+            }
+            @if (Model.IsAdminOrManager && (Model.Dispute?.Status == "Open" || Model.Dispute?.Status == "UnderReview"))
+            {
+                @if (Model.Dispute?.Status == "Open")
+                {
+                    <form method="post" asp-page-handler="MarkUnderReview" class="d-inline">
+                        <input type="hidden" name="orderId" value="@Model.OrderId" />
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-search me-1"></i>Mark Under Review
+                        </button>
+                    </form>
+                }
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#adminResolveModal">
+                    <i class="bi bi-check-lg me-1"></i>Resolve Dispute
+                </button>
+            }
+        </div>
+
+        @if (Model.IsBuyer && (Model.Dispute?.Status == "Open" || Model.Dispute?.Status == "UnderReview"))
+        {
+            <div class="modal fade" id="withdrawModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Close Dispute</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-2">Are you sure you want to close this dispute?</p>
+                            <p class="text-muted small mb-0">
+                                If you've reached an understanding with the seller, you can close the dispute and the order will return to its previous status and continue as normal.
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <form method="post" asp-page-handler="Withdraw" class="d-inline">
+                                <input type="hidden" name="orderId" value="@Model.OrderId" />
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-x-circle me-1"></i>Yes, Close Dispute
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.IsAdminOrManager)
+        {
+            <!-- Admin: Contact Buyer / Seller by email -->
+            <div class="card mt-4 border-warning">
+                <div class="card-header fw-semibold small" style="background:rgba(255,193,7,.1);color:#856404;">
+                    <i class="bi bi-envelope me-1"></i>Contact Parties
+                </div>
+                <div class="card-body d-flex gap-2 flex-wrap py-3">
+                    <button type="button" class="btn btn-outline-primary btn-sm"
+                            data-bs-toggle="modal" data-bs-target="#adminEmailModal"
+                            data-user-id="@Model.BuyerUserId"
+                            data-display-name="@Model.BuyerDisplayName"
+                            data-role="Buyer">
+                        <i class="bi bi-envelope me-1"></i>Email @Model.BuyerDisplayName (Buyer)
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                            data-bs-toggle="modal" data-bs-target="#adminEmailModal"
+                            data-user-id="@Model.SellerUserId"
+                            data-display-name="@Model.SellerDisplayName"
+                            data-role="Seller">
+                        <i class="bi bi-envelope me-1"></i>Email @Model.SellerDisplayName (Seller)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Email compose modal -->
+            <div class="modal fade" id="adminEmailModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="bi bi-envelope me-2"></i>Send Email to <span id="emailModalRecipientLabel"></span></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="post" asp-page-handler="EmailParty">
+                            <div class="modal-body">
+                                <input type="hidden" name="orderId" value="@Model.OrderId" />
+                                <input type="hidden" name="recipientUserId" id="emailModalUserId" />
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Subject</label>
+                                    <input type="text" name="subject" id="emailModalSubject" class="form-control"
+                                           value="Regarding your dispute - @Html.Encode(Model.OrderTitle)"
+                                           maxlength="200" required />
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label fw-semibold">Message</label>
+                                    <textarea name="messageBody" class="form-control" rows="6"
+                                              maxlength="4000" required placeholder="Write your message…"></textarea>
+                                    <div class="form-text">The recipient will receive this via email and can reply directly.</div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-send me-1"></i>Send Email
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.IsAdminOrManager && (Model.Dispute?.Status == "Open" || Model.Dispute?.Status == "UnderReview"))
+        {
+            <!-- Admin: Resolve dispute modal -->
+            <div class="modal fade" id="adminResolveModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="bi bi-check-lg me-2"></i>Resolve Dispute</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="post" asp-page-handler="Resolve">
+                            <div class="modal-body">
+                                <p class="text-muted small mb-3">
+                                    <strong>@Model.OrderTitle</strong>
+                                </p>
+                                <input type="hidden" name="orderId" value="@Model.OrderId" />
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Resolution</label>
+                                    <select name="resolution" class="form-select" required
+                                            onchange="togglePartialAmountView(this)">
+                                        <option value="RefundBuyer">Refund buyer (full refund)</option>
+                                        <option value="PaySeller">Release to seller</option>
+                                        <option value="PartialRefund">Partial refund</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3 d-none" id="partialAmountView">
+                                    <label class="form-label fw-semibold">Refund amount (€)</label>
+                                    <input type="number" name="partialRefundAmount" class="form-control"
+                                           min="0.01" step="0.01" placeholder="e.g. 25.00" />
+                                    <div class="form-text">Enter the euro amount to refund to the buyer.</div>
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label fw-semibold">Admin Notes <span class="text-muted fw-normal">(optional)</span></label>
+                                    <textarea name="adminNotes" class="form-control" rows="3" maxlength="2000"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-success">Resolve</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-exclamation-circle fs-1"></i>
+            <p class="mt-2">No dispute found for this order.</p>
+            <a href="/Orders/Details/@Model.OrderId" class="btn btn-outline-secondary mt-2">Back to Order</a>
+        </div>
+    }
+</div>
+
+<script>
+    function togglePartialAmountView(select) {
+        const amountDiv = document.getElementById('partialAmountView');
+        const input = amountDiv?.querySelector('input');
+        if (select.value === 'PartialRefund') {
+            amountDiv?.classList.remove('d-none');
+            if (input) input.required = true;
+        } else {
+            amountDiv?.classList.add('d-none');
+            if (input) input.required = false;
+        }
+    }
+
+    document.getElementById('adminEmailModal')?.addEventListener('show.bs.modal', function (e) {
+        const btn = e.relatedTarget;
+        if (!btn) return;
+        document.getElementById('emailModalUserId').value = btn.getAttribute('data-user-id');
+        document.getElementById('emailModalRecipientLabel').textContent =
+            btn.getAttribute('data-display-name') + ' (' + btn.getAttribute('data-role') + ')';
+    });
+</script>

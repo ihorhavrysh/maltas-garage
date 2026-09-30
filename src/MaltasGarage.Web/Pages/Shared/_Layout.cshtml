@@ -1,0 +1,94 @@
+@inject Microsoft.Extensions.Options.IOptions<MaltasGarage.Application.Common.Models.AppSettings> AppOptions
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Malta's Garage</title>
+    <meta name="description" content="@(ViewData["Description"] ?? "Malta's Garage is Malta's online marketplace for second-hand items. Buy and sell used goods safely with escrow payments, auctions, and MaltaPost delivery.")" />
+    @if (ViewData["Canonical"] != null)
+    {
+        <link rel="canonical" href="@ViewData["Canonical"]" />
+    }
+    @{
+        var ogType        = ViewData["OgType"]        as string ?? "website";
+        var ogTitle       = ViewData["OgTitle"]       as string ?? (ViewData["Title"] + " - Malta's Garage");
+        var ogDescription = ViewData["Description"]   as string ?? "Malta's Garage - Malta's online marketplace for second-hand items.";
+        var ogUrl         = ViewData["Canonical"]     as string ?? Site.BaseUrl;
+        var ogImage       = ViewData["OgImage"]       as string;
+    }
+    <meta property="og:type"        content="@ogType" />
+    <meta property="og:title"       content="@ogTitle" />
+    <meta property="og:description" content="@ogDescription" />
+    <meta property="og:url"         content="@ogUrl" />
+    @if (ogImage != null)
+    {
+        <meta property="og:image"   content="@ogImage" />
+    }
+    <meta property="og:site_name"   content="Malta's Garage" />
+    @if (ViewData["JsonLd"] != null)
+    {
+        <script type="application/ld+json">@Html.Raw(ViewData["JsonLd"])</script>
+    }
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
+
+    <!-- Preconnect for Google Fonts only -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Bootstrap 5 CSS (self-hosted) -->
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+
+    <!-- Bootstrap Icons (self-hosted, non-blocking) -->
+    <link rel="preload" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css"></noscript>
+
+    <!-- Tabler Icons outline (self-hosted, non-blocking) -->
+    <link rel="preload" href="~/lib/tabler-icons/tabler-icons-outline.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="~/lib/tabler-icons/tabler-icons-outline.min.css"></noscript>
+
+    <!-- Google Fonts (non-blocking) -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600&family=Lobster&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600&family=Lobster&display=swap"></noscript>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    @if (!string.IsNullOrEmpty(AppOptions.Value.GoogleAnalyticsId))
+    {
+        <!-- Google tag (gtag.js), only when App:GoogleAnalyticsId is configured -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=@AppOptions.Value.GoogleAnalyticsId"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '@AppOptions.Value.GoogleAnalyticsId');
+        </script>
+    }
+</head>
+<body>
+    <partial name="_DemoBanner" />
+
+    <!-- Header -->
+    @await Html.PartialAsync("_Header")
+
+    <!-- Main Content -->
+    <main>
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    @await Html.PartialAsync("_Footer")
+
+    <!-- Bootstrap 5 JS Bundle (self-hosted) -->
+    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Alpine.js (for interactivity) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Custom JS -->
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

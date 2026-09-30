@@ -1,0 +1,167 @@
+@using Microsoft.AspNetCore.Identity
+@using MaltasGarage.Application.Common.Interfaces
+@using MaltasGarage.Infrastructure.Data
+@using Microsoft.EntityFrameworkCore
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@inject ICurrentUserService CurrentUserService
+@inject ApplicationDbContext DbContext
+@{
+    int unreadCount = 0;
+    MaltasGarage.Domain.Entities.UserProfile? headerProfile = null;
+    bool isAdminOrManager = User.IsInRole("Admin") || User.IsInRole("Manager");
+
+    if (SignInManager.IsSignedIn(User) && !string.IsNullOrEmpty(CurrentUserService.UserId))
+    {
+        headerProfile = await DbContext.UserProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.UserId == CurrentUserService.UserId);
+        if (headerProfile != null)
+        {
+            var unreadChats = await DbContext.ChatMessages
+                .CountAsync(m =>
+                    m.FromUserId != headerProfile.Id &&
+                    !m.IsRead &&
+                    (m.Conversation.BuyerId == headerProfile.Id || m.Conversation.SellerId == headerProfile.Id));
+            var unreadSystem = await DbContext.SystemMessages
+                .CountAsync(m => m.UserId == headerProfile.Id && !m.IsRead);
+            unreadCount = unreadChats + unreadSystem;
+        }
+    }
+}
+
+<header class="site-header">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <!-- Logo -->
+            <a class="navbar-brand" href="/">Malta's Garage</a>
+
+            <!-- Mobile Toggle -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Nav Items -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <!-- How it works -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="/HowItWorks">
+                            <i class="bi bi-question-circle me-1"></i>
+                            How it works
+                        </a>
+                    </li>
+
+                    @if (SignInManager.IsSignedIn(User))
+                    {
+                        <!-- Admin Panel link (Admin + Manager) -->
+                        @if (isAdminOrManager)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Admin">
+                                    <i class="bi bi-shield-check me-1"></i>
+                                    Admin
+                                </a>
+                            </li>
+                        }
+
+                        @if (headerProfile != null && !isAdminOrManager)
+                        {
+                            <!-- My Orders -->
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Orders">
+                                    <i class="bi bi-bag me-1"></i>
+                                    My Orders
+                                </a>
+                            </li>
+
+                            <!-- Sell -->
+                            <li class="nav-item">
+                                <a class="nav-link btn-sell-nav" href="/Listings/Create">
+                                    <i class="bi bi-plus-circle me-1"></i>
+                                    Sell
+                                </a>
+                            </li>
+
+                            <!-- Profile Dropdown -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    Profile
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="/Account/Profile">
+                                        <i class="bi bi-person me-2"></i>My Profile
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="/Account/MyListings">
+                                        <i class="bi bi-collection me-2"></i>My Listings
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="/Account/Sales">
+                                        <i class="bi bi-graph-up me-2"></i>My Sales
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="/Account/Favourites">
+                                        <i class="bi bi-heart me-2"></i>Favourites
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <!-- Bell / Notifications -->
+                            <li class="nav-item">
+                                <a class="nav-link position-relative px-2" href="/Messages">
+                                    @if (unreadCount > 0)
+                                    {
+                                        <i class="bi bi-bell-fill text-primary" style="font-size:1.25em;"></i>
+                                        <span style="position:absolute; top:2px; right:-3px; min-width:1.35em; height:1.35em; border-radius:50%; background:#ffc107; color:#fff; font-weight:700; font-size:0.65rem; display:inline-flex; align-items:center; justify-content:center; padding:0 3px; line-height:1;">
+                                            @unreadCount
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-bell" style="font-size:1.25em;"></i>
+                                    }
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <!-- No UserProfile (admin/manager account) - just Logout -->
+                            <li class="nav-item">
+                                <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                                    <button type="submit" class="nav-link btn btn-link" style="box-shadow:none;">
+                                        <i class="bi bi-box-arrow-right me-1"></i>Logout
+                                    </button>
+                                </form>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        <!-- Login -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Identity/Account/Login">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>
+                                Login
+                            </a>
+                        </li>
+
+                        <!-- Register -->
+                        <li class="nav-item">
+                            <a class="btn btn-primary btn-sm ms-2" href="/Identity/Account/Register">
+                                <i class="bi bi-person-plus me-1"></i>
+                                Sign Up
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>

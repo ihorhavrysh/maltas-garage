@@ -1,0 +1,424 @@
+@page "{id:guid}"
+@model MaltasGarage.Web.Pages.Listings.EditModel
+@{
+    ViewData["Title"] = "Edit Listing";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <a href="/Listing/@Model.Id" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>Back
+                </a>
+                <h4 class="mb-0 fw-bold">Edit Listing</h4>
+            </div>
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger">@TempData["Error"]</div>
+            }
+
+            <form method="post" enctype="multipart/form-data">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <!-- Basics -->
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">
+                        <i class="bi bi-pencil me-2"></i>Basics
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Input.Title" class="form-label">Title *</label>
+                            <input asp-for="Input.Title" class="form-control" maxlength="200" />
+                            <span asp-validation-for="Input.Title" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Input.CategoryId" class="form-label">Category *</label>
+                            <select asp-for="Input.CategoryId" class="form-select" asp-items="Model.Categories">
+                                <option value="">Select a category...</option>
+                            </select>
+                            <span asp-validation-for="Input.CategoryId" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Condition</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" asp-for="Input.IsNew" id="isNewCheck" />
+                                <label class="form-check-label" for="isNewCheck">New item (unused)</label>
+                            </div>
+                            <small class="text-muted">Leave unchecked if the item is used or second-hand</small>
+                        </div>
+                        <div class="mb-0">
+                            <label asp-for="Input.Description" class="form-label">Description *</label>
+                            <textarea asp-for="Input.Description" class="form-control" rows="6"></textarea>
+                            <span asp-validation-for="Input.Description" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pricing -->
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">
+                        <i class="bi bi-tag me-2"></i>Pricing & Deadline
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="Input.DesiredPrice" class="form-label">Buy Now Price (€) *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">€</span>
+                                    <input asp-for="Input.DesiredPrice" type="number" step="0.01" min="1" class="form-control" id="editDesiredPrice" />
+                                </div>
+                                <span asp-validation-for="Input.DesiredPrice" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4 mb-3" id="editMinPriceGroup">
+                                <label asp-for="Input.MinPrice" class="form-label">Min Auction Price (€) *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">€</span>
+                                    <input asp-for="Input.MinPrice" type="number" step="0.01" min="1" class="form-control" id="editMinPrice" />
+                                </div>
+                                <span asp-validation-for="Input.MinPrice" class="text-danger small"></span>
+                                <small class="text-muted d-block">Max 80% of desired price</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label asp-for="Input.SellByDate" class="form-label">Sell By Date *</label>
+                                <input asp-for="Input.SellByDate" type="date" class="form-control"
+                                       min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="Input.SellByDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="mb-0">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" asp-for="Input.AuctionEnabled" id="editAuctionEnabled" />
+                                <label class="form-check-label fw-semibold" for="editAuctionEnabled">Enable auction in the final 7 days</label>
+                            </div>
+                            <small class="text-muted">If disabled, the listing stays at Buy Now price until the deadline then expires</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">
+                        <i class="bi bi-geo-alt me-2"></i>Pickup Location
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Input.PickupCity" class="form-label">City *</label>
+                                <select asp-for="Input.PickupCity" class="form-select" id="pickupCitySelect">
+                                    <option value="">Select city...</option>
+                                    <optgroup label="Malta">
+                                        <option>Attard</option>
+                                        <option>Balzan</option>
+                                        <option>Birkirkara</option>
+                                        <option>Birzebbuga</option>
+                                        <option>Birgu (Vittoriosa)</option>
+                                        <option>Bormla (Cospicua)</option>
+                                        <option>Dingli</option>
+                                        <option>Fgura</option>
+                                        <option>Floriana</option>
+                                        <option>Ghaxaq</option>
+                                        <option>Gharghur</option>
+                                        <option>Gudja</option>
+                                        <option>Gzira</option>
+                                        <option>Hamrun</option>
+                                        <option>Iklin</option>
+                                        <option>Isla (Senglea)</option>
+                                        <option>Kalkara</option>
+                                        <option>Kirkop</option>
+                                        <option>Lija</option>
+                                        <option>Luqa</option>
+                                        <option>Marsa</option>
+                                        <option>Marsascala</option>
+                                        <option>Marsaxlokk</option>
+                                        <option>Mdina</option>
+                                        <option>Mellieha</option>
+                                        <option>Mgarr</option>
+                                        <option>Mqabba</option>
+                                        <option>Msida</option>
+                                        <option>Mosta</option>
+                                        <option>Mtarfa</option>
+                                        <option>Naxxar</option>
+                                        <option>Paola</option>
+                                        <option>Pembroke</option>
+                                        <option>Pieta</option>
+                                        <option>Qormi</option>
+                                        <option>Qrendi</option>
+                                        <option>Rabat</option>
+                                        <option>Safi</option>
+                                        <option>San Gwann</option>
+                                        <option>Santa Lucija</option>
+                                        <option>Santa Venera</option>
+                                        <option>Siggiewi</option>
+                                        <option>Sliema</option>
+                                        <option>St Julian's</option>
+                                        <option>St Paul's Bay</option>
+                                        <option>Swieqi</option>
+                                        <option>Ta' Xbiex</option>
+                                        <option>Tarxien</option>
+                                        <option>Valletta</option>
+                                        <option>Xghajra</option>
+                                        <option>Zabbar</option>
+                                        <option>Zebbug</option>
+                                        <option>Zejtun</option>
+                                        <option>Zurrieq</option>
+                                    </optgroup>
+                                    <optgroup label="Gozo">
+                                        <option>Fontana</option>
+                                        <option>Gharb</option>
+                                        <option>Ghajnsielem</option>
+                                        <option>Kercem</option>
+                                        <option>Munxar</option>
+                                        <option>Nadur</option>
+                                        <option>Qala</option>
+                                        <option>San Lawrenz</option>
+                                        <option>Sannat</option>
+                                        <option>Victoria</option>
+                                        <option>Xaghra</option>
+                                        <option>Zebbug (Gozo)</option>
+                                    </optgroup>
+                                    <option value="Other">Other...</option>
+                                </select>
+                                <input type="text" id="pickupCityOtherInput" class="form-control mt-2 d-none"
+                                       placeholder="Enter your city or town..." maxlength="100">
+                                <span asp-validation-for="Input.PickupCity" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Input.PickupAddress" class="form-label">Address (optional)</label>
+                                <input asp-for="Input.PickupAddress" class="form-control"
+                                       placeholder="Only shown to buyer after purchase" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Photos -->
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">
+                        <i class="bi bi-images me-2"></i>Photos
+                    </div>
+                    <div class="card-body">
+
+                        <!-- Existing photos -->
+                        @if (Model.ExistingImages.Any())
+                        {
+                            <p class="small text-muted mb-2">Check photos to remove:</p>
+                            <div class="row g-2 mb-3">
+                                @foreach (var img in Model.ExistingImages)
+                                {
+                                    <div class="col-4 col-md-3">
+                                        <div class="position-relative existing-photo-wrapper">
+                                            <img src="@(img.ThumbnailUrl ?? img.Url)" alt=""
+                                                 class="img-fluid rounded existing-photo"
+                                                 style="aspect-ratio: 4/3; object-fit: cover; width: 100%;">
+                                            <label class="existing-photo-remove" title="Remove">
+                                                <input type="checkbox" name="RemoveImageIds" value="@img.Id"
+                                                       class="d-none remove-checkbox">
+                                                <i class="bi bi-x-circle-fill"></i>
+                                            </label>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <!-- New photos drop zone -->
+                        <p class="small text-muted mb-2">Add new photos (up to 8 total):</p>
+                        <div id="dropZone" class="drop-zone">
+                            <i class="bi bi-cloud-upload fs-1 text-muted mb-2"></i>
+                            <p class="mb-1">Drag & drop photos here</p>
+                            <p class="text-muted small mb-2">or <label for="photosInput" class="text-primary fw-semibold" style="cursor:pointer">click to browse</label></p>
+                            <small class="text-muted">JPG, PNG, WEBP · max 5MB each</small>
+                            <input type="file" id="photosInput" name="Photos" multiple
+                                   accept="image/jpeg,image/png,image/webp" class="d-none">
+                        </div>
+                        <div id="previewGrid" class="row g-2 mt-2"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-check-lg me-2"></i>Save Changes
+                    </button>
+                    <a href="/Listing/@Model.Id" class="btn btn-outline-secondary btn-lg">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Drop zone */
+    .drop-zone {
+        border: 2px dashed var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+        border-color: var(--color-primary);
+        background: #f0f7e6;
+    }
+
+    /* Existing photo remove toggle */
+    .existing-photo-wrapper { cursor: pointer; }
+    .existing-photo-remove {
+        position: absolute; top: 4px; right: 4px;
+        color: white; font-size: 1.25rem; cursor: pointer;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+        opacity: 0; transition: opacity 0.15s;
+    }
+    .existing-photo-wrapper:hover .existing-photo-remove { opacity: 1; }
+    .remove-checkbox:checked ~ .bi,
+    .existing-photo-remove:has(.remove-checkbox:checked) { color: var(--color-urgent); opacity: 1; }
+    .existing-photo-wrapper:has(.remove-checkbox:checked) .existing-photo {
+        opacity: 0.35;
+        outline: 2px solid var(--color-urgent);
+        outline-offset: -2px;
+    }
+    .existing-photo-wrapper:has(.remove-checkbox:checked) .existing-photo-remove { opacity: 1; }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // ── Auction toggle ────────────────────────────────────────────────
+        (function () {
+            const auctionCheck  = document.getElementById('editAuctionEnabled');
+            const minPriceGroup = document.getElementById('editMinPriceGroup');
+            const minPriceInput = document.getElementById('editMinPrice');
+
+            function toggleAuction() {
+                const enabled = auctionCheck.checked;
+                minPriceGroup.style.opacity  = enabled ? '1' : '0.5';
+                minPriceInput.disabled       = !enabled;
+                if (!enabled) minPriceInput.removeAttribute('required');
+                else          minPriceInput.setAttribute('required', 'required');
+            }
+
+            auctionCheck.addEventListener('change', toggleAuction);
+            toggleAuction();
+        })();
+
+        // ── Drag-and-drop photo upload ────────────────────────────────────
+        const dropZone = document.getElementById('dropZone');
+        const photosInput = document.getElementById('photosInput');
+        let selectedFiles = [];
+
+        // Click anywhere on drop zone opens file picker
+        dropZone.addEventListener('click', e => {
+            if (e.target !== photosInput && !e.target.closest('label')) photosInput.click();
+        });
+
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            addFiles([...e.dataTransfer.files]);
+        });
+
+        photosInput.addEventListener('change', () => {
+            addFiles([...photosInput.files]);
+        });
+
+        function addFiles(files) {
+            files.filter(f => f.type.startsWith('image/')).forEach(file => {
+                if (selectedFiles.length >= 8) return;
+                selectedFiles.push(file);
+            });
+            renderAllPreviews();
+            syncInput();
+        }
+
+        function removeNewFile(idx) {
+            selectedFiles.splice(idx, 1);
+            renderAllPreviews();
+            syncInput();
+        }
+
+        function renderAllPreviews() {
+            const grid = document.getElementById('previewGrid');
+            grid.innerHTML = '';
+            selectedFiles.forEach((file, i) => {
+                const col = document.createElement('div');
+                col.className = 'col-4 col-md-3 preview-item';
+                col.dataset.index = i;
+                grid.appendChild(col);
+
+                const reader = new FileReader();
+                reader.onload = e => {
+                    col.innerHTML = `
+                        <div class="position-relative">
+                            <img src="${e.target.result}" class="img-fluid rounded"
+                                 style="aspect-ratio:4/3;object-fit:cover;width:100%">
+                            <button type="button"
+                                    onclick="removeNewFile(${i})"
+                                    class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle p-0"
+                                    style="width:24px;height:24px;line-height:1">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>`;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function syncInput() {
+            const dt = new DataTransfer();
+            selectedFiles.forEach(f => dt.items.add(f));
+            photosInput.files = dt.files;
+        }
+
+        // ── City "Other" toggle ───────────────────────────────────────────
+        const citySelect = document.getElementById('pickupCitySelect');
+        const cityOtherInput = document.getElementById('pickupCityOtherInput');
+
+        function syncCityOther() {
+            if (citySelect.value === 'Other') {
+                cityOtherInput.classList.remove('d-none');
+                cityOtherInput.required = true;
+            } else {
+                cityOtherInput.classList.add('d-none');
+                cityOtherInput.required = false;
+            }
+        }
+
+        // If saved city isn't in the list, switch to Other + prefill
+        const savedCity = citySelect.value;
+        if (savedCity && citySelect.selectedIndex <= 0) {
+            citySelect.value = 'Other';
+            cityOtherInput.value = savedCity;
+        }
+        syncCityOther();
+
+        citySelect.addEventListener('change', syncCityOther);
+        cityOtherInput.addEventListener('input', () => {
+            citySelect.value = 'Other';
+        });
+
+        // On form submit — copy Other input value into select if needed
+        citySelect.closest('form').addEventListener('submit', () => {
+            if (citySelect.value === 'Other' && cityOtherInput.value.trim()) {
+                const opt = new Option(cityOtherInput.value.trim(), cityOtherInput.value.trim(), true, true);
+                citySelect.add(opt);
+                citySelect.value = cityOtherInput.value.trim();
+            }
+        });
+
+        // ── Existing photo remove checkbox toggle ─────────────────────────
+        document.querySelectorAll('.existing-photo-wrapper').forEach(wrapper => {
+            wrapper.addEventListener('click', () => {
+                const cb = wrapper.querySelector('.remove-checkbox');
+                cb.checked = !cb.checked;
+            });
+        });
+    </script>
+}

@@ -1,0 +1,51 @@
+@page
+@model ErrorModel
+@if (Model.DatabaseWakingUp)
+{
+    Layout = null;
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="refresh" content="20" />
+        <title>Waking up - Malta's Garage</title>
+        <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+    </head>
+    <body class="bg-light d-flex align-items-center" style="min-height:100vh;">
+        <main class="container text-center py-5">
+            <div class="spinner-border text-success mb-4" role="status" aria-hidden="true"></div>
+            <h1 class="h3 mb-3">The demo is waking up</h1>
+            <p class="text-muted mb-1">This portfolio demo runs on free Azure tiers, and the database pauses when nobody is using it.</p>
+            <p class="text-muted mb-4">It takes up to a minute to resume. This page reloads by itself.</p>
+            <a href="" class="btn btn-success">Try again now</a>
+        </main>
+    </body>
+    </html>
+    return;
+}
+@{
+    var (title, message, icon) = Model.StatusCode switch
+    {
+        404 => ("Page Not Found", "The page you're looking for doesn't exist or has been moved.", "bi-search"),
+        429 => ("Too Many Requests", "You've made too many requests in a short period. Please wait a moment and try again.", "bi-hourglass-split"),
+        403 => ("Access Denied", "You don't have permission to access this page.", "bi-shield-exclamation"),
+        _   => ("Something Went Wrong", "An unexpected error occurred. Please try again later.", "bi-exclamation-triangle")
+    };
+    ViewData["Title"] = title;
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <i class="bi @icon display-1 text-muted mb-4 d-block"></i>
+            @if (Model.StatusCode != 500)
+            {
+                <h1 class="display-4 fw-bold text-muted">@Model.StatusCode</h1>
+            }
+            <h2 class="mb-3">@title</h2>
+            <p class="text-muted mb-4">@message</p>
+            <a href="/" class="btn btn-primary">Go to Homepage</a>
+        </div>
+    </div>
+</div>

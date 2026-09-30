@@ -1,0 +1,119 @@
+@page
+@model MaltasGarage.Web.Pages.SafetyModel
+@{
+    ViewData["Title"]       = "Safe Buying & Selling Online in Malta | Malta's Garage";
+    ViewData["Description"] = "Learn how to buy and sell second-hand goods safely on Malta's online marketplace. Tips on escrow payments, safe hand-to-hand meetings in Malta, and avoiding scams.";
+    ViewData["Canonical"]   = Site.Absolute("/Safety");
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="text-center mb-5">
+                <i class="bi bi-shield-check text-primary" style="font-size: 3rem;"></i>
+                <h1 class="fw-bold mt-3 mb-2">Safe Buying &amp; Selling in Malta</h1>
+                <p class="text-muted">Malta's Garage is built around escrow-protected payments, verified seller ratings, and a buyer confirmation system - so every transaction is covered from start to finish. Follow these guidelines to get the most out of our safe second-hand marketplace.</p>
+            </div>
+
+            <div class="row g-4 mb-5">
+                <div class="col-md-6">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-bag-check text-primary me-2"></i>For Buyers</h5>
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Read the listing description carefully before bidding or buying.</li>
+                                <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Check the seller's rating and reviews before buying high-value items.</li>
+                                <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Always pay through Malta's Garage - never pay outside the platform.</li>
+                                <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>For hand-to-hand: inspect the item thoroughly before clicking Confirm Receipt on your order page.</li>
+                                <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>For MaltaPost: do not confirm receipt until you've checked the item.</li>
+                                <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>If something seems too good to be true, it probably is.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-tag text-primary me-2"></i>For Sellers</h5>
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Be honest about the item's condition - accurate listings lead to better reviews.</li>
+                                <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Only list items you actually own and can deliver.</li>
+                                <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>For hand-to-hand: payment is secured in escrow before the meetup - hand over the item, then wait for the buyer to confirm receipt on their order page.</li>
+                                <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Ship promptly and provide a real tracking number.</li>
+                                <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Never ask buyers to pay outside the platform.</li>
+                                <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Respond to buyer messages promptly.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="fw-bold mb-3"><i class="bi bi-people text-primary me-2"></i>Safe Meeting Tips (Hand-to-Hand)</h4>
+            <div class="card border-0 shadow-sm mb-5">
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="d-flex gap-3">
+                                <i class="bi bi-geo-alt-fill text-primary flex-shrink-0 mt-1"></i>
+                                <div>
+                                    <strong>Choose a public place</strong>
+                                    <p class="text-muted small mb-0">Meet at a café, shopping centre, or petrol station - somewhere busy and well-lit.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex gap-3">
+                                <i class="bi bi-people-fill text-primary flex-shrink-0 mt-1"></i>
+                                <div>
+                                    <strong>Bring someone along</strong>
+                                    <p class="text-muted small mb-0">For high-value items, bring a friend or family member.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex gap-3">
+                                <i class="bi bi-clock text-primary flex-shrink-0 mt-1"></i>
+                                <div>
+                                    <strong>Meet during daylight hours</strong>
+                                    <p class="text-muted small mb-0">Daytime meetings are generally safer and easier for inspecting items.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex gap-3">
+                                <i class="bi bi-search text-primary flex-shrink-0 mt-1"></i>
+                                <div>
+                                    <strong>Inspect before confirming</strong>
+                                    <p class="text-muted small mb-0">Test the item and check it matches the listing before clicking Confirm Receipt on your order page.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="fw-bold mb-3"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Red Flags - Avoid These</h4>
+            <div class="card border-warning border-0 shadow-sm mb-5">
+                <div class="card-body p-4">
+                    <ul class="mb-0">
+                        <li class="mb-2">A seller or buyer asks you to pay or receive money <strong>outside Malta's Garage</strong></li>
+                        <li class="mb-2">Someone pressures you to complete a transaction quickly without proper checks</li>
+                        <li class="mb-2">A new account with no reviews selling an expensive item at an unusually low price</li>
+                        <li class="mb-2">A buyer asks you to ship before payment has cleared</li>
+                        <li class="mb-2">Requests to communicate via WhatsApp or other external channels to avoid platform oversight</li>
+                        <li class="mb-2">Anyone asking for your password, OTP code, or payment card details</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="alert alert-primary d-flex gap-3 align-items-start">
+                <i class="bi bi-megaphone-fill flex-shrink-0 mt-1"></i>
+                <div>
+                    <strong>See something suspicious?</strong> Report it to us immediately via the <a href="/Contact" class="alert-link">Contact page</a>. Select "Report a listing or user" and include the listing ID or username. We review all reports.
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

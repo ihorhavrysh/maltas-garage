@@ -1,0 +1,168 @@
+@page
+@model MaltasGarage.Web.Pages.Categories.IndexModel
+@{
+    ViewData["Title"]       = "All Categories - Second Hand Malta";
+    ViewData["Description"] = "Browse all categories of second-hand items for sale in Malta on Malta's Garage.";
+    ViewData["Canonical"]   = Site.Absolute("/Categories");
+}
+
+@{
+    var categoryColors = new Dictionary<string, string>
+    {
+        ["pets"]           = "#eab308",
+        ["electronics"]    = "#6366f1",
+        ["clothing"]       = "#14b8a6",
+        ["home-kitchen"]   = "#f97316",
+        ["sports-leisure"] = "#22c55e",
+        ["garden-outdoor"] = "#16a34a",
+        ["kids-baby"]      = "#ec4899",
+        ["other"]          = "#a855f7",
+    };
+}
+
+<!-- Categories Section -->
+<section class="py-5 bg-light-custom">
+    <div class="container">
+        <h1 class="section-title mb-1">All Categories</h1>
+        <p class="section-subtitle mb-4">Browse by category or search all listings below</p>
+
+        <div class="row g-3">
+            @foreach (var category in Model.Categories)
+            {
+                var iconColor = categoryColors.TryGetValue(category.Slug, out var col) ? col : "var(--color-primary)";
+                var iconClass = category.IconClass ?? "";
+                var iconFull  = iconClass.Contains(' ') ? iconClass : "bi " + iconClass;
+                <div class="col-6 col-md-4 col-lg-3">
+                    <a href="/Category/@category.Slug" class="text-decoration-none">
+                        <div class="category-card">
+                            <i class="@iconFull category-icon" style="font-size:3.25rem; color:@iconColor"></i>
+                            <h5 class="category-name">@category.Name</h5>
+                            <small class="text-muted">@category.ListingCount items</small>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Filters + Listings Section -->
+<section class="py-5">
+    <div class="container">
+
+        <div class="mb-3">
+            <h2 class="section-title mb-0">All Listings</h2>
+            <p class="text-muted mb-0">@Model.TotalCount @(Model.TotalCount == 1 ? "item" : "items") found</p>
+        </div>
+
+        <!-- Filter form -->
+        <form method="get" class="row g-3 align-items-end mb-4">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="catAllSearchInput" name="q" class="form-control" placeholder="Search all listings..." value="@Model.Q" autocomplete="off" />
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Price Range</label>
+                <div class="input-group">
+                    <span class="input-group-text">€</span>
+                    <input type="number" name="minPrice" class="form-control" placeholder="Min" value="@Model.MinPrice" />
+                    <input type="number" name="maxPrice" class="form-control" placeholder="Max" value="@Model.MaxPrice" />
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Sort by</label>
+                <select name="sort" class="form-select">
+                    <option value="newest" selected="@(Model.Sort == "newest")">Newest</option>
+                    <option value="price-asc" selected="@(Model.Sort == "price-asc")">Price: Low to High</option>
+                    <option value="price-desc" selected="@(Model.Sort == "price-desc")">Price: High to Low</option>
+                    <option value="ending" selected="@(Model.Sort == "ending")">Ending Soon</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Condition</label>
+                <select name="condition" class="form-select @(!string.IsNullOrEmpty(Model.Condition) ? "border-primary" : "")">
+                    <option value="" selected="@(string.IsNullOrEmpty(Model.Condition))">All</option>
+                    <option value="new" selected="@(Model.Condition == "new")">New</option>
+                    <option value="used" selected="@(Model.Condition == "used")">Used</option>
+                </select>
+            </div>
+
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel me-1"></i>Filter
+                </button>
+            </div>
+        </form>
+
+        @if (Model.Listings.Any())
+        {
+            <div class="row g-4">
+                @foreach (var listing in Model.Listings)
+                {
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <partial name="_ListingCard" model="listing" />
+                    </div>
+                }
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                var p   = Model.CurrentPage;
+                var tp  = Model.TotalPages;
+                var s   = Model.Sort;
+                var qp  = Model.Q != null ? $"&q={Uri.EscapeDataString(Model.Q)}" : "";
+                var nop = !string.IsNullOrEmpty(Model.Condition) ? $"&condition={Model.Condition}" : "";
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center flex-wrap">
+                        <li class="page-item @(p == 1 ? "disabled" : "")">
+                            <a class="page-link" href="?sort=@s@qp@nop&pageNum=@(p - 1)"><i class="bi bi-chevron-left"></i></a>
+                        </li>
+
+                        @if (p > 3)
+                        {
+                            <li class="page-item"><a class="page-link" href="?sort=@s@qp@nop&pageNum=1">1</a></li>
+                            @if (p > 4) { <li class="page-item disabled"><span class="page-link">...</span></li> }
+                        }
+
+                        @for (int i = Math.Max(1, p - 2); i <= Math.Min(tp, p + 2); i++)
+                        {
+                            <li class="page-item @(i == p ? "active" : "")">
+                                <a class="page-link" href="?sort=@s@qp@nop&pageNum=@i">@i</a>
+                            </li>
+                        }
+
+                        @if (p < tp - 2)
+                        {
+                            @if (p < tp - 3) { <li class="page-item disabled"><span class="page-link">...</span></li> }
+                            <li class="page-item"><a class="page-link" href="?sort=@s@qp@nop&pageNum=@tp">@tp</a></li>
+                        }
+
+                        <li class="page-item @(p == tp ? "disabled" : "")">
+                            <a class="page-link" href="?sort=@s@qp@nop&pageNum=@(p + 1)"><i class="bi bi-chevron-right"></i></a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+                <h4 class="mt-3">No listings found</h4>
+                <p class="text-muted">Try adjusting your filters</p>
+            </div>
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        initSearchAutocomplete(document.getElementById('catAllSearchInput'));
+    </script>
+}

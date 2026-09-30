@@ -1,0 +1,98 @@
+@page
+@model PrivacyModel
+@{
+    ViewData["Title"] = "Privacy Policy";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <h1 class="fw-bold mb-2">Privacy Policy</h1>
+            <p class="text-muted mb-5">Last updated: February 2026</p>
+
+            <div class="mb-5">
+                <p>Malta's Garage ("we", "us", "our") is committed to protecting your personal data in accordance with the General Data Protection Regulation (GDPR) and Maltese law. This policy explains what data we collect, why, and your rights.</p>
+                <p>Data controller: Malta's Garage, Malta. For privacy enquiries contact us via the <a href="/Contact">Contact page</a>.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">1. What Data We Collect</h4>
+            <div class="mb-4">
+                <p><strong>When you register:</strong> name, email address, and password (stored as a secure hash).</p>
+                <p><strong>When you set up your profile:</strong> display name, phone number, location (city), and optional profile photo.</p>
+                <p><strong>When you sell:</strong> pickup address (shown only to buyer after purchase), Stripe account details for receiving payments.</p>
+                <p><strong>When you buy:</strong> delivery address, payment information (processed directly by Stripe - we never see or store your card details).</p>
+                <p><strong>Automatically:</strong> IP address, browser type, pages visited, and timestamps - used for security and to improve the service.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">2. How We Use Your Data</h4>
+            <div class="mb-4">
+                <ul>
+                    <li>To create and manage your account</li>
+                    <li>To facilitate transactions between buyers and sellers</li>
+                    <li>To process payments securely via Stripe</li>
+                    <li>To send order confirmations and status updates</li>
+                    <li>To resolve disputes and enforce our Terms of Service</li>
+                    <li>To detect and prevent fraud and abuse</li>
+                    <li>To comply with legal obligations</li>
+                </ul>
+            </div>
+
+            <h4 class="fw-bold mb-3">3. Legal Basis for Processing</h4>
+            <div class="mb-4">
+                <ul>
+                    <li><strong>Contract:</strong> processing necessary to fulfil your orders and manage your account</li>
+                    <li><strong>Legal obligation:</strong> tax records, anti-money-laundering checks</li>
+                    <li><strong>Legitimate interest:</strong> fraud prevention, platform security, service improvement</li>
+                    <li><strong>Consent:</strong> marketing emails (you can unsubscribe at any time)</li>
+                </ul>
+            </div>
+
+            <h4 class="fw-bold mb-3">4. Who We Share Data With</h4>
+            <div class="mb-4">
+                <p>We do <strong>not</strong> sell or rent your personal data to third parties. We share data only where necessary:</p>
+                <ul>
+                    <li><strong>Other users:</strong> your display name and city are visible to other users. Your full address is shared only with your buyer/seller after a completed transaction.</li>
+                    <li><strong>Stripe:</strong> payment processing. Stripe is PCI-DSS compliant. See <a href="https://stripe.com/privacy" target="_blank">Stripe's Privacy Policy</a>.</li>
+                    <li><strong>Authorities:</strong> if required by Maltese or EU law.</li>
+                </ul>
+            </div>
+
+            <h4 class="fw-bold mb-3">5. Data Retention</h4>
+            <div class="mb-4">
+                <p>We retain your account data for as long as your account is active. Transaction records (orders, payments) are kept for 7 years to comply with Maltese tax law - even after account deletion, these records are anonymised and retained for legal compliance.</p>
+                <p>When you delete your account, we permanently remove your personal data: email address, password, display name, profile photo, bio, phone number, location, conversations, and notification preferences.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">6. Your Rights (GDPR)</h4>
+            <div class="mb-4">
+                <p>As an EU resident you have the right to:</p>
+                <ul>
+                    <li><strong>Access</strong> - request a copy of the data we hold about you</li>
+                    <li><strong>Rectification</strong> - correct inaccurate or incomplete data via your <a href="/Account/Profile">Profile</a></li>
+                    <li><strong>Erasure</strong> - delete your account and personal data via <a href="/Account/Settings">Account Settings</a> ("right to be forgotten")</li>
+                    <li><strong>Restriction</strong> - ask us to limit how we process your data</li>
+                    <li><strong>Portability</strong> - receive your data in a machine-readable format</li>
+                    <li><strong>Object</strong> - opt out of processing based on legitimate interest or direct marketing</li>
+                </ul>
+                <p>To exercise any of these rights, use our <a href="/Contact">Contact page</a> or your <a href="/Account/Settings">Account Settings</a>. You also have the right to lodge a complaint with the <a href="https://idpc.org.mt" target="_blank">Information and Data Protection Commissioner (IDPC)</a> of Malta.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">7. Security</h4>
+            <div class="mb-4">
+                <p>We use HTTPS encryption, hashed passwords, and role-based access controls. Payment data is handled entirely by Stripe and never touches our servers. Despite our efforts, no system is 100% secure - please use a strong, unique password for your account.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">8. Cookies</h4>
+            <div class="mb-4">
+                <p>We use essential cookies to keep you logged in and protect against cross-site request forgery. See our <a href="/Cookies">Cookie Policy</a> for details.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">9. Changes to This Policy</h4>
+            <div class="mb-4">
+                <p>We may update this policy from time to time. Significant changes will be communicated by email. The date at the top of this page always reflects the latest version.</p>
+            </div>
+
+        </div>
+    </div>
+</div>

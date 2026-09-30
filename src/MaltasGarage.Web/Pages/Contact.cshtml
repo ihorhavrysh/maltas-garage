@@ -1,0 +1,135 @@
+@page
+@model MaltasGarage.Web.Pages.ContactModel
+@{
+    ViewData["Title"]       = "Contact Us | Malta's Garage";
+    ViewData["Description"] = "Get in touch with the Malta's Garage support team. We answer questions about listings, orders, payments, and disputes within 1 business day.";
+    ViewData["Canonical"]   = Site.Absolute("/Contact");
+    ViewData["JsonLd"]      = $@"{{
+  ""@context"": ""https://schema.org"",
+  ""@type"": ""LocalBusiness"",
+  ""name"": ""Malta's Garage"",
+  ""description"": ""Malta's online marketplace for second-hand goods. Buy and sell used items safely with escrow payments, auctions, and MaltaPost delivery."",
+  ""url"": ""{Site.BaseUrl}"",
+  ""areaServed"": {{
+    ""@type"": ""Country"",
+    ""name"": ""Malta""
+  }},
+  ""contactPoint"": {{
+    ""@type"": ""ContactPoint"",
+    ""contactType"": ""customer support"",
+    ""url"": ""{Site.BaseUrl}/Contact"",
+    ""availableLanguage"": [""English"", ""Maltese""]
+  }}
+}}";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+
+            <div class="text-center mb-5">
+                <h1 class="fw-bold mb-2">Contact Us</h1>
+                <p class="text-muted">Have a question about a listing or order? We're here to help. We aim to respond within 1 business day.</p>
+            </div>
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        @* Honeypot: hidden from real users, bots fill it in *@
+                        <div style="display:none" aria-hidden="true">
+                            <input type="text" name="Fax" tabindex="-1" autocomplete="off" />
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Input.Name" class="form-label">Your Name *</label>
+                                <input asp-for="Input.Name" class="form-control" placeholder="John Smith" />
+                                <span asp-validation-for="Input.Name" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.Email" class="form-label">Email Address *</label>
+                                <input asp-for="Input.Email" type="email" class="form-control" placeholder="you@example.com" />
+                                <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
+                                <label asp-for="Input.Subject" class="form-label">Subject *</label>
+                                <select asp-for="Input.Subject" class="form-select">
+                                    <option value="">Select a topic...</option>
+                                    <option>Question about a listing</option>
+                                    <option>Issue with an order</option>
+                                    <option>Payment or payout problem</option>
+                                    <option>Report a listing or user</option>
+                                    <option>Account issue</option>
+                                    <option>Other</option>
+                                </select>
+                                <span asp-validation-for="Input.Subject" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.ListingOrOrderRef" class="form-label">
+                                    Listing or Order ID
+                                    <span class="text-muted fw-normal">(optional)</span>
+                                </label>
+                                <input asp-for="Input.ListingOrOrderRef" class="form-control"
+                                       placeholder="e.g. a3f1bc2d-..." />
+                                <small class="text-muted">Found in the URL or your Orders page</small>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <label asp-for="Input.Message" class="form-label">Message *</label>
+                            <textarea asp-for="Input.Message" class="form-control" rows="6"
+                                      placeholder="Please describe your issue or question in as much detail as possible..."></textarea>
+                            <span asp-validation-for="Input.Message" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-send me-2"></i>Send Message
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-4 text-center">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body p-3">
+                            <i class="bi bi-question-circle text-primary fs-3 mb-2 d-block"></i>
+                            <h6 class="fw-bold">Help Centre</h6>
+                            <p class="text-muted small mb-2">Browse answers to common questions</p>
+                            <a href="/Help" class="btn btn-outline-primary btn-sm">View FAQ</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body p-3">
+                            <i class="bi bi-shield-check text-primary fs-3 mb-2 d-block"></i>
+                            <h6 class="fw-bold">Safety Tips</h6>
+                            <p class="text-muted small mb-2">Tips for safe buying and selling</p>
+                            <a href="/Safety" class="btn btn-outline-primary btn-sm">Read More</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

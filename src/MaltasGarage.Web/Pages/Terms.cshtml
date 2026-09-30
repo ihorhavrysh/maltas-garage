@@ -1,0 +1,156 @@
+@page
+@model MaltasGarage.Web.Pages.TermsModel
+@{
+    ViewData["Title"] = "Terms of Service";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <h1 class="fw-bold mb-2">Terms of Service</h1>
+            <p class="text-muted mb-5">Last updated: March 2026</p>
+
+            <div class="mb-5">
+                <p>These Terms of Service ("Terms") govern your use of Malta's Garage ("the platform", "we", "us"). By registering or using the platform you agree to these Terms. Please read them carefully.</p>
+                <p>Malta's Garage is a <strong>peer-to-peer marketplace</strong>. We connect buyers and sellers - we do not own, inspect, or guarantee any item listed on the platform.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">1. Eligibility &amp; Accounts</h4>
+            <div class="mb-4">
+                <p>By creating an account you confirm that:</p>
+                <ul>
+                    <li>You are <strong>at least 18 years old</strong>. The platform involves binding financial contracts (purchases, auction bids, and payment processing via Stripe) that require full legal capacity under Maltese law.</li>
+                    <li>You have the legal right to enter into contracts in your country of residence.</li>
+                    <li>All information you provide is accurate and up-to-date.</li>
+                </ul>
+                <p>Additionally:</p>
+                <ul>
+                    <li>You are responsible for keeping your password secure and for all activity under your account.</li>
+                    <li>Each person may hold only one active account.</li>
+                    <li>You may delete your account at any time via <a href="/Account/Settings">Account Settings</a>. Accounts with active orders or auctions with bids cannot be deleted until those transactions are completed.</li>
+                </ul>
+            </div>
+
+            <h4 class="fw-bold mb-3">2. Listings</h4>
+            <div class="mb-4">
+                <ul>
+                    <li>Sellers are responsible for the accuracy of their listings - description, condition, and photos must honestly represent the item.</li>
+                    <li>You may only list items you own and have the right to sell.</li>
+                    <li>Listings must include a realistic "Sell By" date, a Buy Now price, and a minimum auction price.</li>
+                    <li>Once a bid has been placed on a listing, the listing cannot be edited or deleted. This protects bidders who have already been charged.</li>
+                    <li>We reserve the right to remove any listing that violates these Terms without notice.</li>
+                </ul>
+                <p class="mt-2"><strong>Prohibited items include but are not limited to:</strong> weapons, controlled substances, counterfeit goods, stolen property, adult content, live animals, and items restricted or prohibited under Maltese law.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">3. Buying - Bids and Purchases</h4>
+            <div class="mb-4">
+                <ul>
+                    <li><strong>Bids are binding.</strong> Placing a bid is a commitment to purchase at that price if you win the auction. Your card is charged at the time the bid is placed.</li>
+                    <li>If you are outbid, your payment is automatically refunded. Refunds typically appear within <strong>5–10 business days</strong> depending on your card issuer - this is a standard banking timeline outside our control.</li>
+                    <li>The Buy Now option is available at all times, including during an active auction. If someone purchases via Buy Now while you hold the top bid, your bid is refunded automatically.</li>
+                    <li>Buying at the "Buy Now" price creates an immediate and binding purchase contract.</li>
+                    <li>You may not bid on or buy your own listings.</li>
+                    <li>Read the full listing description before buying or bidding. All sales are final unless a dispute is raised within the permitted window.</li>
+                </ul>
+            </div>
+
+            <h4 class="fw-bold mb-3">4. Selling - Obligations</h4>
+            <div class="mb-4">
+                <ul>
+                    <li>Once a sale is made (Buy Now or auction win), you must complete the transaction.</li>
+                    <li>For MaltaPost delivery, you must enter a valid tracking number within <strong>3 days</strong> of the buyer's payment. If you fail to do so, the buyer may cancel the order and receive a full refund.</li>
+                    <li>For hand-to-hand delivery, you must arrange a meeting with the buyer promptly. Payment is released once the buyer clicks "Confirm Receipt" on their order page.</li>
+                    <li>Sellers must connect a Stripe account before listing items.</li>
+                </ul>
+            </div>
+
+            <h4 class="fw-bold mb-3">5. Fees</h4>
+            <div class="mb-4">
+                <p>Malta's Garage charges a <strong>10% service fee</strong> on every completed sale (minimum €1.00). This fee is automatically deducted from the seller's payout. There are no listing fees - you only pay when you sell.</p>
+                <p>Stripe may charge additional payment processing fees as per their pricing.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">6. Escrow &amp; Payments</h4>
+            <div class="mb-4">
+                <p>All payments are held in escrow by Stripe until the transaction is confirmed complete. The seller cannot access funds until escrow is released.</p>
+                <ul>
+                    <li><strong>Hand-to-hand:</strong> escrow is released immediately when the buyer clicks "Confirm Receipt". If the buyer has paid but does not confirm receipt, escrow is released automatically after <strong>7 days</strong>.</li>
+                    <li><strong>MaltaPost:</strong> escrow is released when the buyer clicks "Confirm Receipt", or automatically <strong>5 days after the tracking number is entered</strong> - whichever comes first. A dispute must be raised before the escrow is released.</li>
+                    <li>Once escrow is released, the transaction is considered complete and refunds require seller cooperation.</li>
+                    <li>If a dispute is raised, we will review the case and may issue a full refund, partial refund, or release payment to the seller depending on the evidence.</li>
+                </ul>
+            </div>
+
+            <h4 class="fw-bold mb-3">7. Disputes</h4>
+            <div class="mb-4">
+                <ul>
+                    <li>Only the buyer may open a dispute, and only while the order is in Paid (hand-to-hand) or Shipped (MaltaPost) status.</li>
+                    <li>Disputes must be raised before confirming receipt. Once "Confirm Receipt" is clicked, the escrow is released and a dispute can no longer be opened.</li>
+                    <li>Valid dispute reasons are: item not received, item not as described, or other reasonable grounds.</li>
+                    <li>We will review all disputes fairly and communicate our decision to both parties. Our decision is final.</li>
+                    <li>Abuse of the dispute system may result in account suspension.</li>
+                </ul>
+            </div>
+
+            <h4 class="fw-bold mb-3">8. Prohibited Conduct</h4>
+            <div class="mb-4">
+                <ul>
+                    <li>Shill bidding (artificially inflating prices)</li>
+                    <li>Creating fake accounts or impersonating others</li>
+                    <li>Circumventing the platform's payment system (e.g. paying outside the platform)</li>
+                    <li>Harassing, threatening, or abusing other users</li>
+                    <li>Posting false, misleading, or fraudulent listings</li>
+                    <li>Using automated tools to scrape or interact with the platform</li>
+                </ul>
+                <p>Violations may result in immediate account suspension and, where appropriate, referral to law enforcement.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">9. Reviews</h4>
+            <div class="mb-4">
+                <p>After a transaction is completed, the buyer may leave a star rating (1–5) and written comment for the seller. Reviews must be honest and based on your actual experience. We reserve the right to remove reviews that are abusive, fraudulent, or irrelevant. You may leave one review per completed transaction.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">10. Limitation of Liability</h4>
+            <div class="mb-4">
+                <p>Malta's Garage is a marketplace and is not party to transactions between buyers and sellers. We are not liable for the quality, legality, or condition of listed items. Our liability is limited to the greater of: (a) the service fee paid on the relevant transaction, or (b) €50.</p>
+                <p>We are not liable for indirect losses including loss of profit, data, or business opportunity.</p>
+                <p>Refund processing times are governed by Stripe and your card issuer. We are not liable for delays in the banking system.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">11. Suspension and Termination</h4>
+            <div class="mb-4">
+                <p>We may suspend or terminate accounts that violate these Terms, pose a risk to other users, or engage in fraudulent activity. We will provide notice where reasonably possible. You may delete your account at any time via <a href="/Account/Settings">Account Settings</a>.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">12. Changes to These Terms</h4>
+            <div class="mb-4">
+                <p>We may update these Terms from time to time. We will notify you by email at least 14 days before significant changes take effect. Continued use of the platform after that date constitutes acceptance of the new Terms.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">13. Legal Information</h4>
+            <div class="mb-4">
+                <p>In accordance with the EU e-Commerce Directive, the following information is provided:</p>
+                <ul>
+                    <li><strong>Trading name:</strong> Malta's Garage</li>
+                    <li><strong>Owner:</strong> Malta's Garage is a trading name of Ihor Havrysh</li>
+                    <li><strong>Address:</strong> Ap. 3, Il-Kajjik 14, Marsaxlokk, MXK1011, Malta</li>
+                    <li><strong>Email:</strong> <a href="mailto:@Site.SupportEmail">@Site.SupportEmail</a></li>
+                    <li><strong>Tax ID:</strong> 0490986A</li>
+                    <li><strong>VAT:</strong> Exempt under Article 11 (small undertaking exemption).</li>
+                </ul>
+            </div>
+
+            <h4 class="fw-bold mb-3">14. Governing Law</h4>
+            <div class="mb-4">
+                <p>These Terms are governed by the laws of Malta. Any disputes shall be subject to the exclusive jurisdiction of the courts of Malta. Consumers retain their statutory rights under EU consumer protection law.</p>
+            </div>
+
+            <div class="alert alert-light border mt-4">
+                <p class="mb-0 small text-muted">Questions about these Terms? <a href="/Contact">Contact us</a> and we'll be happy to help.</p>
+            </div>
+
+        </div>
+    </div>
+</div>

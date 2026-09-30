@@ -1,0 +1,755 @@
+@page
+@model MaltasGarage.Web.Pages.HelpModel
+@{
+    ViewData["Title"]       = "Help Centre - FAQ | Malta's Garage";
+    ViewData["Description"] = "Answers to the most common questions about Malta's Garage - buying, selling, auctions, escrow payments, MaltaPost delivery, disputes, and account management.";
+    ViewData["Canonical"]   = Site.Absolute("/Help");
+
+    Func<string, string> J = s => System.Text.Json.JsonSerializer.Serialize(s);
+    var faqItems = new (string Q, string A)[]
+    {
+        ("What's the difference between Buy Now and an auction?",
+         "Buy Now lets you purchase an item immediately at the seller's full price - no waiting, no bidding. Auction starts automatically 7 days before the seller's deadline. The item goes to the highest bidder when the auction ends, starting at the seller's minimum price."),
+        ("Can I make an offer on a listing?",
+         "Yes. On any active listing you can tap 'Make an Offer' to propose a price below the Buy Now price. The seller is notified and can accept or decline in the chat thread. Offers expire after 24 hours if the seller doesn't respond."),
+        ("What is a Bundle Offer?",
+         "A Bundle Offer lets you select two or more items from the same seller and make a single combined offer for all of them. Open the seller's profile page, tick the items you want, and submit your bundle price. The seller can accept or decline in the chat. Bundle Offers also expire after 24 hours."),
+        ("Can I make an offer while an item is in auction?",
+         "No. Make an Offer and Bundle Offer are only available during the active (non-auction) phase. Once an item enters the auction phase, only bids are accepted."),
+        ("As a seller, how do I respond to an offer?",
+         "You'll receive a notification and a message in your Messages inbox. Open the conversation and tap Accept or Decline. If you accept, the buyer is notified and can proceed to checkout at the agreed price. Offers expire automatically after 24 hours if you don't respond."),
+        ("What is escrow and how does it protect me?",
+         "When you pay for an item, the money is held securely by Stripe in escrow. The seller cannot access it until you confirm the item is received. If the item doesn't arrive or doesn't match the description, you can open a dispute before the seller is paid."),
+        ("What fees does Malta's Garage charge?",
+         "Listing is completely free. Malta's Garage charges a 10% service fee (minimum €1.00) only when your item sells. The fee is automatically deducted from the sale price. Buyers pay no fees - you pay exactly the price shown, with no hidden charges."),
+        ("When does an auction start?",
+         "Auctions start automatically 7 days before the seller's deadline. During the auction phase, buyers place bids starting from the seller's minimum price. The auction ends exactly at the seller's deadline."),
+        ("Are bids binding on Malta's Garage?",
+         "Yes. Placing a bid is a commitment to buy at that price if you win. Your card is charged at the time of bidding. If you are outbid by another bidder, your payment is automatically refunded."),
+        ("When do I get paid as a seller?",
+         "For hand-to-hand: as soon as the buyer confirms receipt, the escrow is released immediately. For MaltaPost: your payout is released when the buyer confirms receipt, or automatically 5 days after you enter the tracking number - unless a dispute is opened before then."),
+        ("What delivery options are available in Malta?",
+         "Hand-to-hand: you and the seller arrange to meet in person. The buyer inspects the item and clicks Confirm Receipt on their order page to release the escrow. MaltaPost: the seller ships via Malta Post and provides a tracking number. Escrow is released 5 days after the tracking number is entered, or sooner if the buyer confirms receipt."),
+        ("What if the item I received isn't as described?",
+         "Do not confirm delivery if the item is significantly different from the listing. Open a dispute through your order page - our team will review the case. For MaltaPost orders, open a dispute before clicking Confirm Receipt. For hand-to-hand, inspect the item carefully before clicking Confirm Receipt - once confirmed, the escrow is released immediately."),
+        ("How do I get a refund on Malta's Garage?",
+         "For MaltaPost orders: do not click Confirm Receipt if there is a problem - open a dispute instead. For hand-to-hand: inspect the item before clicking Confirm Receipt on your order page. For auction bids where you were outbid, your payment is automatically refunded within 5–10 business days."),
+        ("When can I open a dispute?",
+         "Only the buyer can open a dispute. For hand-to-hand orders: after paying but before confirming receipt. For MaltaPost orders: after the seller marks it as shipped but before you confirm receipt. Once you confirm receipt, the escrow is released and disputes can no longer be opened."),
+        ("Do I need to connect Stripe to sell on Malta's Garage?",
+         "You can create listings without Stripe, but you must complete Stripe Connect onboarding before a buyer can pay. Setup takes about 5 minutes and requires a bank account for payouts. You only need to do this once."),
+        ("Can I disable the auction for my listing?",
+         "Yes. On Step 3 of the listing wizard you will find an 'Enable auction' toggle. When turned off, your listing stays active at the Buy Now price until your deadline - no auction phase, no minimum price required. The trade-off is that if no one buys at full price, the listing simply expires. With auction enabled, buyers can compete for the item in the final 7 days, which guarantees a sale at or above your minimum price."),
+        ("How do I mark my item as new or used?",
+         "On Step 1 of the listing wizard there is a 'New item' toggle. Enable it if the item is brand new and unused. Items marked as new get a 'New' badge on their listing card so buyers can filter for new items using the Condition filter on the listings and category pages."),
+        ("How does hand-to-hand pickup work safely?",
+         "After payment, coordinate with the seller via Messages to arrange a meetup. Inspect the item carefully, and if you're happy, go to your order page and click Confirm Receipt - this instantly releases the escrow payment to the seller. Always meet in a public place and never confirm receipt before you have physically inspected the item."),
+    };
+    var mainEntity = string.Join(",", faqItems.Select(f =>
+        $@"{{""@type"":""Question"",""name"":{J(f.Q)},""acceptedAnswer"":{{""@type"":""Answer"",""text"":{J(f.A)}}}}}"));
+    ViewData["JsonLd"] = $@"{{""@context"":""https://schema.org"",""@type"":""FAQPage"",""mainEntity"":[{mainEntity}]}}";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+
+            <div class="text-center mb-5">
+                <h1 class="fw-bold mb-2">Help Centre</h1>
+                <p class="text-muted">Find answers to the most common questions. Can't find what you need? <a href="/Contact">Contact us</a>.</p>
+            </div>
+
+            <!-- Key facts cards -->
+            <div class="row g-3 mb-5">
+                <div class="col-6 col-md-3">
+                    <div class="card h-100 text-center border-0 bg-light">
+                        <div class="card-body py-3 px-2">
+                            <i class="bi bi-tag-fill text-primary fs-3 mb-2 d-block"></i>
+                            <div class="fw-bold small">Free to list</div>
+                            <div class="text-muted" style="font-size:0.78rem;">No upfront fees</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card h-100 text-center border-0 bg-light">
+                        <div class="card-body py-3 px-2">
+                            <i class="bi bi-percent text-primary fs-3 mb-2 d-block"></i>
+                            <div class="fw-bold small">10% on sale</div>
+                            <div class="text-muted" style="font-size:0.78rem;">Min €1 · auto-deducted</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card h-100 text-center border-0 bg-light">
+                        <div class="card-body py-3 px-2">
+                            <i class="bi bi-shield-lock-fill text-primary fs-3 mb-2 d-block"></i>
+                            <div class="fw-bold small">Escrow protected</div>
+                            <div class="text-muted" style="font-size:0.78rem;">Paid on delivery</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card h-100 text-center border-0 bg-light">
+                        <div class="card-body py-3 px-2">
+                            <i class="bi bi-geo-alt-fill text-primary fs-3 mb-2 d-block"></i>
+                            <div class="fw-bold small">Malta only</div>
+                            <div class="text-muted" style="font-size:0.78rem;">Local buyers &amp; sellers</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category pills -->
+            <div class="d-flex flex-wrap gap-2 mb-5 justify-content-center">
+                <a href="#buying"   class="btn btn-outline-primary btn-sm"><i class="bi bi-bag me-1"></i>Buying</a>
+                <a href="#offers"   class="btn btn-outline-primary btn-sm"><i class="bi bi-chat-left-dots me-1"></i>Offers</a>
+                <a href="#auctions" class="btn btn-outline-primary btn-sm"><i class="bi bi-hammer me-1"></i>Auctions</a>
+                <a href="#selling"  class="btn btn-outline-primary btn-sm"><i class="bi bi-tag me-1"></i>Selling</a>
+                <a href="#payments" class="btn btn-outline-primary btn-sm"><i class="bi bi-credit-card me-1"></i>Payments</a>
+                <a href="#delivery" class="btn btn-outline-primary btn-sm"><i class="bi bi-truck me-1"></i>Delivery</a>
+                <a href="#disputes" class="btn btn-outline-primary btn-sm"><i class="bi bi-exclamation-circle me-1"></i>Disputes</a>
+                <a href="#account"  class="btn btn-outline-primary btn-sm"><i class="bi bi-person me-1"></i>Account</a>
+                <a href="#safety"   class="btn btn-outline-primary btn-sm"><i class="bi bi-shield-check me-1"></i>Safety</a>
+            </div>
+
+            <!-- ── BUYING ──────────────────────────────────────────── -->
+            <h4 class="fw-bold mb-3" id="buying"><i class="bi bi-bag text-primary me-2"></i>Buying</h4>
+            <div class="accordion mb-5" id="accordionBuying">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#b1">
+                            What's the difference between Buy Now and an auction?
+                        </button>
+                    </h2>
+                    <div id="b1" class="accordion-collapse collapse" data-bs-parent="#accordionBuying">
+                        <div class="accordion-body text-muted">
+                            <strong>Buy Now</strong> lets you purchase an item immediately at the seller's full price - no waiting, no bidding. The Buy Now button is available at all times, even once an auction is underway.<br><br>
+                            <strong>Auction</strong> starts automatically 7 days before the seller's deadline. The item goes to the highest bidder when the auction ends. Auctions start at the seller's minimum price and go up to (but not including) the Buy Now price.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#b2">
+                            The item doesn't match the description - what do I do?
+                        </button>
+                    </h2>
+                    <div id="b2" class="accordion-collapse collapse" data-bs-parent="#accordionBuying">
+                        <div class="accordion-body text-muted">
+                            First, contact the seller directly through your order page using the message button. If you can't reach an agreement:<br><br>
+                            <ul class="mb-0">
+                                <li><strong>MaltaPost orders:</strong> open a dispute before clicking "Confirm Receipt". Once you confirm, the escrow is released and refunds require seller cooperation.</li>
+                                <li><strong>Hand-to-hand orders:</strong> inspect the item carefully before clicking "Confirm Receipt" - that is your protection. Do not confirm until you are satisfied.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#b3">
+                            Can I buy from my own listing?
+                        </button>
+                    </h2>
+                    <div id="b3" class="accordion-collapse collapse" data-bs-parent="#accordionBuying">
+                        <div class="accordion-body text-muted">
+                            No. You cannot buy or bid on your own listings. This is enforced automatically by the platform.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── OFFERS ─────────────────────────────────────────── -->
+            <h4 class="fw-bold mb-3" id="offers"><i class="bi bi-chat-left-dots text-primary me-2"></i>Offers</h4>
+            <div class="accordion mb-5" id="accordionOffers">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#of1">
+                            Can I make an offer on a listing?
+                        </button>
+                    </h2>
+                    <div id="of1" class="accordion-collapse collapse" data-bs-parent="#accordionOffers">
+                        <div class="accordion-body text-muted">
+                            Yes. On any active listing you can click <strong>Make an Offer</strong> to propose a price below the Buy Now price. The seller is notified and can accept or decline in the chat thread. If accepted, you'll receive a notification and can proceed to checkout at the agreed price.<br><br>
+                            Offers expire automatically after <strong>24 hours</strong> if the seller doesn't respond.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#of2">
+                            What is a Bundle Offer?
+                        </button>
+                    </h2>
+                    <div id="of2" class="accordion-collapse collapse" data-bs-parent="#accordionOffers">
+                        <div class="accordion-body text-muted">
+                            A Bundle Offer lets you select <strong>two or more items from the same seller</strong> and make a single combined offer for all of them. To create one, open the seller's profile page, tick the items you want, enter your offer amount, and submit.<br><br>
+                            The seller can accept or decline in the chat. If accepted, you pay for the whole bundle in one checkout. Bundle Offers also expire after <strong>24 hours</strong>.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#of3">
+                            Can I make an offer while an item is in auction?
+                        </button>
+                    </h2>
+                    <div id="of3" class="accordion-collapse collapse" data-bs-parent="#accordionOffers">
+                        <div class="accordion-body text-muted">
+                            No. Make an Offer and Bundle Offer are only available during the <strong>active (non-auction) phase</strong>. Once an item enters the auction phase, only bids are accepted.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#of4">
+                            As a seller, how do I respond to an offer?
+                        </button>
+                    </h2>
+                    <div id="of4" class="accordion-collapse collapse" data-bs-parent="#accordionOffers">
+                        <div class="accordion-body text-muted">
+                            You'll receive a notification and a message in your <a href="/Messages">Messages</a> inbox. Open the conversation and click <strong>Accept</strong> or <strong>Decline</strong>. If you accept, the buyer is notified and can proceed to checkout at the agreed price. Offers expire automatically after 24 hours if you don't respond.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── AUCTIONS ────────────────────────────────────────── -->
+            <h4 class="fw-bold mb-3" id="auctions"><i class="bi bi-hammer text-primary me-2"></i>Auctions</h4>
+            <div class="accordion mb-5" id="accordionAuctions">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#au1">
+                            When does an auction start?
+                        </button>
+                    </h2>
+                    <div id="au1" class="accordion-collapse collapse" data-bs-parent="#accordionAuctions">
+                        <div class="accordion-body text-muted">
+                            Auctions start automatically 7 days before the seller's deadline. During the auction phase the Buy Now option is no longer available - only bidding. The auction ends exactly at the seller's deadline date.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#au2">
+                            What are the minimum bid increments?
+                        </button>
+                    </h2>
+                    <div id="au2" class="accordion-collapse collapse" data-bs-parent="#accordionAuctions">
+                        <div class="accordion-body text-muted">
+                            Each new bid must beat the current highest bid by at least:
+                            <table class="table table-sm table-bordered mt-2 mb-0" style="max-width:320px;">
+                                <thead class="table-light">
+                                    <tr><th>Current highest bid</th><th>Min increment</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Up to €50</td><td>€1</td></tr>
+                                    <tr><td>€51 – €200</td><td>€5</td></tr>
+                                    <tr><td>€201 – €500</td><td>€10</td></tr>
+                                    <tr><td>€501 – €1,000</td><td>€25</td></tr>
+                                    <tr><td>Over €1,000</td><td>€50</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#au3">
+                            Are bids binding?
+                        </button>
+                    </h2>
+                    <div id="au3" class="accordion-collapse collapse" data-bs-parent="#accordionAuctions">
+                        <div class="accordion-body text-muted">
+                            Yes. Placing a bid is a commitment to buy at that price if you win. Your card is charged at the time of bidding - if you are outbid, your payment is automatically refunded. Do not bid unless you intend to pay.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#au4">
+                            Can I remove a bid?
+                        </button>
+                    </h2>
+                    <div id="au4" class="accordion-collapse collapse" data-bs-parent="#accordionAuctions">
+                        <div class="accordion-body text-muted">
+                            Bids cannot be removed once placed. This ensures a fair process for all participants. Note that listings cannot be edited once a bid has been placed, so bids are always for the item as originally described. If you have a genuine concern, contact us via the <a href="/Contact">Contact page</a>.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#au5">
+                            What happens when I win an auction?
+                        </button>
+                    </h2>
+                    <div id="au5" class="accordion-collapse collapse" data-bs-parent="#accordionAuctions">
+                        <div class="accordion-body text-muted">
+                            Since your card was already charged when you placed the winning bid, your order is created automatically - no further payment step is needed. You'll receive a notification and can track your order from the <a href="/Orders">Orders page</a>.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#au6">
+                            What happens if the auction ends with no bids?
+                        </button>
+                    </h2>
+                    <div id="au6" class="accordion-collapse collapse" data-bs-parent="#accordionAuctions">
+                        <div class="accordion-body text-muted">
+                            The listing is marked as <strong>Expired</strong> and the seller receives a notification. To sell the item again, the seller can create a new listing at any time.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── SELLING ─────────────────────────────────────────── -->
+            <h4 class="fw-bold mb-3" id="selling"><i class="bi bi-tag text-primary me-2"></i>Selling</h4>
+            <div class="accordion mb-5" id="accordionSelling">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#s1">
+                            How does the pricing work?
+                        </button>
+                    </h2>
+                    <div id="s1" class="accordion-collapse collapse" data-bs-parent="#accordionSelling">
+                        <div class="accordion-body text-muted">
+                            You set two prices when creating a listing:<br><br>
+                            <ul class="mb-0">
+                                <li><strong>Buy Now price</strong> - the full price someone can buy immediately.</li>
+                                <li><strong>Minimum price</strong> - the lowest amount you will accept at auction.</li>
+                            </ul>
+                            <br>
+                            The listing shows at the Buy Now price until 7 days before your deadline, when an auction begins at the minimum price. Bids can go up to - but not including - the Buy Now price.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#s2">
+                            What fees does Malta's Garage charge?
+                        </button>
+                    </h2>
+                    <div id="s2" class="accordion-collapse collapse" data-bs-parent="#accordionSelling">
+                        <div class="accordion-body text-muted">
+                            <strong>Listing is completely free.</strong> We charge a <strong>10% service fee</strong> (minimum €1.00) only when your item sells. The fee is automatically deducted from the sale price before your payout is transferred to your Stripe account. There are no hidden or monthly charges.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#s3">
+                            Do I need to connect Stripe before listing?
+                        </button>
+                    </h2>
+                    <div id="s3" class="accordion-collapse collapse" data-bs-parent="#accordionSelling">
+                        <div class="accordion-body text-muted">
+                            Yes. To receive payouts you must connect a Stripe account via your <a href="/Account/Profile">Profile page</a>. Stripe is our payment processor and handles all money transfers securely. Setup takes about 5 minutes and requires a bank account or debit card for payouts.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#s4">
+                            When do I get paid?
+                        </button>
+                    </h2>
+                    <div id="s4" class="accordion-collapse collapse" data-bs-parent="#accordionSelling">
+                        <div class="accordion-body text-muted">
+                            <strong>Hand-to-hand:</strong> as soon as the buyer clicks "Confirm Receipt", the escrow is released immediately and your payout is sent to Stripe. If the buyer paid but never came to collect, the escrow is released automatically after <strong>7 days</strong>.<br><br>
+                            <strong>MaltaPost:</strong> your payout is released when the buyer clicks "Confirm Receipt", or automatically <strong>5 days after you enter the tracking number</strong> - whichever comes first. Unless the buyer opens a dispute before then. Stripe then transfers funds to your bank on their standard schedule (usually 2–3 business days).
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#s5">
+                            Can I edit or delete a listing?
+                        </button>
+                    </h2>
+                    <div id="s5" class="accordion-collapse collapse" data-bs-parent="#accordionSelling">
+                        <div class="accordion-body text-muted">
+                            You can edit or delete a listing from <a href="/Account/MyListings">My Listings</a>, but only if it has no active bids. Once a bid has been placed, the listing is locked - this protects bidders who have already been charged.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#s7">
+                            Can I disable the auction for my listing?
+                        </button>
+                    </h2>
+                    <div id="s7" class="accordion-collapse collapse" data-bs-parent="#accordionSelling">
+                        <div class="accordion-body text-muted">
+                            Yes. On <strong>Step 3</strong> of the listing wizard you will find an <strong>Enable auction</strong> toggle. When turned off, your listing stays active at the Buy Now price until your deadline - no auction phase, no minimum price required.<br><br>
+                            The trade-off: if no one buys at full price, the listing simply expires. With auction enabled, buyers can compete for the item in the final 7 days, which gives you a chance to sell at or above your minimum price even if the Buy Now price wasn't met.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#s8">
+                            How do I mark my item as new or used?
+                        </button>
+                    </h2>
+                    <div id="s8" class="accordion-collapse collapse" data-bs-parent="#accordionSelling">
+                        <div class="accordion-body text-muted">
+                            On <strong>Step 1</strong> of the listing wizard there is a <strong>New item</strong> toggle. Enable it if the item is brand new and unused. Items marked as new display a <strong>New</strong> badge on their listing card, and buyers can filter for new items using the <strong>Condition</strong> dropdown on the listings and category pages.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#s6">
+                            How do I take good listing photos?
+                        </button>
+                    </h2>
+                    <div id="s6" class="accordion-collapse collapse" data-bs-parent="#accordionSelling">
+                        <div class="accordion-body text-muted">
+                            Use natural light and photograph against a plain background. Include multiple angles - front, back, sides, and any defects or damage. The first photo becomes your main thumbnail. Clear, honest photos lead to faster sales and fewer disputes.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── PAYMENTS ────────────────────────────────────────── -->
+            <h4 class="fw-bold mb-3" id="payments"><i class="bi bi-credit-card text-primary me-2"></i>Payments</h4>
+            <div class="accordion mb-5" id="accordionPayments">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#p1">
+                            What payment methods are accepted?
+                        </button>
+                    </h2>
+                    <div id="p1" class="accordion-collapse collapse" data-bs-parent="#accordionPayments">
+                        <div class="accordion-body text-muted">
+                            We accept all major credit and debit cards (Visa, Mastercard, Amex) via Stripe. Apple Pay and Google Pay may also be available depending on your device and browser.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#p2">
+                            Is my payment information secure?
+                        </button>
+                    </h2>
+                    <div id="p2" class="accordion-collapse collapse" data-bs-parent="#accordionPayments">
+                        <div class="accordion-body text-muted">
+                            Yes. All payments are processed by Stripe, which is PCI-DSS Level 1 certified - the highest level of payment security. Malta's Garage never sees or stores your card details.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#p3">
+                            What is escrow and how does it protect me?
+                        </button>
+                    </h2>
+                    <div id="p3" class="accordion-collapse collapse" data-bs-parent="#accordionPayments">
+                        <div class="accordion-body text-muted">
+                            When you pay for an item, the money is held securely by Stripe (in escrow). The seller cannot access it until the transaction is confirmed complete. This means if the item never arrives or doesn't match the description, you have a window to dispute the transaction before the seller is paid.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#p4">
+                            How do I get a refund?
+                        </button>
+                    </h2>
+                    <div id="p4" class="accordion-collapse collapse" data-bs-parent="#accordionPayments">
+                        <div class="accordion-body text-muted">
+                            <strong>MaltaPost orders:</strong> do not click "Confirm Receipt" if there is a problem. Open a dispute from your order page - our team will review the case and can issue a full or partial refund.<br><br>
+                            <strong>Hand-to-hand:</strong> do not click "Confirm Receipt" until you are satisfied with the item. Once confirmed, the escrow is released immediately and refunds require seller cooperation.<br><br>
+                            <strong>Auction bids:</strong> if you are outbid by another bidder, your payment is automatically refunded. The refund typically appears within 5–10 business days depending on your bank.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── DELIVERY ────────────────────────────────────────── -->
+            <h4 class="fw-bold mb-3" id="delivery"><i class="bi bi-truck text-primary me-2"></i>Delivery</h4>
+            <div class="accordion mb-5" id="accordionDelivery">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#d1">
+                            What delivery options are available?
+                        </button>
+                    </h2>
+                    <div id="d1" class="accordion-collapse collapse" data-bs-parent="#accordionDelivery">
+                        <div class="accordion-body text-muted">
+                            <strong>Hand-to-hand:</strong> you and the seller arrange to meet in person. After paying, the buyer goes to the order page and clicks "Confirm Receipt" once they have collected and inspected the item. This releases the payment from escrow immediately. Inspect the item carefully before confirming.<br><br>
+                            <strong>MaltaPost:</strong> the seller ships via Malta Post and provides a tracking number. Once 5 days have passed since the tracking number was entered, the escrow is released automatically - or sooner if the buyer clicks "Confirm Receipt".
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#d2">
+                            The seller hasn't shipped - what can I do?
+                        </button>
+                    </h2>
+                    <div id="d2" class="accordion-collapse collapse" data-bs-parent="#accordionDelivery">
+                        <div class="accordion-body text-muted">
+                            Sellers are expected to ship within <strong>3 days</strong> of receiving payment. If the seller has not entered a tracking number within 3 days, a "Cancel Order" button will appear on your order page. Cancelling will issue a full refund to your original payment method. You can also try messaging the seller first via the order page.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#d3">
+                            My item hasn't arrived - what do I do?
+                        </button>
+                    </h2>
+                    <div id="d3" class="accordion-collapse collapse" data-bs-parent="#accordionDelivery">
+                        <div class="accordion-body text-muted">
+                            First, check the tracking number on your order page. If the item is significantly delayed or tracking shows no movement for several days, message the seller via the order page. If you can't resolve it, open a dispute before the 5-day escrow release window closes. <strong>Do not click "Confirm Receipt" if there is an issue.</strong>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── DISPUTES ────────────────────────────────────────── -->
+            <h4 class="fw-bold mb-3" id="disputes"><i class="bi bi-exclamation-circle text-primary me-2"></i>Disputes</h4>
+            <div class="accordion mb-5" id="accordionDisputes">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dis1">
+                            When can I open a dispute?
+                        </button>
+                    </h2>
+                    <div id="dis1" class="accordion-collapse collapse" data-bs-parent="#accordionDisputes">
+                        <div class="accordion-body text-muted">
+                            Only the <strong>buyer</strong> can open a dispute, and only while the order is in one of these states:<br><br>
+                            <ul class="mb-0">
+                                <li><strong>Hand-to-hand (Paid):</strong> after paying but before clicking "Confirm Receipt".</li>
+                                <li><strong>MaltaPost (Shipped):</strong> after the seller marks it as shipped but before you confirm receipt.</li>
+                            </ul>
+                            <br>
+                            Once you click "Confirm Receipt", the escrow is released and a dispute can no longer be opened.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dis2">
+                            What reasons can I give for a dispute?
+                        </button>
+                    </h2>
+                    <div id="dis2" class="accordion-collapse collapse" data-bs-parent="#accordionDisputes">
+                        <div class="accordion-body text-muted">
+                            <ul class="mb-0">
+                                <li><strong>Item not received</strong> - the parcel never arrived or MaltaPost tracking shows no delivery.</li>
+                                <li><strong>Item not as described</strong> - the item differs significantly from the listing photos or description.</li>
+                                <li><strong>Other</strong> - any other valid reason; please describe in detail.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dis3">
+                            What happens after I open a dispute?
+                        </button>
+                    </h2>
+                    <div id="dis3" class="accordion-collapse collapse" data-bs-parent="#accordionDisputes">
+                        <div class="accordion-body text-muted">
+                            <ol class="mb-0">
+                                <li>The order is frozen - the escrow release is paused.</li>
+                                <li>Both buyer and seller are notified and our team is alerted.</li>
+                                <li>Our team reviews the case and may mark it "Under Review".</li>
+                                <li>We will resolve the dispute by issuing a <strong>full refund to the buyer</strong>, <strong>partial refund</strong>, or <strong>releasing payment to the seller</strong>, depending on the evidence.</li>
+                                <li>Both parties are notified of the outcome.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dis4">
+                            Can I withdraw a dispute?
+                        </button>
+                    </h2>
+                    <div id="dis4" class="accordion-collapse collapse" data-bs-parent="#accordionDisputes">
+                        <div class="accordion-body text-muted">
+                            Yes. If you resolve the issue directly with the seller, you can withdraw the dispute from your order page. The order will return to its previous status and the normal escrow release process resumes.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dis5">
+                            I'm a seller - a dispute was opened against me. What do I do?
+                        </button>
+                    </h2>
+                    <div id="dis5" class="accordion-collapse collapse" data-bs-parent="#accordionDisputes">
+                        <div class="accordion-body text-muted">
+                            You'll receive a notification when a dispute is opened. Message the buyer through your order page to try to resolve the issue directly - many disputes are resolved without our involvement. If the buyer withdraws the dispute, the order resumes normally. If our team gets involved, we may contact you for evidence such as shipping receipts or photos.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── ACCOUNT ─────────────────────────────────────────── -->
+            <h4 class="fw-bold mb-3" id="account"><i class="bi bi-person text-primary me-2"></i>Account</h4>
+            <div class="accordion mb-5" id="accordionAccount">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a1">
+                            How do I change my email or password?
+                        </button>
+                    </h2>
+                    <div id="a1" class="accordion-collapse collapse" data-bs-parent="#accordionAccount">
+                        <div class="accordion-body text-muted">
+                            Go to <a href="/Account/Settings">Account Settings</a> and use the "Change Email" or "Change Password" buttons in the Account Security section. If you've forgotten your password, use the "Forgot password?" link on the login page.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a2">
+                            How do reviews and ratings work?
+                        </button>
+                    </h2>
+                    <div id="a2" class="accordion-collapse collapse" data-bs-parent="#accordionAccount">
+                        <div class="accordion-body text-muted">
+                            After a transaction is completed, the <strong>buyer</strong> can leave a star rating (1–5) and a written comment for the seller. Ratings are averaged and displayed publicly on the seller's profile. You can leave one review per transaction.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a3">
+                            How do I turn on or off email notifications?
+                        </button>
+                    </h2>
+                    <div id="a3" class="accordion-collapse collapse" data-bs-parent="#accordionAccount">
+                        <div class="accordion-body text-muted">
+                            Go to <a href="/Account/Settings">Account Settings</a> and use the toggles in the "Email Notification Preferences" section. All activity is always visible in your in-app notification bell regardless of email settings.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a4">
+                            How do I delete my account?
+                        </button>
+                    </h2>
+                    <div id="a4" class="accordion-collapse collapse" data-bs-parent="#accordionAccount">
+                        <div class="accordion-body text-muted">
+                            Go to <a href="/Account/Settings">Account Settings</a> and click "Delete Account" in the Danger Zone section. You'll need to confirm with your password. Account deletion is permanent and removes all your personal data in accordance with our <a href="/Privacy">Privacy Policy</a>.<br><br>
+                            <strong>Note:</strong> you cannot delete your account while you have active orders (Paid, Shipped, or Disputed) or active auctions with bids. Please resolve or complete these first.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── SAFETY ──────────────────────────────────────────── -->
+            <h4 class="fw-bold mb-3" id="safety"><i class="bi bi-shield-check text-primary me-2"></i>Safety</h4>
+            <div class="accordion mb-5" id="accordionSafety">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sf1">
+                            Tips for safe hand-to-hand meetings
+                        </button>
+                    </h2>
+                    <div id="sf1" class="accordion-collapse collapse" data-bs-parent="#accordionSafety">
+                        <div class="accordion-body text-muted">
+                            <ul class="mb-0">
+                                <li>Meet in a public, well-lit location - a café, shopping centre, or petrol station forecourt works well.</li>
+                                <li>Bring a friend if possible, especially for high-value items.</li>
+                                <li>Inspect the item carefully <strong>before</strong> clicking "Confirm Receipt" - once confirmed, the payment is released and cannot be undone.</li>
+                                <li>Trust your instincts. If something feels wrong, leave and contact us.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sf2">
+                            Something looks suspicious - how do I report it?
+                        </button>
+                    </h2>
+                    <div id="sf2" class="accordion-collapse collapse" data-bs-parent="#accordionSafety">
+                        <div class="accordion-body text-muted">
+                            Use our <a href="/Contact">Contact page</a> and select "Report a listing or user" as the subject. Include the listing ID or username and describe what you found. We review all reports and take action where necessary.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sf3">
+                            Avoid scams - what to watch out for
+                        </button>
+                    </h2>
+                    <div id="sf3" class="accordion-collapse collapse" data-bs-parent="#accordionSafety">
+                        <div class="accordion-body text-muted">
+                            <ul class="mb-0">
+                                <li><strong>Never pay outside the platform.</strong> All transactions must go through Malta's Garage checkout - this is your protection.</li>
+                                <li>Be sceptical of listings where the price is unrealistically low.</li>
+                                <li>Don't share personal contact details (phone, email, WhatsApp) before the transaction is complete.</li>
+                                <li>Malta's Garage staff will <strong>never</strong> ask for your password or card details.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="text-center py-4 border-top">
+                <p class="text-muted mb-3">Still have a question?</p>
+                <a href="/Contact" class="btn btn-primary">
+                    <i class="bi bi-envelope me-2"></i>Contact Us
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>

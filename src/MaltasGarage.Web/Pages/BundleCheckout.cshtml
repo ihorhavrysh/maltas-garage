@@ -1,0 +1,188 @@
+@page
+@model MaltasGarage.Web.Pages.BundleCheckoutModel
+@inject Microsoft.Extensions.Options.IOptions<MaltasGarage.Application.Common.Models.StripeSettings> StripeSettings
+@{
+    ViewData["Title"] = "Bundle Checkout";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="mb-4">Bundle Checkout</h1>
+
+            <div class="row">
+                <div class="col-md-7 mb-4">
+
+                    <!-- Items summary -->
+                    <div class="card mb-3">
+                        <div class="card-header"><h6 class="mb-0">Items in Bundle</h6></div>
+                        <div class="list-group list-group-flush">
+                            @foreach (var item in Model.BundleOffer!.Items.OrderBy(i => i.Listing.Title))
+                            {
+                                var thumb = item.Listing.Images.OrderBy(i => i.SortOrder).FirstOrDefault();
+                                <div class="list-group-item d-flex align-items-center gap-3 py-2">
+                                    @if (thumb != null)
+                                    {
+                                        <img src="@(thumb.ThumbnailUrl ?? thumb.Url)" alt="@item.Listing.Title"
+                                             style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-light d-flex align-items-center justify-content-center rounded flex-shrink-0"
+                                             style="width: 44px; height: 44px;">
+                                            <i class="bi bi-image text-muted"></i>
+                                        </div>
+                                    }
+                                    <div class="flex-grow-1">
+                                        <a href="/Listing/@item.ListingId" target="_blank" class="fw-semibold small text-primary text-decoration-none">@item.Listing.Title</a>
+                                        <small class="text-muted">Listed at €@item.ListedPrice.ToString("N0")</small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Delivery -->
+                    <div class="card mb-3">
+                        <div class="card-header"><h6 class="mb-0">Delivery Method</h6></div>
+                        <div class="card-body">
+                            <div class="form-check mb-3 p-3 border rounded" style="cursor:pointer;">
+                                <input class="form-check-input" type="radio" name="deliveryMethod"
+                                       id="handToHand" value="HandToHand" checked>
+                                <label class="form-check-label w-100" for="handToHand" style="cursor:pointer;">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong><i class="bi bi-person-check me-2"></i>Hand-to-Hand</strong>
+                                            <p class="text-muted small mb-0">Meet the seller in person. One handover for all items.</p>
+                                        </div>
+                                        <span class="text-success fw-semibold flex-shrink-0 ms-2">Free</span>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="form-check p-3 border rounded" style="cursor:pointer;">
+                                <input class="form-check-input" type="radio" name="deliveryMethod"
+                                       id="maltaPost" value="MaltaPost">
+                                <label class="form-check-label w-100" for="maltaPost" style="cursor:pointer;">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong><i class="bi bi-truck me-2"></i>MaltaPost Delivery</strong>
+                                            <p class="text-muted small mb-0">Seller ships as one package with tracking.</p>
+                                        </div>
+                                        <span class="text-muted flex-shrink-0 ms-2">Billed by MaltaPost</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment -->
+                    <div class="card">
+                        <div class="card-header"><h6 class="mb-0">Payment</h6></div>
+                        <div class="card-body">
+                            <div id="payment-element"></div>
+                            <div id="payment-errors" class="alert alert-danger mt-3 d-none"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price summary -->
+                <div class="col-md-5">
+                    <div class="card sticky-top" style="top: 100px;">
+                        <div class="card-header"><h6 class="mb-0">Price Details</h6></div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Listed total</span>
+                                <span class="text-muted text-decoration-line-through">€@Model.BundleOffer.TotalListedPrice.ToString("N0")</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Your offer</span>
+                                <span class="text-success fw-semibold">€@Model.BundleOffer.OfferAmount.ToString("N0")</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Delivery</span>
+                                <span id="deliveryPriceLabel" class="text-success">Free</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between mb-4">
+                                <strong>Total</strong>
+                                <strong class="text-primary fs-4">€@Model.BundleOffer.OfferAmount.ToString("N0")</strong>
+                            </div>
+
+                            <button type="button" id="submit-payment" class="btn btn-primary btn-lg w-100">
+                                <span id="button-text">
+                                    <i class="bi bi-lock me-2"></i>Pay €@Model.BundleOffer.OfferAmount.ToString("N0")
+                                </span>
+                                <span id="spinner" class="d-none">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>Processing...
+                                </span>
+                            </button>
+
+                            <div class="mt-3 text-muted small">
+                                <p class="mb-1"><i class="bi bi-shield-check me-1 text-success"></i>Payment held securely - nothing goes to the seller yet.</p>
+                                <p class="mb-0"><i class="bi bi-check-circle me-1 text-primary"></i>Funds released only after you confirm receipt.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const stripe       = Stripe('@StripeSettings.Value.PublishableKey');
+        const clientSecret = '@Model.ClientSecret';
+        const bundleOfferId = '@Model.BundleOfferId';
+        const price        = '@Model.BundleOffer!.OfferAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)';
+        const returnBase   = window.location.origin + '/Orders/BundlePaymentComplete';
+
+        let elements;
+
+        async function initialize() {
+            elements = stripe.elements({ clientSecret });
+            const paymentElement = elements.create('payment');
+            paymentElement.mount('#payment-element');
+        }
+
+        async function handleSubmit() {
+            const btn      = document.getElementById('submit-payment');
+            const btnText  = document.getElementById('button-text');
+            const spinner  = document.getElementById('spinner');
+            const errorsDiv = document.getElementById('payment-errors');
+
+            btn.disabled = true;
+            btnText.classList.add('d-none');
+            spinner.classList.remove('d-none');
+            errorsDiv.classList.add('d-none');
+
+            const deliveryMethod = document.querySelector('input[name="deliveryMethod"]:checked').value;
+            const returnUrl = `${returnBase}?bundleOfferId=${bundleOfferId}&price=${price}&deliveryMethod=${deliveryMethod}`;
+
+            const { error } = await stripe.confirmPayment({
+                elements,
+                confirmParams: { return_url: returnUrl }
+            });
+
+            if (error) {
+                errorsDiv.textContent = error.message;
+                errorsDiv.classList.remove('d-none');
+                btn.disabled = false;
+                btnText.classList.remove('d-none');
+                spinner.classList.add('d-none');
+            }
+        }
+
+        document.getElementById('submit-payment').addEventListener('click', handleSubmit);
+        initialize();
+
+        document.querySelectorAll('input[name="deliveryMethod"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                const label = document.getElementById('deliveryPriceLabel');
+                label.textContent = this.value === 'MaltaPost' ? 'Billed by MaltaPost' : 'Free';
+                label.className   = this.value === 'MaltaPost' ? 'text-muted small' : 'text-success';
+            });
+        });
+    </script>
+}

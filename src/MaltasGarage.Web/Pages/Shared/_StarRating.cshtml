@@ -1,0 +1,25 @@
+@model (decimal Rating, int Count)
+@{
+    var full = (int)Math.Floor(Model.Rating);
+    var half = Model.Rating - full >= 0.5m;
+}
+<div class="d-inline-flex align-items-center gap-1">
+    <div>
+        @for (int i = 1; i <= 5; i++)
+        {
+            if (i <= full)
+            {
+                <i class="bi bi-star-fill text-warning"></i>
+            }
+            else if (i == full + 1 && half)
+            {
+                <i class="bi bi-star-half text-warning"></i>
+            }
+            else
+            {
+                <i class="bi bi-star text-muted"></i>
+            }
+        }
+    </div>
+    <span class="small text-muted">@Model.Rating.ToString("0.0") (@Model.Count)</span>
+</div>

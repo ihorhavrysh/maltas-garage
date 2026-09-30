@@ -1,0 +1,139 @@
+@page
+@model MaltasGarage.Web.Pages.Account.SalesModel
+@using MaltasGarage.Domain.Enums
+@{
+    ViewData["Title"] = "My Sales";
+}
+
+<div class="container py-5">
+    <div class="row">
+
+        <!-- Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    @if (!string.IsNullOrEmpty(Model.Profile?.AvatarUrl))
+                    {
+                        <img src="@Model.Profile.AvatarUrl" alt="Avatar"
+                             class="rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover;">
+                    }
+                    else
+                    {
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                             style="width: 80px; height: 80px; font-size: 2rem;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                    }
+                    <h6 class="mb-1">@(Model.Profile?.DisplayName ?? "User")</h6>
+                    <small class="text-muted">Member since @Model.Profile?.CreatedAt.ToString("MMM yyyy")</small>
+                </div>
+            </div>
+
+            <div class="list-group mt-3">
+                <a href="/Account/Profile" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person me-2"></i>Profile
+                </a>
+                <a href="/Account/MyListings" class="list-group-item list-group-item-action">
+                    <i class="bi bi-collection me-2"></i>My Listings
+                </a>
+                <a href="/Account/Sales" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-graph-up me-2"></i>My Sales
+                </a>
+                <a href="/Orders" class="list-group-item list-group-item-action">
+                    <i class="bi bi-bag me-2"></i>My Orders
+                </a>
+                <a href="/Account/Favourites" class="list-group-item list-group-item-action">
+                    <i class="bi bi-heart me-2"></i>Favourites
+                </a>
+                <a href="/Account/Settings" class="list-group-item list-group-item-action">
+                    <i class="bi bi-gear me-2"></i>Settings
+                </a>
+            </div>
+        </div>
+
+        <!-- Main -->
+        <div class="col-lg-9">
+            <h4 class="mb-4 fw-bold">My Sales</h4>
+
+            <!-- Stats -->
+            <div class="row g-3 mb-4">
+                <div class="col-sm-4">
+                    <div class="card text-center h-100">
+                        <div class="card-body py-3">
+                            <div class="h4 fw-bold text-primary mb-1">@Model.CompletedOrders.Count</div>
+                            <small class="text-muted">Completed Sales</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="card text-center h-100">
+                        <div class="card-body py-3">
+                            <div class="h4 fw-bold text-primary mb-1">€@Model.TotalEarned.ToString("N0")</div>
+                            <small class="text-muted">Total Earned</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="card text-center h-100">
+                        <div class="card-body py-3">
+                            <div class="h4 fw-bold mb-1">€@Model.PlatformFeesPaid.ToString("N0")</div>
+                            <small class="text-muted">Platform Fees (10%)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (!Model.PendingOrders.Any() && !Model.ActiveOrders.Any() && !Model.CompletedOrders.Any())
+            {
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-graph-up text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">No sales yet</h5>
+                        <p class="text-muted">Once someone buys your item, the sale will appear here.</p>
+                        <a href="/Account/MyListings" class="btn btn-primary">
+                            <i class="bi bi-collection me-2"></i>View My Listings
+                        </a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- Awaiting payment (auction winners) -->
+                @if (Model.PendingOrders.Any())
+                {
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">Awaiting Payment (@Model.PendingOrders.Count)</h6>
+                    <div class="card mb-4">
+                        @foreach (var order in Model.PendingOrders)
+                        {
+                            <partial name="_SaleRow" model="order" />
+                        }
+                    </div>
+                }
+
+                <!-- In progress -->
+                @if (Model.ActiveOrders.Any())
+                {
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">In Progress (@Model.ActiveOrders.Count)</h6>
+                    <div class="card mb-4">
+                        @foreach (var order in Model.ActiveOrders)
+                        {
+                            <partial name="_SaleRow" model="order" />
+                        }
+                    </div>
+                }
+
+                <!-- Completed -->
+                @if (Model.CompletedOrders.Any())
+                {
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">Completed (@Model.CompletedOrders.Count)</h6>
+                    <div class="card mb-4">
+                        @foreach (var order in Model.CompletedOrders)
+                        {
+                            <partial name="_SaleRow" model="order" />
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>

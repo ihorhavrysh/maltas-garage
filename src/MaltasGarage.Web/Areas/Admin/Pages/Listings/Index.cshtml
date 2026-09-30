@@ -1,0 +1,81 @@
+@page
+@model MaltasGarage.Web.Areas.Admin.Pages.Listings.IndexModel
+@{ ViewData["Title"] = "Listings"; }
+
+<h4 class="fw-bold mb-4">Listings</h4>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success mb-3">@TempData["Success"]</div>
+}
+
+<!-- Filter tabs -->
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link @(Model.Filter == "active" ? "active" : "")" href="?filter=active">Active</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.Filter == "sold" ? "active" : "")" href="?filter=sold">Sold</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.Filter == "cancelled" ? "active" : "")" href="?filter=cancelled">Cancelled / Expired</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.Filter == "all" ? "active" : "")" href="?filter=all">All</a>
+    </li>
+</ul>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Title</th>
+                    <th>Seller</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var listing in Model.Listings)
+                {
+                    <tr>
+                        <td class="fw-semibold text-truncate" style="max-width:200px;">
+                            <a href="/Listing/@listing.Id" target="_blank" class="text-decoration-none">
+                                @listing.Title
+                            </a>
+                        </td>
+                        <td>
+                            <a href="/Seller/@listing.SellerId" target="_blank" class="text-decoration-none text-muted">
+                                @listing.SellerName
+                            </a>
+                        </td>
+                        <td class="text-muted small">@listing.CategoryName</td>
+                        <td>€@listing.Price.ToString("N0")</td>
+                        <td>
+                            <span class="fw-semibold @(listing.Status == "Active" ? "text-success" : listing.Status == "AuctionPhase" ? "text-warning" : listing.Status == "Sold" ? "text-primary" : "text-secondary")">
+                                @listing.Status
+                            </span>
+                        </td>
+                        <td class="text-muted small">@listing.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td>
+                            @if (listing.Status != "Cancelled")
+                            {
+                                <form method="post" asp-page-handler="Remove" class="d-inline">
+                                    <input type="hidden" name="listingId" value="@listing.Id" />
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Remove this listing?')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

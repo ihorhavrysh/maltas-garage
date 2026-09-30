@@ -1,0 +1,52 @@
+@page "{orderId:guid}"
+@model MaltasGarage.Web.Pages.Orders.ShipModel
+@{
+    ViewData["Title"] = "Ship Order";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/Orders">My Orders</a></li>
+                    <li class="breadcrumb-item"><a href="/Orders/Details/@Model.Order?.Id">Order Details</a></li>
+                    <li class="breadcrumb-item active">Ship</li>
+                </ol>
+            </nav>
+
+            <h5 class="mb-1"><i class="bi bi-truck me-2"></i>Ship Order</h5>
+
+            <div class="d-flex align-items-center mb-3 mt-3">
+                @if (!string.IsNullOrEmpty(Model.Order?.ImageUrl))
+                {
+                    <img src="@Model.Order.ImageUrl" class="rounded me-3"
+                         style="width: 64px; height: 64px; object-fit: cover;">
+                }
+                <div>
+                    <h6 class="mb-0">@Model.Order?.Title</h6>
+                    <small class="text-muted">Buyer: @Model.Order?.BuyerName</small>
+                </div>
+            </div>
+
+            <p class="text-muted mb-4">Package the item, take it to any MaltaPost office, and enter the tracking number from the receipt below.</p>
+
+            <form method="post">
+                <div class="mb-3">
+                    <label asp-for="TrackingNumber" class="form-label fw-semibold">Tracking Number *</label>
+                    <input asp-for="TrackingNumber" class="form-control"
+                           placeholder="e.g., RR123456789MT" autocomplete="off" />
+                    <span asp-validation-for="TrackingNumber" class="text-danger small"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle me-2"></i>Mark as Shipped
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

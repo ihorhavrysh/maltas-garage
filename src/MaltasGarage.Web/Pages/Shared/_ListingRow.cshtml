@@ -1,0 +1,91 @@
+@using MaltasGarage.Domain.Entities
+@using MaltasGarage.Domain.Enums
+@model Listing
+
+@{
+    var thumb = Model.Images.OrderBy(i => i.SortOrder).FirstOrDefault()?.ThumbnailUrl
+                ?? Model.Images.OrderBy(i => i.SortOrder).FirstOrDefault()?.Url;
+
+    var (badgeClass, badgeText) = Model.Status switch
+    {
+        ListingStatus.Active       => ("bg-primary", "Active"),
+        ListingStatus.AuctionPhase => ("bg-warning text-dark", "Auction"),
+        ListingStatus.Sold         => ("bg-secondary", "Sold"),
+        ListingStatus.Draft        => ("bg-light text-dark border", "Draft"),
+        ListingStatus.Expired      => ("bg-danger", "Expired"),
+        ListingStatus.Cancelled    => ("bg-dark", "Cancelled"),
+        _                          => ("bg-secondary", Model.Status.ToString())
+    };
+
+    var _remaining = Model.SellByDate - DateTime.UtcNow;
+    var timeLeft = _remaining.TotalDays >= 1
+        ? $"{(int)_remaining.TotalDays}d left"
+        : _remaining.TotalHours >= 1
+            ? $"{(int)_remaining.TotalHours}h left"
+            : "ending soon";
+}
+
+<div class="d-flex align-items-center gap-3 p-3 border-bottom">
+    <!-- Thumbnail -->
+    <div class="flex-shrink-0">
+        @if (!string.IsNullOrEmpty(thumb))
+        {
+            <img src="@thumb" alt="@Model.Title"
+                 style="width: 64px; height: 64px; object-fit: cover; border-radius: 8px;">
+        }
+        else
+        {
+            <div class="bg-light d-flex align-items-center justify-content-center rounded"
+                 style="width: 64px; height: 64px;">
+                <i class="bi bi-image text-muted fs-4"></i>
+            </div>
+        }
+    </div>
+
+    <!-- Info -->
+    <div class="flex-grow-1 min-width-0">
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="badge @badgeClass">@badgeText</span>
+            @if (Model.Status == ListingStatus.AuctionPhase)
+            {
+                <small class="text-urgent fw-bold">@timeLeft</small>
+            }
+        </div>
+        <div class="fw-semibold text-truncate">@Model.Title</div>
+        @{
+            var displayPrice = Model.Status == ListingStatus.AuctionPhase && Model.Bids.Any()
+                ? Model.Bids.Max(b => b.Amount)
+                : Model.CurrentPrice;
+        }
+        <small class="text-muted">€@displayPrice.ToString("N0") · @Model.Category?.Name · Sell by @Model.SellByDate.ToString("dd MMM yyyy") · <i class="bi bi-eye"></i> @Model.ViewCount</small>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex-shrink-0 d-flex gap-2 align-items-center">
+        <a href="/Listing/@Model.Id" class="btn btn-sm btn-outline-secondary" title="View">
+            <i class="bi bi-eye"></i>
+        </a>
+        @if (Model.Status == ListingStatus.Expired)
+        {
+            <a href="/Listings/Create?id=@Model.Id&relist=true" class="btn btn-sm btn-outline-primary" title="Relist">
+                <i class="bi bi-arrow-clockwise"></i>
+            </a>
+        }
+        @if (Model.Status != ListingStatus.Sold && Model.Status != ListingStatus.Cancelled && Model.Status != ListingStatus.Expired)
+        {
+            <a href="/Listings/Edit/@Model.Id" class="btn btn-sm btn-outline-primary" title="Edit">
+                <i class="bi bi-pencil"></i>
+            </a>
+        }
+        @if (!Model.Bids.Any() && Model.Status != ListingStatus.Sold && Model.Status != ListingStatus.Cancelled)
+        {
+            <form method="post" asp-page="/Account/MyListings" asp-page-handler="Delete"
+                  asp-route-id="@Model.Id" id="delete-form-@Model.Id">
+            </form>
+            <button type="button" class="btn btn-sm btn-outline-danger" title="Delete"
+                    onclick="confirmDelete('@Model.Id', @System.Text.Json.JsonSerializer.Serialize(Model.Title))">
+                <i class="bi bi-trash"></i>
+            </button>
+        }
+    </div>
+</div>

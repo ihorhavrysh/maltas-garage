@@ -1,0 +1,47 @@
+@model MaltasGarage.Web.Pages.CategoryModel.ListingCardViewModel
+
+<a href="/Listing/@Model.Id" class="text-decoration-none">
+    <div class="listing-card h-100">
+        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+        {
+            <img src="@Model.ImageUrl" alt="@Model.Title" class="listing-image">
+        }
+        else
+        {
+            <div class="listing-image d-flex align-items-center justify-content-center text-muted">
+                <i class="bi bi-image fs-1"></i>
+            </div>
+        }
+
+        <div class="listing-body">
+            @if (Model.Status == MaltasGarage.Domain.Enums.ListingStatus.AuctionPhase)
+            {
+                <span class="auction-badge-outline-fire mb-2">
+                    <i class="bi bi-fire"></i> @Model.TimeLeft
+                </span>
+            }
+            else if (Model.Status == MaltasGarage.Domain.Enums.ListingStatus.Active && Model.AuctionStartDate > DateTime.UtcNow)
+            {
+                <span class="auction-badge-outline mb-2">
+                    <i class="bi bi-calendar-event"></i>Auction starts @Model.AuctionStartDate?.ToString("dd MMM") · from €@Model.MinPrice.ToString("N0")
+                </span>
+            }
+            else if (Model.Status == MaltasGarage.Domain.Enums.ListingStatus.Active && Model.AuctionStartDate == null)
+            {
+                <span class="auction-badge-outline-dark mb-2">
+                    <i class="bi bi-calendar-x"></i>Fixed price · Expires @Model.SellByDate.ToString("dd MMM")
+                </span>
+            }
+
+            <h5 class="listing-title">@Model.Title@if (Model.IsNew){<span class="badge bg-warning ms-2" style="font-size:0.65rem;vertical-align:middle;">New</span>}</h5>
+            <p class="listing-price mb-1">€@Model.CurrentPrice.ToString("N0")</p>
+
+            @if (!string.IsNullOrEmpty(Model.City))
+            {
+                <p class="listing-location mb-0">
+                    <i class="bi bi-geo-alt me-1"></i>@Model.City
+                </p>
+            }
+        </div>
+    </div>
+</a>

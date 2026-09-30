@@ -1,0 +1,663 @@
+@page
+@model MaltasGarage.Web.Pages.HowItWorksModel
+@{
+    ViewData["Title"]       = "How It Works - Buy & Sell Second Hand in Malta";
+    ViewData["Description"] = "Learn how Malta's Garage works: list your second-hand items with a deadline, let buyers bid or buy now, get paid securely via escrow. Free to list, 10% on sale.";
+    ViewData["Canonical"]   = Site.Absolute("/HowItWorks");
+
+    Func<string, string> J = s => System.Text.Json.JsonSerializer.Serialize(s);
+    var faqItems = new (string Q, string A)[]
+    {
+        ("What if my item doesn't sell at all?",
+         "If no one places a bid and no one buys at Buy Now price, the listing expires with no fee. You only pay the 10% commission when a sale completes. You can re-list at any time with a lower price or extended deadline."),
+        ("When do I actually receive the money as a seller?",
+         "Payment is held in escrow until the buyer confirms they received the item in good condition. Once confirmed, the funds are released to your connected Stripe account. Stripe transfers to your bank account typically within 2–7 business days."),
+        ("Can I cancel a sale after it's been paid?",
+         "Cancellations after payment are handled through a dispute process. If the item is damaged or significantly different from the description, the buyer may request a refund. Unjustified cancellations by sellers can affect your account rating."),
+        ("Do I need to set up Stripe before I can sell?",
+         "You can create listings without Stripe, but you'll need to complete Stripe Connect onboarding before a buyer can pay. It takes about 5–10 minutes and only needs to be done once."),
+        ("What if the item I bought isn't as described?",
+         "Don't confirm delivery if the item is significantly different from the listing. Open a dispute through your order page and the team will step in to help resolve it. Your payment stays in escrow until the issue is sorted out."),
+        ("I won an auction - what happens next?",
+         "You'll see a You Won banner in your orders section. Click through to complete the payment via secure Stripe checkout. Once paid, the seller arranges delivery or you agree on a pickup time."),
+        ("How does Hand-to-Hand pickup work?",
+         "After payment, coordinate with the seller via Messages to arrange a meetup. Inspect the item carefully, and if you're satisfied, go to your order page and click Confirm Receipt - this instantly releases the escrow payment to the seller and marks the order complete. Always meet in a public place and never confirm before you have inspected the item."),
+        ("Are there any fees for buyers?",
+         "No. The platform fee of 10% comes from the seller's side. As a buyer you pay exactly what's shown - no hidden charges, no booking fees."),
+        ("Can I make an offer on a listing?",
+         "Yes. On any active listing you can click Make an Offer to propose a price below the Buy Now price. The seller can accept or decline in the chat. Offers expire after 24 hours if the seller doesn't respond."),
+        ("What is a Bundle Offer?",
+         "A Bundle Offer lets you pick two or more items from the same seller and propose a single combined price for all of them. Open the seller's profile, select the items you want, and submit your offer. If the seller accepts, you pay for everything in one checkout."),
+    };
+    var mainEntity = string.Join(",", faqItems.Select(f =>
+        $@"{{""@type"":""Question"",""name"":{J(f.Q)},""acceptedAnswer"":{{""@type"":""Answer"",""text"":{J(f.A)}}}}}"));
+    ViewData["JsonLd"] = $@"{{""@context"":""https://schema.org"",""@type"":""FAQPage"",""mainEntity"":[{mainEntity}]}}";
+}
+
+<!-- Hero -->
+<section class="hiw-hero py-5">
+    <div class="container text-center">
+        <h1 class="display-5 fw-bold text-white mb-3">How Malta's Garage Works</h1>
+        <p class="lead text-white-75 mb-4">
+            A smarter way to buy and sell second-hand goods - with built-in deadlines,<br class="d-none d-md-block">
+            fair pricing, and payments that protect everyone.
+        </p>
+    </div>
+</section>
+
+<!-- Tabs -->
+<div class="container py-5">
+
+    <ul class="nav nav-tabs hiw-tabs justify-content-center mb-5" role="tablist" id="hiwTabs">
+        <li class="nav-item">
+            <button class="nav-link active" id="buyer-tab-btn" data-bs-toggle="tab" data-bs-target="#buyer-tab" type="button">
+                <i class="bi bi-cart me-2"></i>For Buyers
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="seller-tab-btn" data-bs-toggle="tab" data-bs-target="#seller-tab" type="button">
+                <i class="bi bi-tag me-2"></i>For Sellers
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+
+        <!-- ══════════════════════════════════════════════
+             SELLER TAB
+        ══════════════════════════════════════════════ -->
+        <div class="tab-pane fade" id="seller-tab">
+
+            <!-- Why sell here -->
+            <div class="row align-items-center mb-5 pb-4 border-bottom">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <h2 class="fw-bold mb-3">You set the deadline. We make sure it sells.</h2>
+                    <p class="text-muted fs-5">
+                        Malta's Garage is built for people who need their things sold by a specific date -
+                        whether you're moving abroad, downsizing, renovating, or just finally clearing out the spare room.
+                    </p>
+                    <p class="text-muted">
+                        Unlike regular marketplaces where items can sit for months, here your listing has a countdown.
+                        That urgency is what attracts buyers and keeps prices honest - you set a fair "Buy Now" price,
+                        and as the deadline approaches, an automatic auction kicks in so nothing goes to waste.
+                    </p>
+                </div>
+                <div class="col-lg-5 offset-lg-1">
+                    <div class="hiw-highlight-box">
+                        <div class="d-flex align-items-start gap-3 mb-3">
+                            <i class="bi bi-check-circle-fill text-primary fs-4 mt-1 flex-shrink-0"></i>
+                            <div>
+                                <strong>Guaranteed outcome</strong>
+                                <p class="text-muted mb-0 small">Your item either sells at your price or through the auction. It won't just expire with no result.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-3 mb-3">
+                            <i class="bi bi-check-circle-fill text-primary fs-4 mt-1 flex-shrink-0"></i>
+                            <div>
+                                <strong>No haggling in DMs</strong>
+                                <p class="text-muted mb-0 small">Price offers and bundle offers go through the platform - structured, trackable, and no time-wasters.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-3 mb-3">
+                            <i class="bi bi-check-circle-fill text-primary fs-4 mt-1 flex-shrink-0"></i>
+                            <div>
+                                <strong>Secure payment before handover</strong>
+                                <p class="text-muted mb-0 small">Money is collected upfront via Stripe. You hand over the item knowing you've already been paid.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-3">
+                            <i class="bi bi-check-circle-fill text-primary fs-4 mt-1 flex-shrink-0"></i>
+                            <div>
+                                <strong>Only 10% platform fee</strong>
+                                <p class="text-muted mb-0 small">We take 10% (minimum €1) when a sale completes. Nothing up front.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Steps -->
+            <h3 class="fw-bold text-center mb-4">How to sell, step by step</h3>
+            <div class="row g-4 mb-5">
+                <div class="col-md-6 col-lg-3">
+                    <div class="hiw-step-card">
+                        <div class="hiw-step-number">1</div>
+                        <h5 class="fw-bold mb-2">Create your listing</h5>
+                        <p class="text-muted small">
+                            Add photos, a description, and set two prices: your <strong>Buy Now</strong> price
+                            (what you'd happily accept today) and your <strong>minimum auction price</strong>
+                            (the lowest you'd accept if it came to a bid). Then set your deadline.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="hiw-step-card">
+                        <div class="hiw-step-number">2</div>
+                        <h5 class="fw-bold mb-2">Buyers browse and offer</h5>
+                        <p class="text-muted small">
+                            During the listing period, buyers can purchase at your Buy Now price instantly,
+                            or make a price offer if they'd like to negotiate. They can also bundle multiple
+                            of your listings into a single offer. In the final 7 days, the auction phase opens -
+                            buyers place bids starting from your minimum price, competing to win the item.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="hiw-step-card">
+                        <div class="hiw-step-number">3</div>
+                        <h5 class="fw-bold mb-2">Arrange delivery</h5>
+                        <p class="text-muted small">
+                            Once sold, choose how to get the item to the buyer.
+                            <strong>MaltaPost</strong> for shipping - you add a tracking number and the platform
+                            monitors delivery. Or <strong>Hand-to-Hand</strong> for in-person - the buyer confirms
+                            receipt directly from their order page, releasing the payment instantly.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="hiw-step-card">
+                        <div class="hiw-step-number">4</div>
+                        <h5 class="fw-bold mb-2">Get paid</h5>
+                        <p class="text-muted small">
+                            Payment is released to your Stripe account once the buyer confirms receipt.
+                            This usually happens within minutes. Build up reviews to grow your reputation
+                            and sell faster next time.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auction explained -->
+            <div class="hiw-explainer-box mb-5">
+                <div class="row align-items-center">
+                    <div class="col-lg-7">
+                        <h4 class="fw-bold mb-3">
+                            <i class="bi bi-fire text-urgent me-2"></i>How the auction phase works
+                        </h4>
+                        <p class="mb-2">
+                            7 days before your deadline, if the item hasn't sold at Buy Now price, it automatically enters
+                            <strong>Auction Phase</strong>. Buyers can now place bids in €1 increments, starting from
+                            your minimum price.
+                        </p>
+                        <p class="mb-2">
+                            When the deadline hits, the highest bidder wins. They pay through the platform and
+                            you arrange delivery - same as any other sale. The auction ensures that as long as
+                            someone wants your item, it won't just silently expire.
+                        </p>
+                        <p class="text-muted mb-0 small">
+                            Note: a buyer can still Buy Now during the auction phase if they want to skip the bidding.
+                        </p>
+                    </div>
+                    <div class="col-lg-4 offset-lg-1 mt-3 mt-lg-0">
+                        <div class="hiw-timeline">
+                            <div class="hiw-timeline-item">
+                                <span class="hiw-timeline-dot bg-primary"></span>
+                                <div>
+                                    <strong>Day 0</strong>
+                                    <p class="text-muted small mb-0">You publish the listing. Buy Now is available.</p>
+                                </div>
+                            </div>
+                            <div class="hiw-timeline-item">
+                                <span class="hiw-timeline-dot bg-warning"></span>
+                                <div>
+                                    <strong>Day X−7</strong>
+                                    <p class="text-muted small mb-0">Auction phase opens. Bids start.</p>
+                                </div>
+                            </div>
+                            <div class="hiw-timeline-item">
+                                <span class="hiw-timeline-dot bg-urgent"></span>
+                                <div>
+                                    <strong>Deadline</strong>
+                                    <p class="text-muted small mb-0">Highest bidder wins and pays.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seller FAQ -->
+            <h4 class="fw-bold mb-3">Common seller questions</h4>
+            <div class="accordion hiw-accordion mb-5" id="sellerFaq">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sf1">
+                            What if my item doesn't sell at all?
+                        </button>
+                    </h2>
+                    <div id="sf1" class="accordion-collapse collapse" data-bs-parent="#sellerFaq">
+                        <div class="accordion-body text-muted">
+                            If no one places a bid and no one buys at Buy Now price, the listing expires. In that case,
+                            there's no fee - you only pay the 10% commission when a sale completes. You can always re-list
+                            with a lower price or extended deadline.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sf2">
+                            When do I actually receive the money?
+                        </button>
+                    </h2>
+                    <div id="sf2" class="accordion-collapse collapse" data-bs-parent="#sellerFaq">
+                        <div class="accordion-body text-muted">
+                            Payment is held in escrow until the buyer confirms they received the item in good condition.
+                            Once confirmed (or after a reasonable timeout), the funds are released to your connected
+                            Stripe account. Stripe transfers to your bank account typically within 2–7 business days
+                            depending on your country.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sf3">
+                            Can I cancel a sale after it's been paid?
+                        </button>
+                    </h2>
+                    <div id="sf3" class="accordion-collapse collapse" data-bs-parent="#sellerFaq">
+                        <div class="accordion-body text-muted">
+                            Cancellations after payment are handled through a dispute process. If the item is damaged
+                            or significantly different from the description, the buyer may request a refund. Unjustified
+                            cancellations by sellers can affect your account rating.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sf4">
+                            Do I need to set up Stripe before I can sell?
+                        </button>
+                    </h2>
+                    <div id="sf4" class="accordion-collapse collapse" data-bs-parent="#sellerFaq">
+                        <div class="accordion-body text-muted">
+                            You can create listings without Stripe, but you'll need to complete Stripe Connect
+                            onboarding before a buyer can pay. It takes about 5–10 minutes and only needs to be
+                            done once. We'll prompt you when the time comes.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <a href="/Listings/Create" class="btn btn-primary btn-lg px-5">
+                    <i class="bi bi-plus-circle me-2"></i>Create your first listing
+                </a>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════
+             BUYER TAB
+        ══════════════════════════════════════════════ -->
+        <div class="tab-pane fade show active" id="buyer-tab">
+
+            <!-- Why buy here -->
+            <div class="row align-items-center mb-5 pb-4 border-bottom">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <h2 class="fw-bold mb-3">Real items, real prices - from people who actually need to sell.</h2>
+                    <p class="text-muted fs-5">
+                        Sellers on Malta's Garage have a deadline. That changes everything. Instead of listing
+                        something at an optimistic price and waiting forever, they set realistic prices from the start.
+                    </p>
+                    <p class="text-muted">
+                        You'll find well-maintained furniture, electronics, bikes, kitchen gear, and more -
+                        priced to move, not priced to sit. And because every payment goes through secure escrow,
+                        your money is protected until the item is actually in your hands.
+                    </p>
+                </div>
+                <div class="col-lg-5 offset-lg-1">
+                    <div class="hiw-highlight-box">
+                        <div class="d-flex align-items-start gap-3 mb-3">
+                            <i class="bi bi-check-circle-fill text-primary fs-4 mt-1 flex-shrink-0"></i>
+                            <div>
+                                <strong>Motivated sellers = better prices</strong>
+                                <p class="text-muted mb-0 small">Sellers have a real deadline, so prices are honest from day one.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-3 mb-3">
+                            <i class="bi bi-check-circle-fill text-primary fs-4 mt-1 flex-shrink-0"></i>
+                            <div>
+                                <strong>Buy Now, bid, or make an offer - your choice</strong>
+                                <p class="text-muted mb-0 small">Grab it instantly at Buy Now price, wait for the auction, make a price offer, or bundle items for an even better deal.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-3 mb-3">
+                            <i class="bi bi-check-circle-fill text-primary fs-4 mt-1 flex-shrink-0"></i>
+                            <div>
+                                <strong>Escrow protection</strong>
+                                <p class="text-muted mb-0 small">Your payment is held securely. The seller only gets paid once you confirm the item arrived.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-3">
+                            <i class="bi bi-check-circle-fill text-primary fs-4 mt-1 flex-shrink-0"></i>
+                            <div>
+                                <strong>Verified seller ratings</strong>
+                                <p class="text-muted mb-0 small">Check a seller's history and reviews before you commit to anything.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Steps -->
+            <h3 class="fw-bold text-center mb-4">How to buy, step by step</h3>
+            <div class="row g-4 mb-5">
+                <div class="col-md-6 col-lg-3">
+                    <div class="hiw-step-card">
+                        <div class="hiw-step-number">1</div>
+                        <h5 class="fw-bold mb-2">Find what you need</h5>
+                        <p class="text-muted small">
+                            Browse by category or use the expiring-soon section to catch the best last-minute deals.
+                            Filter by location to find items you can pick up nearby.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="hiw-step-card">
+                        <div class="hiw-step-number">2</div>
+                        <h5 class="fw-bold mb-2">Buy, bid, or make an offer</h5>
+                        <p class="text-muted small">
+                            Use <strong>Buy Now</strong> to grab the item instantly. During the auction phase,
+                            <strong>place a bid</strong> in €1 increments and win if you're highest when the clock runs out.
+                            Or skip both - click <strong>Make an Offer</strong> to propose your own price,
+                            or go to the seller's profile and send a <strong>Bundle Offer</strong> on multiple items at once.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="hiw-step-card">
+                        <div class="hiw-step-number">3</div>
+                        <h5 class="fw-bold mb-2">Pay securely</h5>
+                        <p class="text-muted small">
+                            Payment goes through Stripe - card, Apple Pay, Google Pay. Your money is
+                            held in escrow until you confirm the item is received. You're protected at every step.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="hiw-step-card">
+                        <div class="hiw-step-number">4</div>
+                        <h5 class="fw-bold mb-2">Receive and confirm</h5>
+                        <p class="text-muted small">
+                            Get the item via MaltaPost or pick it up in person.
+                            Click Confirm Receipt on your order page - this releases payment to the seller - then leave a review.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buy Now vs Auction -->
+            <div class="hiw-explainer-box mb-5">
+                <h4 class="fw-bold mb-4">
+                    <i class="bi bi-info-circle text-primary me-2"></i>Your options as a buyer
+                </h4>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="hiw-compare-card border-primary">
+                            <h5 class="fw-bold text-primary mb-3"><i class="bi bi-cart-check me-2"></i>Buy Now</h5>
+                            <ul class="list-unstyled text-muted small">
+                                <li class="mb-2"><i class="bi bi-dot fs-4 me-1"></i>You want the item and don't want to risk losing it to another bidder</li>
+                                <li class="mb-2"><i class="bi bi-dot fs-4 me-1"></i>The price already feels fair</li>
+                                <li class="mb-2"><i class="bi bi-dot fs-4 me-1"></i>You need it by a specific date</li>
+                                <li><i class="bi bi-dot fs-4 me-1"></i>Available any time during the listing</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="hiw-compare-card border-warning">
+                            <h5 class="fw-bold mb-3" style="color: #e65100;"><i class="bi bi-fire me-2"></i>Auction</h5>
+                            <ul class="list-unstyled text-muted small">
+                                <li class="mb-2"><i class="bi bi-dot fs-4 me-1"></i>You're flexible on timing and want to try for a lower price</li>
+                                <li class="mb-2"><i class="bi bi-dot fs-4 me-1"></i>The listing is in its final 7 days</li>
+                                <li class="mb-2"><i class="bi bi-dot fs-4 me-1"></i>Not many competing bids yet</li>
+                                <li><i class="bi bi-dot fs-4 me-1"></i>Minimum bid starts lower than Buy Now price</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="hiw-compare-card" style="border-color: #6366f1;">
+                            <h5 class="fw-bold mb-3" style="color: #6366f1;"><i class="bi bi-chat-left-dots me-2"></i>Make an Offer</h5>
+                            <ul class="list-unstyled text-muted small">
+                                <li class="mb-2"><i class="bi bi-dot fs-4 me-1"></i>The Buy Now price feels a bit high and you want to negotiate</li>
+                                <li class="mb-2"><i class="bi bi-dot fs-4 me-1"></i>You're interested in multiple items from the same seller - use a Bundle Offer</li>
+                                <li class="mb-2"><i class="bi bi-dot fs-4 me-1"></i>Only available in the active phase, before auction starts</li>
+                                <li><i class="bi bi-dot fs-4 me-1"></i>Seller has 24 hours to accept or decline</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buyer FAQ -->
+            <h4 class="fw-bold mb-3">Common buyer questions</h4>
+            <div class="accordion hiw-accordion mb-5" id="buyerFaq">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#bf1">
+                            What if the item isn't as described?
+                        </button>
+                    </h2>
+                    <div id="bf1" class="accordion-collapse collapse" data-bs-parent="#buyerFaq">
+                        <div class="accordion-body text-muted">
+                            Don't confirm delivery if the item is significantly different from the listing.
+                            Open a dispute through your order page and we'll step in to help resolve it.
+                            Your payment stays in escrow until the issue is sorted out.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#bf2">
+                            I won an auction - what happens next?
+                        </button>
+                    </h2>
+                    <div id="bf2" class="accordion-collapse collapse" data-bs-parent="#buyerFaq">
+                        <div class="accordion-body text-muted">
+                            You'll see a "You Won!" banner in your orders section. Click through to complete
+                            the payment - same secure Stripe checkout as Buy Now. Once paid, the seller arranges
+                            delivery or you agree on a pickup time.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#bf3">
+                            How does Hand-to-Hand pickup work?
+                        </button>
+                    </h2>
+                    <div id="bf3" class="accordion-collapse collapse" data-bs-parent="#buyerFaq">
+                        <div class="accordion-body text-muted">
+                            After payment, coordinate with the seller via Messages to arrange a meetup.
+                            Inspect the item carefully, and if you're happy with it, go to your order page and click
+                            <strong>Confirm Receipt</strong> - this instantly releases the escrow payment to the seller
+                            and marks the order complete. Never confirm before you have physically received and inspected the item.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#bf4">
+                            Are there any fees for buyers?
+                        </button>
+                    </h2>
+                    <div id="bf4" class="accordion-collapse collapse" data-bs-parent="#buyerFaq">
+                        <div class="accordion-body text-muted">
+                            No. The platform fee (10%) comes from the seller's side. As a buyer you pay
+                            exactly what's shown - no hidden charges, no booking fees.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#bf5">
+                            Can I make an offer instead of paying the full price?
+                        </button>
+                    </h2>
+                    <div id="bf5" class="accordion-collapse collapse" data-bs-parent="#buyerFaq">
+                        <div class="accordion-body text-muted">
+                            Yes. On any active listing (before the auction phase starts) you can click
+                            <strong>Make an Offer</strong> to propose a lower price. The seller will be
+                            notified and can accept or decline in the chat. If accepted, you proceed to
+                            checkout at the agreed price. Offers expire after 24 hours if the seller doesn't respond.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#bf6">
+                            What is a Bundle Offer?
+                        </button>
+                    </h2>
+                    <div id="bf6" class="accordion-collapse collapse" data-bs-parent="#buyerFaq">
+                        <div class="accordion-body text-muted">
+                            A Bundle Offer lets you pick <strong>two or more items from the same seller</strong>
+                            and propose a single combined price for the whole lot. Open the seller's profile page,
+                            tick the items you want, enter your offer amount, and submit. If the seller accepts,
+                            you pay for everything in one checkout. Great for saving on multiple purchases from
+                            the same person. Bundle Offers also expire after 24 hours.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <a href="/" class="btn btn-primary btn-lg px-5">
+                    <i class="bi bi-search me-2"></i>Browse listings
+                </a>
+            </div>
+        </div>
+
+    </div><!-- /tab-content -->
+</div>
+
+<!-- Bottom CTA -->
+<section class="py-5 bg-light-custom">
+    <div class="container text-center">
+        <h3 class="fw-bold mb-2">Ready to get started?</h3>
+        <p class="text-muted mb-4">It takes under 5 minutes to list something or find your next bargain.</p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="/Listings/Create" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-circle me-2"></i>List an item
+            </a>
+            <a href="/" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-grid me-2"></i>Browse items
+            </a>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Hero */
+    .hiw-hero {
+        background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary-light) 100%);
+        padding: 4rem 0;
+    }
+    .hiw-hero .text-white-75 { color: rgba(255,255,255,0.88); }
+
+    /* Tabs */
+    .hiw-tabs {
+        border-bottom: 2px solid var(--color-border);
+        gap: 0.5rem;
+    }
+    .hiw-tabs .nav-link {
+        border: none;
+        color: var(--color-text-light);
+        font-weight: 600;
+        font-size: 1.05rem;
+        padding: 0.85rem 2rem;
+        border-radius: var(--radius-md) var(--radius-md) 0 0;
+        position: relative;
+    }
+    .hiw-tabs .nav-link.active {
+        color: var(--color-primary);
+        background: transparent;
+    }
+    .hiw-tabs .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0; right: 0;
+        height: 2px;
+        background: var(--color-primary);
+    }
+
+    /* Highlight box */
+    .hiw-highlight-box {
+        background: var(--color-bg-light);
+        border-radius: var(--radius-lg);
+        padding: 1.75rem;
+    }
+
+    /* Step cards */
+    .hiw-step-card {
+        background: white;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: 1.75rem;
+        height: 100%;
+        text-align: center;
+    }
+    .hiw-step-number {
+        width: 52px;
+        height: 52px;
+        background: var(--color-primary);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: 800;
+        margin: 0 auto 1rem;
+    }
+
+    /* Explainer box */
+    .hiw-explainer-box {
+        background: white;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: 2rem;
+    }
+
+    /* Timeline */
+    .hiw-timeline { display: flex; flex-direction: column; gap: 1.25rem; }
+    .hiw-timeline-item { display: flex; gap: 1rem; align-items: flex-start; }
+    .hiw-timeline-dot {
+        width: 14px; height: 14px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 5px;
+    }
+    .bg-urgent { background-color: var(--color-urgent); }
+
+    /* Compare cards */
+    .hiw-compare-card {
+        border: 2px solid;
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        height: 100%;
+    }
+
+    /* Accordion */
+    .hiw-accordion .accordion-button:not(.collapsed) {
+        color: var(--color-primary);
+        background: #f0f7e6;
+        box-shadow: none;
+    }
+    .hiw-accordion .accordion-button:focus { box-shadow: none; }
+</style>
+
+@section Scripts {
+    <script>
+        function showTab(which) {
+            const btn = document.getElementById(which + '-tab-btn');
+            if (btn) {
+                const tab = new bootstrap.Tab(btn);
+                tab.show();
+            }
+        }
+
+        // If URL has ?tab=seller, auto-switch
+        const params = new URLSearchParams(location.search);
+        if (params.get('tab') === 'seller') showTab('seller');
+    </script>
+}

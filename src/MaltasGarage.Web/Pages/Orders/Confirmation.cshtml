@@ -1,0 +1,43 @@
+@page
+@model MaltasGarage.Web.Pages.Orders.ConfirmationModel
+@{
+    ViewData["Title"] = "Order Confirmed";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
+            <h1 class="mt-4">Order Confirmed!</h1>
+            <p class="lead text-muted">Thank you for your purchase</p>
+
+            <div class="card mt-4">
+                <div class="card-body">
+                    <p class="mb-2">Order number</p>
+                    <h4 class="font-monospace">@Model.OrderId.ToString()[..8].ToUpper()</h4>
+                </div>
+            </div>
+
+            <div class="card mt-4 text-start">
+                <div class="card-body">
+                    <h6 class="fw-semibold mb-3"><i class="bi bi-arrow-right-circle text-primary me-2"></i>What happens next?</h6>
+                    <ol class="text-muted small mb-0 ps-3">
+                        <li class="mb-2">The seller has been notified and will prepare your item for delivery.</li>
+                        <li class="mb-2">Your payment is held securely in escrow - the seller cannot access it yet.</li>
+                        <li class="mb-2">Once you receive the item, click <strong>Confirm Receipt</strong> on your order page to release the payment.</li>
+                        <li>If anything is wrong, you can open a dispute before confirming - your money stays protected.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <a href="/Orders/Details/@Model.OrderId" class="btn btn-primary me-2">
+                    View Order Details
+                </a>
+                <a href="/" class="btn btn-outline-secondary">
+                    Continue Shopping
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

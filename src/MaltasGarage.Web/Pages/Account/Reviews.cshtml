@@ -1,0 +1,144 @@
+@page
+@model MaltasGarage.Web.Pages.Account.ReviewsModel
+@{
+    ViewData["Title"] = "My Reviews";
+}
+
+<div class="container py-5">
+    <div class="row">
+
+        <!-- Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    @if (!string.IsNullOrEmpty(Model.Profile?.AvatarUrl))
+                    {
+                        <img src="@Model.Profile.AvatarUrl" alt="Avatar"
+                             class="rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover;">
+                    }
+                    else
+                    {
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                             style="width: 80px; height: 80px; font-size: 2rem;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                    }
+                    <h6 class="mb-1">@(Model.Profile?.DisplayName ?? "User")</h6>
+                    <small class="text-muted">Member since @Model.Profile?.CreatedAt.ToString("MMM yyyy")</small>
+                </div>
+            </div>
+
+            <div class="list-group mt-3">
+                <a href="/Account/Profile" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person me-2"></i>Profile
+                </a>
+                <a href="/Account/MyListings" class="list-group-item list-group-item-action">
+                    <i class="bi bi-collection me-2"></i>My Listings
+                </a>
+                <a href="/Account/Sales" class="list-group-item list-group-item-action">
+                    <i class="bi bi-graph-up me-2"></i>My Sales
+                </a>
+                <a href="/Orders" class="list-group-item list-group-item-action">
+                    <i class="bi bi-bag me-2"></i>My Orders
+                </a>
+                <a href="/Account/Favourites" class="list-group-item list-group-item-action">
+                    <i class="bi bi-heart me-2"></i>Favourites
+                </a>
+                <a href="/Account/Reviews" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-star me-2"></i>Reviews
+                </a>
+                <a href="/Account/Settings" class="list-group-item list-group-item-action">
+                    <i class="bi bi-gear me-2"></i>Settings
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-star me-2"></i>My Reviews</h5>
+                    @if (Model.Reviews.Any())
+                    {
+                        <span class="badge bg-primary rounded-pill">@Model.Reviews.Count</span>
+                    }
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.Reviews.Any())
+                    {
+                        <!-- Summary bar -->
+                        <div class="px-4 py-3 border-bottom bg-light">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="text-center">
+                                    <div class="fw-bold fs-3">@Model.Profile?.Rating.ToString("0.0")</div>
+                                    <div class="text-warning">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            var fill = (Model.Profile?.Rating ?? 0) >= i ? "bi-star-fill" :
+                                                       (Model.Profile?.Rating ?? 0) >= i - 0.5m ? "bi-star-half" : "bi-star";
+                                            <i class="bi @fill"></i>
+                                        }
+                                    </div>
+                                    <small class="text-muted">@Model.Reviews.Count review@(Model.Reviews.Count == 1 ? "" : "s")</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="list-group list-group-flush">
+                            @foreach (var review in Model.Reviews)
+                            {
+                                <div class="list-group-item px-4 py-3">
+                                    <div class="d-flex align-items-start gap-3">
+                                        <!-- Reviewer avatar -->
+                                        @if (!string.IsNullOrEmpty(review.FromUserAvatarUrl))
+                                        {
+                                            <img src="@review.FromUserAvatarUrl" alt="@review.FromUserName"
+                                                 class="rounded-circle flex-shrink-0"
+                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                        }
+                                        else
+                                        {
+                                            <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                                 style="width: 40px; height: 40px;">
+                                                <i class="bi bi-person"></i>
+                                            </div>
+                                        }
+
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <div>
+                                                    <span class="fw-semibold me-2">@review.FromUserName</span>
+                                                    @for (int i = 1; i <= 5; i++)
+                                                    {
+                                                        <i class="bi @(i <= review.Rating ? "bi-star-fill text-warning" : "bi-star text-muted") small"></i>
+                                                    }
+                                                </div>
+                                                <small class="text-muted">@review.CreatedAt.ToString("dd MMM yyyy")</small>
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(review.Comment))
+                                            {
+                                                <p class="mb-0 text-muted">@review.Comment</p>
+                                            }
+                                            else
+                                            {
+                                                <p class="mb-0 text-muted fst-italic">No comment left.</p>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-star fs-1 d-block mb-3"></i>
+                            <p class="mb-1">No reviews yet</p>
+                            <small>Reviews appear here after buyers complete their orders and rate you.</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

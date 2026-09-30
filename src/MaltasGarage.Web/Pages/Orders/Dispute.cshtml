@@ -1,0 +1,145 @@
+@page "{orderId:guid}"
+@model MaltasGarage.Web.Pages.Orders.DisputeModel
+@{
+    ViewData["Title"] = "Open a Dispute";
+}
+
+<div class="container py-5" style="max-width: 680px;">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/Orders">My Orders</a></li>
+            <li class="breadcrumb-item"><a href="/Orders/Details/@Model.OrderId">Order #@Model.OrderId.ToString()[..8]</a></li>
+            <li class="breadcrumb-item active">Open Dispute</li>
+        </ol>
+    </nav>
+
+    <div class="alert alert-info d-flex gap-3 align-items-start mb-4">
+        <i class="bi bi-chat-dots-fill flex-shrink-0 fs-5 mt-1"></i>
+        <div>
+            <strong>Tried messaging the seller first?</strong>
+            <p class="mb-1 mt-1 small">Many issues can be resolved quickly without opening a formal dispute.
+                <a href="/Messages?orderId=@Model.OrderId" class="alert-link">Message the seller</a> and give them a chance to respond.</p>
+            <small class="text-muted">If you can't reach an agreement, open a dispute below - your payment stays protected either way.</small>
+        </div>
+    </div>
+
+    <div class="card border-warning mb-4">
+        <div class="card-header bg-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>Open a Dispute
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-4">
+                Opening a dispute will <strong>freeze the payment</strong> until our team reviews the case.
+                Please describe the issue clearly - photos or order details will help resolve it faster.
+            </p>
+
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger">@Model.ErrorMessage</div>
+            }
+
+            <form method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Reason</label>
+                    <select name="Reason" class="form-select" required>
+                        <option value="">- Select a reason -</option>
+                        <option value="ItemNotReceived">Item not received</option>
+                        <option value="ItemNotAsDescribed">Item not as described</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Description <span class="text-muted fw-normal">(optional but recommended)</span></label>
+                    <textarea name="Description" class="form-control" rows="5" maxlength="2000"
+                              placeholder="Describe the issue in detail…"></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">
+                        Screenshots <span class="text-muted fw-normal">(optional, up to 5)</span>
+                    </label>
+                    <input type="file" name="Attachments" multiple accept=".jpg,.jpeg,.png,.webp"
+                           class="form-control" id="attachmentInput" />
+                    <div class="form-text" id="attachmentHint">JPG, PNG or WebP · max 5 MB each · up to 5 photos</div>
+                    <div id="attachmentPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Submit Dispute
+                    </button>
+                    <a href="/Orders/Details/@Model.OrderId" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const MAX = 5;
+    const input   = document.getElementById('attachmentInput');
+    const preview = document.getElementById('attachmentPreview');
+    const hint    = document.getElementById('attachmentHint');
+    let files = []; // accumulates across multiple dialog opens
+
+    input.addEventListener('change', function () {
+        Array.from(this.files).forEach(f => {
+            if (files.length >= MAX) return;
+            // skip exact duplicates (same name + size)
+            if (!files.find(x => x.name === f.name && x.size === f.size))
+                files.push(f);
+        });
+        // reset so the same file can be picked again after removal
+        this.value = '';
+        sync();
+        render();
+    });
+
+    function sync() {
+        const dt = new DataTransfer();
+        files.forEach(f => dt.items.add(f));
+        input.files = dt.files;
+        input.disabled = files.length >= MAX;
+        hint.textContent = files.length === 0
+            ? 'JPG, PNG or WebP · max 5 MB each · up to 5 photos'
+            : `${files.length} / ${MAX} photo${files.length > 1 ? 's' : ''} selected - click above to add more`;
+    }
+
+    function render() {
+        preview.innerHTML = '';
+        files.forEach((file, idx) => {
+            const wrap = document.createElement('div');
+            wrap.className = 'position-relative';
+
+            const img = document.createElement('img');
+            img.className = 'rounded border';
+            img.style.cssText = 'width:80px;height:80px;object-fit:cover;display:block;';
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.title = 'Remove';
+            btn.className = 'btn btn-danger position-absolute top-0 end-0 p-0 d-flex align-items-center justify-content-center';
+            btn.style.cssText = 'width:20px;height:20px;font-size:11px;border-radius:50%;margin:2px;';
+            btn.innerHTML = '<i class="bi bi-x"></i>';
+            btn.addEventListener('click', () => {
+                files.splice(idx, 1);
+                sync();
+                render();
+            });
+
+            const reader = new FileReader();
+            reader.onload = e => { img.src = e.target.result; };
+            reader.readAsDataURL(file);
+
+            wrap.appendChild(img);
+            wrap.appendChild(btn);
+            preview.appendChild(wrap);
+        });
+    }
+})();
+</script>
+}

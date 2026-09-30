@@ -1,0 +1,191 @@
+@page
+@model MaltasGarage.Web.Pages.Account.FavouritesModel
+@using MaltasGarage.Domain.Enums
+@{
+    ViewData["Title"] = "My Favourites";
+}
+
+<div class="container py-5">
+    <div class="row">
+
+        <!-- Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    @if (!string.IsNullOrEmpty(Model.Profile?.AvatarUrl))
+                    {
+                        <img src="@Model.Profile.AvatarUrl" alt="Avatar"
+                             class="rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover;">
+                    }
+                    else
+                    {
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                             style="width: 80px; height: 80px; font-size: 2rem;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                    }
+                    <h6 class="mb-1">@(Model.Profile?.DisplayName ?? "User")</h6>
+                    <small class="text-muted">Member since @Model.Profile?.CreatedAt.ToString("MMM yyyy")</small>
+                </div>
+            </div>
+
+            <div class="list-group mt-3">
+                <a href="/Account/Profile" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person me-2"></i>Profile
+                </a>
+                <a href="/Account/MyListings" class="list-group-item list-group-item-action">
+                    <i class="bi bi-collection me-2"></i>My Listings
+                </a>
+                <a href="/Account/Sales" class="list-group-item list-group-item-action">
+                    <i class="bi bi-graph-up me-2"></i>My Sales
+                </a>
+                <a href="/Orders" class="list-group-item list-group-item-action">
+                    <i class="bi bi-bag me-2"></i>My Orders
+                </a>
+                <a href="/Account/Favourites" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-heart me-2"></i>Favourites
+                </a>
+                <a href="/Account/Settings" class="list-group-item list-group-item-action">
+                    <i class="bi bi-gear me-2"></i>Settings
+                </a>
+            </div>
+        </div>
+
+        <!-- Main -->
+        <div class="col-lg-9">
+            <h4 class="mb-4 fw-bold">
+                My Favourites
+                @if (Model.Favourites.Any())
+                {
+                    <span class="fs-6 fw-normal text-muted">(@Model.Favourites.Count)</span>
+                }
+            </h4>
+
+            @if (!Model.Favourites.Any())
+            {
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-heart text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">No favourites yet</h5>
+                        <p class="text-muted">Tap the heart on any listing to save it here.</p>
+                        <a href="/" class="btn btn-primary">Browse Items</a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-3">
+                    @foreach (var fav in Model.Favourites)
+                    {
+                        var listing = fav.Listing;
+                        var thumb = listing.Images.OrderBy(i => i.SortOrder)
+                                        .Select(i => i.ThumbnailUrl ?? i.Url)
+                                        .FirstOrDefault();
+                        var daysLeft = (listing.SellByDate - DateTime.UtcNow).Days;
+                        var isSold = listing.Status is ListingStatus.Sold or ListingStatus.Expired or ListingStatus.Cancelled;
+
+                        <div class="col-sm-6 col-lg-4">
+                            <div class="card h-100 @(isSold ? "opacity-60" : "") position-relative">
+                                @if (!string.IsNullOrEmpty(thumb))
+                                {
+                                    <img src="@thumb" alt="@listing.Title"
+                                         style="width:100%;height:180px;object-fit:cover;border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
+                                }
+                                else
+                                {
+                                    <div class="bg-light d-flex align-items-center justify-content-center"
+                                         style="height:180px;border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
+                                        <i class="bi bi-image text-muted fs-1"></i>
+                                    </div>
+                                }
+
+                                <div class="card-body p-3">
+                                    @if (isSold)
+                                    {
+                                        <span class="badge bg-secondary mb-1">@listing.Status</span>
+                                    }
+                                    else if (listing.Status == ListingStatus.AuctionPhase)
+                                    {
+                                        <span class="auction-badge-outline-fire mb-1">
+                                            <i class="bi bi-fire"></i> @daysLeft days left
+                                        </span>
+                                    }
+                                    else if (listing.Status == ListingStatus.Active && listing.AuctionStartDate > DateTime.UtcNow)
+                                    {
+                                        <span class="auction-badge-outline mb-1">
+                                            <i class="bi bi-calendar-event"></i>Auction starts @listing.AuctionStartDate?.ToString("dd MMM") · from €@listing.MinPrice.ToString("N0")
+                                        </span>
+                                    }
+                                    else if (daysLeft <= 7)
+                                    {
+                                        <span class="auction-badge-outline-fire mb-1">
+                                            <i class="bi bi-fire"></i> @daysLeft days left
+                                        </span>
+                                    }
+
+                                    <a href="/Listing/@listing.Id" class="text-decoration-none text-dark stretched-link">
+                                        <div class="fw-semibold text-truncate">@listing.Title</div>
+                                    </a>
+                                    <div class="text-primary fw-bold">
+                                        €@((listing.Status == ListingStatus.AuctionPhase && listing.Bids.Any()
+                                            ? listing.Bids.Max(b => b.Amount)
+                                            : listing.CurrentPrice).ToString("N0"))
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-geo-alt me-1"></i>@listing.PickupCity
+                                        · @listing.Category?.Name
+                                    </small>
+                                </div>
+
+                                <div class="card-footer bg-transparent border-top-0 pt-0 px-3 pb-3 d-flex justify-content-between align-items-center">
+                                    @if (isSold)
+                                    {
+                                        <span class="small text-muted">No longer available</span>
+                                    }
+                                    else
+                                    {
+                                        <span></span>
+                                    }
+                                    <button class="btn btn-sm btn-outline-danger fav-remove-btn position-relative"
+                                            style="z-index:2;"
+                                            data-listing-id="@listing.Id"
+                                            title="Remove from favourites">
+                                        <i class="bi bi-heart-fill"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.fav-remove-btn').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                const listingId = this.dataset.listingId;
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+
+                const res = await fetch('/Api/ToggleFavourite', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': token
+                    },
+                    body: `listingId=${listingId}`
+                });
+
+                const data = await res.json();
+                if (data.success && !data.isFavourited) {
+                    // Remove the card from the page
+                    this.closest('.col-sm-6').remove();
+                    // Show empty state if none left
+                    if (!document.querySelector('.fav-remove-btn')) location.reload();
+                }
+            });
+        });
+    </script>
+}

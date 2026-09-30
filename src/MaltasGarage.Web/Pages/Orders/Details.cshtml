@@ -1,0 +1,603 @@
+@page "{orderId:guid}"
+@model MaltasGarage.Web.Pages.Orders.DetailsModel
+@{
+    ViewData["Title"] = "Order Details";
+}
+
+<div class="container py-5">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="@(Model.IsSeller ? "/Account/Sales" : "/Orders")">@(Model.IsSeller ? "My Sales" : "My Orders")</a></li>
+            <li class="breadcrumb-item active">Order #@Model.Order?.Id.ToString()[..8]</li>
+        </ol>
+    </nav>
+
+    @if (TempData["Success"] != null)
+    {
+        <p class="text-success mb-3"><i class="bi bi-check-circle me-2"></i>@TempData["Success"]</p>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <p class="text-danger mb-3"><i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]</p>
+    }
+
+    @if (Model.Order != null)
+    {
+        <div class="row">
+            <!-- Left column -->
+            <div class="col-lg-8">
+
+                <!-- Order Status + Timeline -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Order Status</h5>
+                        <div class="d-flex align-items-center mb-4">
+                            <span class="badge @Model.GetStatusBadgeClass() fs-6 me-3">
+                                @Model.GetDisplayStatus()
+                            </span>
+                            <span class="text-muted">@Model.GetStatusDescription()</span>
+                        </div>
+
+                        @{ var steps = Model.GetStatusSteps(); }
+                        <div class="d-flex justify-content-between">
+                            @foreach (var step in steps)
+                            {
+                                <div class="text-center" style="width: @(100 / steps.Count)%;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2
+                                        @(step.IsCompleted ? "bg-primary text-white" : step.IsCurrent ? "border border-2 border-warning text-warning" : "border border-2 border-secondary text-muted")"
+                                         style="width: 40px; height: 40px;">
+                                        <i class="bi @step.Icon"></i>
+                                    </div>
+                                    <small class="@(step.IsCompleted ? "text-primary fw-semibold" : step.IsCurrent ? "text-warning fw-semibold" : "text-muted")">@step.Label</small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Item Details -->
+                <div class="card mb-4">
+                    <div class="card-header">@(Model.Order.IsBundleOrder ? "Bundle Items" : "Item Details")</div>
+                    <div class="card-body">
+                        @if (Model.Order.IsBundleOrder)
+                        {
+                            <p class="text-muted mb-3">
+                                @if (Model.IsBuyer) { <span>Seller: <a href="/Seller/@Model.Order.SellerId">@Model.Order.SellerName</a></span> }
+                                else { <span>Buyer: @Model.Order.BuyerName</span> }
+                            </p>
+                            <div class="list-group list-group-flush">
+                                @foreach (var item in Model.Order.Items.OrderBy(i => i.Title))
+                                {
+                                    <div class="list-group-item d-flex align-items-center gap-3 px-0 py-2">
+                                        @if (!string.IsNullOrEmpty(item.ThumbnailUrl))
+                                        {
+                                            <img src="@item.ThumbnailUrl" style="width:52px;height:52px;object-fit:cover;border-radius:6px;" alt="@item.Title" />
+                                        }
+                                        else
+                                        {
+                                            <div class="bg-light d-flex align-items-center justify-content-center rounded flex-shrink-0" style="width:52px;height:52px;">
+                                                <i class="bi bi-image text-muted"></i>
+                                            </div>
+                                        }
+                                        <div class="flex-grow-1">
+                                            <a href="/Listing/@item.ListingId" class="fw-semibold text-decoration-none text-primary">@item.Title</a>
+                                        </div>
+                                        <div class="text-muted small">€@item.Price.ToString("N0")</div>
+                                    </div>
+                                }
+                            </div>
+                            <div class="mt-3 pt-2 border-top">
+                                <p class="text-muted mb-0 small">
+                                    @if (Model.Order.DeliveryMethodPending)
+                                    {
+                                        <i class="bi bi-question-circle me-1 text-warning"></i>
+                                        <span class="text-warning fw-semibold">Delivery method not selected</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-@(Model.Order.DeliveryMethod == "MaltaPost" ? "truck" : "person-check") me-1"></i>
+                                        @(Model.Order.DeliveryMethod == "MaltaPost" ? "MaltaPost Delivery" : "Hand-to-Hand")
+                                    }
+                                </p>
+                            </div>
+                        }
+                        else
+                        {
+                        <div class="d-flex align-items-center">
+                            @if (!string.IsNullOrEmpty(Model.Order.ImageUrl))
+                            {
+                                <img src="@Model.Order.ImageUrl" alt="@Model.Order.Title"
+                                     class="rounded me-3" style="width: 120px; height: 120px; object-fit: cover;">
+                            }
+                            else
+                            {
+                                <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center"
+                                     style="width: 120px; height: 120px;">
+                                    <i class="bi bi-image text-muted fs-1"></i>
+                                </div>
+                            }
+                            <div>
+                                <h5 class="mb-1">@Model.Order.Title</h5>
+                                <p class="text-muted mb-1">
+                                    @if (Model.IsBuyer)
+                                    {
+                                        <span>Seller: <a href="/Seller/@Model.Order.SellerId">@Model.Order.SellerName</a></span>
+                                    }
+                                    else
+                                    {
+                                        <span>Buyer: @Model.Order.BuyerName</span>
+                                    }
+                                </p>
+                                @if (Model.IsBuyer && !string.IsNullOrEmpty(Model.Order.PickupCity))
+                                {
+                                    <p class="text-muted mb-1 small">
+                                        <i class="bi bi-geo-alt me-1"></i>@Model.Order.PickupCity@(!string.IsNullOrEmpty(Model.Order.PickupAddress) ? $" · {Model.Order.PickupAddress}" : "")
+                                    </p>
+                                }
+                                <p class="text-muted mb-0">
+                                    @if (Model.Order.DeliveryMethodPending)
+                                    {
+                                        <i class="bi bi-question-circle me-1 text-warning"></i>
+                                        <span class="text-warning fw-semibold">Delivery method not selected</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-@(Model.Order.DeliveryMethod == "MaltaPost" ? "truck" : "person-check") me-1"></i>
+                                        @(Model.Order.DeliveryMethod == "MaltaPost" ? "MaltaPost Delivery" : "Hand-to-Hand")
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- ── DELIVERY METHOD SELECTION (auction orders) ── -->
+
+                @if (Model.Order.DeliveryMethodPending && Model.IsBuyer)
+                {
+                    <div class="card border-warning mb-4">
+                        <div class="card-header fw-semibold text-warning" style="background:rgba(255,193,7,.1);">
+                            <i class="bi bi-truck me-2"></i>Choose Your Delivery Method
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-3">
+                                Congratulations on winning the auction! Before the seller can proceed, please select how you'd like to receive the item.
+                            </p>
+                            <form method="post" asp-page-handler="SelectDelivery">
+                                <input type="hidden" name="orderId" value="@Model.Order.Id" />
+                                <div class="form-check mb-3 p-3 border rounded" style="cursor:pointer;">
+                                    <input class="form-check-input" type="radio" name="deliveryMethod"
+                                           id="deliveryHandToHand" value="HandToHand" checked>
+                                    <label class="form-check-label w-100" for="deliveryHandToHand" style="cursor:pointer;">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong><i class="bi bi-person-check me-2"></i>Hand-to-Hand</strong>
+                                                <p class="text-muted small mb-0">Meet the seller in person to collect the item.</p>
+                                            </div>
+                                            <span class="text-muted small">Free</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="form-check mb-4 p-3 border rounded" style="cursor:pointer;">
+                                    <input class="form-check-input" type="radio" name="deliveryMethod"
+                                           id="deliveryMaltaPost" value="MaltaPost">
+                                    <label class="form-check-label w-100" for="deliveryMaltaPost" style="cursor:pointer;">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong><i class="bi bi-truck me-2"></i>MaltaPost Delivery</strong>
+                                                <p class="text-muted small mb-0">Seller ships with tracking. 2–5 business days.</p>
+                                            </div>
+                                            <span class="text-muted small">Billed by MaltaPost</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-warning w-100 mb-2">
+                                    <i class="bi bi-check-circle me-2"></i>Confirm Delivery Method
+                                </button>
+                            </form>
+                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning w-100">
+                                <i class="bi bi-chat me-1"></i>Contact Seller
+                            </a>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.Order.DeliveryMethodPending && Model.IsSeller)
+                {
+                    <div class="mb-4">
+                        <p class="fw-semibold mb-1"><i class="bi bi-hourglass-split me-2 text-warning"></i>Waiting for buyer to select delivery method.</p>
+                        <p class="text-muted mb-2">Contact the buyer to agree on delivery while you wait.</p>
+                        <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                            <i class="bi bi-chat me-1"></i>Contact Buyer
+                        </a>
+                    </div>
+                }
+
+                <!-- ── SELLER ACTIONS ── -->
+
+                @* Seller: MaltaPost - enter tracking *@
+                @if (!Model.Order.DeliveryMethodPending && Model.IsSeller && Model.Order.Status == "Paid" && Model.Order.DeliveryMethod == "MaltaPost")
+                {
+                    <div class="mb-4">
+                        <p class="fw-semibold mb-1"><i class="bi bi-truck me-2 text-primary"></i>Ready to Ship</p>
+                        <p class="text-muted mb-2">Package the item and ship it via MaltaPost, then enter the tracking number.</p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="/Orders/Ship/@Model.Order.Id" class="btn btn-primary">
+                                <i class="bi bi-truck me-2"></i>Enter Tracking Number
+                            </a>
+                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                                <i class="bi bi-chat me-1"></i>Contact Buyer
+                            </a>
+                        </div>
+                    </div>
+                }
+
+                @* Seller: MaltaPost - item shipped, waiting for buyer to confirm *@
+                @if (Model.IsSeller && Model.Order.Status == "Shipped" && Model.Order.DeliveryMethod == "MaltaPost")
+                {
+                    <div class="mb-4">
+                        <p class="fw-semibold mb-1"><i class="bi bi-truck me-2 text-primary"></i>Item Shipped</p>
+                        <p class="text-muted mb-2">The item is on its way. Payment will be released once the buyer confirms receipt or after 5 days.</p>
+                        <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                            <i class="bi bi-chat me-1"></i>Contact Buyer
+                        </a>
+                    </div>
+                }
+
+                @* Seller: Hand-to-Hand - waiting for buyer confirmation *@
+                @if (!Model.Order.DeliveryMethodPending && Model.IsSeller && Model.Order.Status == "Paid" && Model.Order.DeliveryMethod == "HandToHand")
+                {
+                    <div class="mb-4">
+                        <p class="fw-semibold mb-1"><i class="bi bi-person-check me-2 text-primary"></i>Awaiting Meetup</p>
+                        <p class="text-muted mb-2">Meet the buyer to hand over the item. Payment will be released once the buyer confirms receipt.</p>
+                        <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                            <i class="bi bi-chat me-1"></i>Contact Buyer
+                        </a>
+                    </div>
+                }
+
+                <!-- ── BUYER ACTIONS ── -->
+
+                @* Buyer: MaltaPost - waiting for seller to ship *@
+                @if (Model.IsBuyer && Model.Order.Status == "Paid" && Model.Order.DeliveryMethod == "MaltaPost")
+                {
+                    <div class="mb-4">
+                        <p class="fw-semibold mb-1"><i class="bi bi-clock me-2 text-primary"></i>Waiting for seller to ship</p>
+                        <p class="text-muted mb-2">
+                            The seller will ship your item via MaltaPost and provide a tracking number.
+                            @if (Model.CanCancelOrder)
+                            {
+                                <span class="text-warning fw-semibold">The seller has not shipped within 3 days - you may cancel for a full refund.</span>
+                            }
+                        </p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                                <i class="bi bi-chat me-1"></i>Contact Seller
+                            </a>
+                            @if (Model.CanCancelOrder)
+                            {
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
+                                    <i class="bi bi-x-circle me-1"></i>Cancel Order
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    @if (Model.CanCancelOrder)
+                    {
+                        <div class="modal fade" id="cancelOrderModal" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Cancel Order</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p class="mb-2">Cancel your order for <strong>@Model.Order.Title</strong>?</p>
+                                        <p class="text-muted small mb-0">
+                                            A full refund will be issued to your original payment method. The seller has not shipped within 3 days.
+                                        </p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep Order</button>
+                                        <form method="post" asp-page-handler="CancelOrder" class="d-inline">
+                                            <input type="hidden" name="orderId" value="@Model.Order.Id" />
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="bi bi-x-circle me-1"></i>Yes, Cancel & Refund
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+
+                @* Buyer: confirm receipt - Hand-to-Hand (from Paid) or MaltaPost (from Shipped) *@
+                @if (!Model.Order.DeliveryMethodPending && Model.IsBuyer &&
+                    ((Model.Order.Status == "Paid" && Model.Order.DeliveryMethod == "HandToHand") ||
+                     (Model.Order.Status == "Shipped" && Model.Order.DeliveryMethod == "MaltaPost")))
+                {
+                    <div class="mb-4">
+                        <p class="fw-semibold mb-1"><i class="bi bi-box-seam me-2 text-primary"></i>Received your item?</p>
+                        <p class="text-muted mb-2">
+                            Once you confirm, the payment is released to the seller and the order is closed.
+                            @if (Model.Order.DeliveryMethod == "MaltaPost")
+                            {
+                                <span>If no issues are reported, payment also releases automatically after 5 days.</span>
+                            }
+                        </p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmReceiptModal">
+                                <i class="bi bi-check-circle me-2"></i>Confirm Receipt
+                            </button>
+                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                                <i class="bi bi-chat me-1"></i>Contact Seller
+                            </a>
+                            @if (!Model.Order.HasDispute || Model.Order.DisputeStatus == "Withdrawn")
+                            {
+                                <a href="/Orders/Dispute/@Model.Order.Id" class="btn btn-outline-danger">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Open Dispute
+                                </a>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Confirm Receipt Modal -->
+                    <div class="modal fade" id="confirmReceiptModal" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title"><i class="bi bi-box-seam me-2"></i>Confirm Receipt</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="mb-2">Have you received <strong>@Model.Order.Title</strong>?</p>
+                                    @if (Model.Order.DeliveryMethod == "HandToHand")
+                                    {
+                                        <p class="text-muted small mb-2">
+                                            <i class="bi bi-person-check me-1"></i>
+                                            Only confirm if you have physically collected and inspected the item in person.
+                                        </p>
+                                    }
+                                    else if (Model.Order.DeliveryMethod == "MaltaPost")
+                                    {
+                                        <p class="text-muted small mb-2">
+                                            <i class="bi bi-truck me-1"></i>
+                                            Only confirm once you have received and inspected the parcel. If there is an issue, open a dispute before confirming.
+                                        </p>
+                                    }
+                                    <p class="text-danger small mb-0">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        This action cannot be undone. Confirming will immediately release payment to the seller.
+                                    </p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <form method="post" asp-page-handler="ConfirmReceipt" class="d-inline">
+                                        <input type="hidden" name="orderId" value="@Model.Order.Id" />
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-check-circle me-2"></i>Yes, I received it
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @* Dispute status banner - hide once withdrawn *@
+                @if (Model.Order.HasDispute && Model.Order.DisputeStatus != "Withdrawn")
+                {
+                    <div class="alert @(Model.Order.DisputeStatus == "Resolved" ? "alert-success" : "alert-warning") mb-4">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div>
+                                <i class="bi bi-@(Model.Order.DisputeStatus == "Resolved" ? "check-circle" : "exclamation-triangle") me-2"></i>
+                                <strong>Dispute @Model.Order.DisputeStatus</strong>
+                                @if (Model.Order.DisputeStatus != "Resolved")
+                                {
+                                    <span class="ms-2 text-muted small">Our team is reviewing this dispute.</span>
+                                }
+                            </div>
+                            <a href="/Orders/DisputeView/@Model.Order.Id" class="btn btn-sm btn-warning">
+                                <i class="bi bi-eye me-1"></i>View Dispute
+                            </a>
+                        </div>
+                    </div>
+                }
+
+                @* Leave a Review - only buyer reviews the seller *@
+                @if (Model.Order.Status == "Completed" && Model.IsBuyer)
+                {
+                    @if (!Model.HasReviewed)
+                    {
+                        <div class="mb-4">
+                            <p class="fw-semibold mb-1"><i class="bi bi-star me-2 text-warning"></i>How was your experience?</p>
+                            <p class="text-muted mb-2">Your feedback helps the community.</p>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a href="/Orders/LeaveReview/@Model.Order.Id" class="btn btn-outline-warning">
+                                    <i class="bi bi-star me-2"></i>Leave a Review
+                                </a>
+                                <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                                    <i class="bi bi-chat me-1"></i>Contact @(Model.IsBuyer ? "Seller" : "Buyer")
+                                </a>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-4 d-flex gap-2 align-items-center flex-wrap">
+                            <p class="text-muted mb-0"><i class="bi bi-check-circle me-2"></i>You've already reviewed this order.</p>
+                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                                <i class="bi bi-chat me-1"></i>Contact @(Model.IsBuyer ? "Seller" : "Buyer")
+                            </a>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Right column -->
+            <div class="col-lg-4">
+
+                <!-- Price Summary -->
+                <div class="card mb-4">
+                    <div class="card-header">Price Summary</div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Item price</span>
+                            <span>€@Model.Order.FinalPrice.ToString("N0")</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Delivery</span>
+                            @if (Model.Order.DeliveryMethod == "MaltaPost")
+                            {
+                                <span class="text-muted small">Billed by MaltaPost</span>
+                            }
+                            else
+                            {
+                                <span class="text-success">Free</span>
+                            }
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <strong>Total</strong>
+                            <strong class="text-primary">€@Model.Order.FinalPrice.ToString("N0")</strong>
+                        </div>
+                        @if (Model.IsSeller)
+                        {
+                            <hr>
+                            <div class="d-flex justify-content-between text-muted small">
+                                <span>Platform fee (10%)</span>
+                                <span>-€@Model.Order.PlatformFee.ToString("N2")</span>
+                            </div>
+                            @if (Model.Order.DisputePartialRefundAmount.HasValue)
+                            {
+                                <div class="d-flex justify-content-between text-muted small">
+                                    <span>Partial refund to buyer</span>
+                                    <span>-€@Model.Order.DisputePartialRefundAmount.Value.ToString("N2")</span>
+                                </div>
+                            }
+                            <div class="d-flex justify-content-between small fw-semibold">
+                                <span>Your payout</span>
+                                <span class="text-primary">€@Model.Order.SellerPayout.ToString("N2")</span>
+                            </div>
+                        }
+                        @if (Model.IsBuyer && Model.Order.DisputePartialRefundAmount.HasValue)
+                        {
+                            <hr>
+                            <div class="d-flex justify-content-between text-muted small">
+                                <span>Dispute refund</span>
+                                <span class="text-success">+€@Model.Order.DisputePartialRefundAmount.Value.ToString("N2")</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Admin Info (visible only to Admin/Manager) -->
+                @if (!Model.IsBuyer && !Model.IsSeller)
+                {
+                    <div class="card mb-4 border-warning">
+                        <div class="card-header fw-semibold" style="background:rgba(255,193,7,.1);color:#856404;">
+                            <i class="bi bi-shield-check me-1"></i>Admin View
+                        </div>
+                        <div class="card-body small">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Buyer</span>
+                                <span class="fw-semibold">@Model.Order.BuyerName</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Seller</span>
+                                <span class="fw-semibold">@Model.Order.SellerName</span>
+                            </div>
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Placed</span>
+                                <span>@Model.Order.CreatedAt.ToString("dd MMM yyyy, HH:mm")</span>
+                            </div>
+                            @if (Model.Order.PaidAt.HasValue)
+                            {
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted">Paid</span>
+                                    <span>@Model.Order.PaidAt.Value.ToString("dd MMM yyyy, HH:mm")</span>
+                                </div>
+                                @if (Model.Order.Status == "Paid" && Model.Order.DeliveryMethod == "MaltaPost")
+                                {
+                                    var shipDeadline = Model.Order.PaidAt.Value.AddDays(3);
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="text-muted">Ship by</span>
+                                        <span class="@(shipDeadline < DateTime.UtcNow ? "text-danger fw-semibold" : "")">@shipDeadline.ToString("dd MMM yyyy")</span>
+                                    </div>
+                                    @if (shipDeadline < DateTime.UtcNow)
+                                    {
+                                        <div class="small text-danger mb-1">Buyer may cancel</div>
+                                    }
+                                }
+                                @if (Model.Order.Status == "Shipped" && Model.Order.ShippedAt.HasValue)
+                                {
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="text-muted">Shipped</span>
+                                        <span>@Model.Order.ShippedAt.Value.ToString("dd MMM yyyy, HH:mm")</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="text-muted">Auto-release</span>
+                                        <span class="text-muted">~@Model.Order.ShippedAt.Value.AddDays(5).ToString("dd MMM yyyy")</span>
+                                    </div>
+                                }
+                                @if (Model.Order.DeliveryMethod == "HandToHand" && (Model.Order.Status == "Paid" || Model.Order.Status == "Disputed"))
+                                {
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="text-muted">Auto-release</span>
+                                        <span class="text-muted">~@Model.Order.PaidAt.Value.AddDays(7).ToString("dd MMM yyyy")</span>
+                                    </div>
+                                }
+                            }
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Total</span>
+                                <span class="fw-semibold">€@Model.Order.FinalPrice.ToString("N0")</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Platform fee (10%)</span>
+                                <span>€@Model.Order.PlatformFee.ToString("N0")</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Payout to seller</span>
+                                <span>€@Model.Order.SellerPayout.ToString("N2")</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Help link -->
+                <div class="card mb-4">
+                    <div class="card-body py-3">
+                        <p class="text-muted small mb-1">
+                            <i class="bi bi-question-circle me-1"></i><strong>Have questions about this order?</strong>
+                        </p>
+                        <a href="/Help#delivery" class="small text-primary">Visit our Help Centre</a>
+                        <span class="text-muted small"> · </span>
+                        <a href="/Contact" class="small text-primary">Contact support</a>
+                    </div>
+                </div>
+
+                <!-- MaltaPost tracking -->
+                @if (Model.Order.DeliveryMethod == "MaltaPost" && !string.IsNullOrEmpty(Model.Order.TrackingNumber))
+                {
+                    <div class="card mb-4">
+                        <div class="card-header"><i class="bi bi-truck me-2"></i>Tracking</div>
+                        <div class="card-body">
+                            <p class="mb-1 small text-muted">Carrier: @(Model.Order.TrackingNumber.StartsWith("RR") ? "MaltaPost" : "Other")</p>
+                            <p class="mb-3"><strong>@Model.Order.TrackingNumber</strong></p>
+                            <a href="https://www.maltapost.com/track/@Model.Order.TrackingNumber"
+                               target="_blank" class="btn btn-outline-primary btn-sm w-100">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Track on MaltaPost
+                            </a>
+                        </div>
+                    </div>
+                }
+
+            </div>
+        </div>
+    }
+</div>

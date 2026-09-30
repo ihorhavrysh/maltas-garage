@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+<!-- Original illustration for Malta's Garage demo data (MIT, same as the project). -->
+<rect width="800" height="600" fill="#f3efe8"/>
+<ellipse cx="400" cy="485" rx="270" ry="26" fill="#000000" opacity=".07"/>
+<path d="M300 210 h180 l30 250 h-240 Z" fill="#e3e6ea"/><path d="M480 250 q90 20 60 150 l-30 10" fill="none" stroke="#8a8f98" stroke-width="22" stroke-linecap="round"/>
+<path d="M300 230 l-60 -30 l20 60 Z" fill="#e3e6ea"/><rect x="330" y="180" width="120" height="30" rx="10" fill="#8a8f98"/>
+<rect x="250" y="455" width="300" height="24" rx="10" fill="#3b3f46"/><rect x="360" y="300" width="60" height="100" rx="10" fill="#bfe9f5"/></svg>

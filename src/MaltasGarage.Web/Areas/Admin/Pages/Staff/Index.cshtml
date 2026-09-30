@@ -1,0 +1,141 @@
+@page
+@model MaltasGarage.Web.Areas.Admin.Pages.Staff.IndexModel
+@{ ViewData["Title"] = "Staff"; }
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h4 class="fw-bold mb-0">Staff Management</h4>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success mb-3">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger mb-3">@TempData["Error"]</div>
+}
+
+<!-- Current Staff -->
+<div class="card mb-4">
+    <div class="card-header fw-semibold">Staff</div>
+    @if (!Model.Managers.Any())
+    {
+        <div class="card-body text-center text-muted py-4">No staff yet.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Email</th>
+                        <th>Roles</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model.Managers)
+                    {
+                        <tr class="@(m.IsCurrentUser ? "table-light" : "")">
+                            <td>
+                                @m.Email
+                                @if (m.IsCurrentUser)
+                                {
+                                    <span class="text-muted small ms-1">(you)</span>
+                                }
+                            </td>
+                            <td>
+                                @if (m.IsManager)
+                                {
+                                    <span class="fw-semibold text-secondary">Manager</span>
+                                }
+                                @if (m.IsAdmin)
+                                {
+                                    <span class="fw-semibold text-primary @(m.IsManager ? "ms-1" : "")">Admin</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!m.IsCurrentUser)
+                                {
+                                    <div class="d-flex gap-1 flex-wrap">
+                                        @if (m.IsManager && !m.IsAdmin)
+                                        {
+                                            <form method="post" asp-page-handler="Promote" class="d-inline">
+                                                <input type="hidden" name="userId" value="@m.UserId" />
+                                                <button class="btn btn-sm btn-outline-primary"
+                                                        onclick="return confirm('Promote this user to Admin?')">
+                                                    Promote to Admin
+                                                </button>
+                                            </form>
+                                        }
+                                        <form method="post" asp-page-handler="Delete" class="d-inline">
+                                            <input type="hidden" name="userId" value="@m.UserId" />
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    onclick="return confirm('Delete account @m.Email?\nThis cannot be undone.')">
+                                                Delete Account
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">-</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- Add New Manager -->
+<div class="card">
+    <div class="card-header fw-semibold">Add Manager</div>
+    <div class="card-body">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">@Model.ErrorMessage</div>
+        }
+        <form method="post" asp-page-handler="Create" id="createManagerForm">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="NewEmail" class="form-control" placeholder="manager@example.com" required />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="NewPassword" id="newPassword" class="form-control" placeholder="Min. 6 characters" required />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="password" name="NewPasswordConfirm" id="newPasswordConfirm" class="form-control" placeholder="Repeat password" required />
+                    <div class="invalid-feedback">Passwords do not match.</div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Create</button>
+                </div>
+            </div>
+            <p class="text-muted small mt-2 mb-0">
+                Creates a dedicated staff account. Staff accounts are separate from regular marketplace accounts.
+            </p>
+        </form>
+
+        <script>
+            document.getElementById('createManagerForm').addEventListener('submit', function (e) {
+                const pw  = document.getElementById('newPassword');
+                const pwc = document.getElementById('newPasswordConfirm');
+                if (pw.value !== pwc.value) {
+                    e.preventDefault();
+                    pwc.classList.add('is-invalid');
+                } else {
+                    pwc.classList.remove('is-invalid');
+                }
+            });
+            document.getElementById('newPasswordConfirm').addEventListener('input', function () {
+                this.classList.remove('is-invalid');
+            });
+        </script>
+    </div>
+</div>

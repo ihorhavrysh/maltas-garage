@@ -1,0 +1,82 @@
+@page
+@model MaltasGarage.Web.Pages.CookiesModel
+@{
+    ViewData["Title"] = "Cookie Policy";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <h1 class="fw-bold mb-2">Cookie Policy</h1>
+            <p class="text-muted mb-5">Last updated: January 2026</p>
+
+            <p class="mb-4">This policy explains how Malta's Garage uses cookies and similar technologies. Malta is an EU member state, so we comply with the EU ePrivacy Directive and GDPR.</p>
+
+            <h4 class="fw-bold mb-3">What are cookies?</h4>
+            <div class="mb-4">
+                <p>Cookies are small text files stored on your device when you visit a website. They allow the site to remember information about your visit - such as whether you are logged in.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">Cookies we use</h4>
+            <div class="mb-4">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Cookie</th>
+                                <th>Purpose</th>
+                                <th>Type</th>
+                                <th>Expires</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>.AspNetCore.Identity.Application</code></td>
+                                <td>Keeps you logged in between pages</td>
+                                <td>Essential</td>
+                                <td>Session / 14 days</td>
+                            </tr>
+                            <tr>
+                                <td><code>.AspNetCore.Antiforgery.*</code></td>
+                                <td>Protects forms against cross-site request forgery (CSRF)</td>
+                                <td>Essential</td>
+                                <td>Session</td>
+                            </tr>
+                            <tr>
+                                <td><code>TempData</code></td>
+                                <td>Displays one-time success/error messages after form submissions</td>
+                                <td>Essential</td>
+                                <td>Session</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="small text-muted mt-2">We currently use <strong>no tracking, advertising, or analytics cookies</strong>.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">Third-party cookies</h4>
+            <div class="mb-4">
+                <p><strong>Stripe</strong> may set cookies when you proceed to checkout. These are essential for payment processing. See <a href="https://stripe.com/cookie-settings" target="_blank">Stripe's Cookie Policy</a>.</p>
+                <p>We do not use Google Analytics, Facebook Pixel, or any other advertising or analytics tools at this time.</p>
+            </div>
+
+            <h4 class="fw-bold mb-3">Managing cookies</h4>
+            <div class="mb-4">
+                <p>Since we only use essential cookies, disabling them will prevent the site from working correctly (you won't be able to stay logged in or submit forms). You can manage cookies in your browser settings:</p>
+                <ul>
+                    <li><a href="https://support.google.com/chrome/answer/95647" target="_blank">Chrome</a></li>
+                    <li><a href="https://support.mozilla.org/en-US/kb/cookies-information-websites-store-on-your-computer" target="_blank">Firefox</a></li>
+                    <li><a href="https://support.apple.com/en-gb/guide/safari/sfri11471/mac" target="_blank">Safari</a></li>
+                    <li><a href="https://support.microsoft.com/en-us/microsoft-edge/delete-cookies-in-microsoft-edge-63947406-40ac-c3b8-57b9-2a946a29ae09" target="_blank">Edge</a></li>
+                </ul>
+            </div>
+
+            <h4 class="fw-bold mb-3">Changes</h4>
+            <div class="mb-4">
+                <p>If we introduce new types of cookies (e.g. analytics) we will update this page and notify you before they are set.</p>
+            </div>
+
+        </div>
+    </div>
+</div>

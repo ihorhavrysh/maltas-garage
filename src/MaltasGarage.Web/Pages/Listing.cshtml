@@ -1,0 +1,547 @@
+@page "{id:guid}"
+@model MaltasGarage.Web.Pages.ListingModel
+@{
+    var listingTitle = Model.Listing?.Title ?? "Listing";
+    var listingPrice = Model.Listing?.DesiredPrice.ToString("N0") ?? "0";
+    var categoryName = Model.Listing?.Category?.Name ?? "Items";
+
+    ViewData["Title"]       = $"{listingTitle} - {categoryName} in Malta";
+    ViewData["Description"] = Model.MetaDescription;
+    ViewData["Canonical"]   = Site.Absolute($"/Listing/{Model.Listing?.Id}");
+    ViewData["OgType"]      = "og:product";
+    ViewData["OgTitle"]     = $"{listingTitle} - \u20ac{listingPrice} | Malta's Garage";
+    ViewData["OgImage"]     = Model.PrimaryImageUrl != null ? Site.Absolute(Model.PrimaryImageUrl) : null;
+    ViewData["JsonLd"]      = Model.JsonLd;
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item"><a href="/Category/@Model.Listing?.Category?.Slug">@Model.Listing?.Category?.Name</a></li>
+            <li class="breadcrumb-item active text-truncate" style="max-width: 200px;">@Model.Listing?.Title</li>
+        </ol>
+    </nav>
+
+    @if (TempData["Error"] != null)
+    {
+        <p class="text-danger small mb-3"><i class="bi bi-exclamation-circle me-1"></i>@TempData["Error"]</p>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <p class="text-success small mb-3"><i class="bi bi-check-circle me-1"></i>@TempData["Success"]</p>
+    }
+
+    @{
+        var isAuction = Model.Listing?.Status == MaltasGarage.Domain.Enums.ListingStatus.AuctionPhase;
+        var isActive  = Model.Listing?.Status == MaltasGarage.Domain.Enums.ListingStatus.Active;
+    }
+
+    <!-- Row 1: Images + Price panel -->
+    <div class="row g-4 mb-4">
+
+        <!-- Left: Images -->
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-body p-0">
+                    @if (Model.Listing?.Images.Any() == true)
+                    {
+                        var images = Model.Listing.Images.OrderBy(i => i.SortOrder).ToList();
+
+                        <div id="mainImageContainer" class="position-relative" style="background:#f5f5f5; height:480px;">
+                            <img id="mainImage" src="@images.First().Url"
+                                 style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;"
+                                 alt="@Model.Listing.Title">
+
+                            @if (images.Count > 1)
+                            {
+                                <button type="button" class="carousel-arrow carousel-arrow-left"
+                                        onclick="slideImage(-1)" aria-label="Previous">
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                                <button type="button" class="carousel-arrow carousel-arrow-right"
+                                        onclick="slideImage(1)" aria-label="Next">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                                <div class="carousel-counter" id="carouselCounter">1 / @images.Count</div>
+                            }
+                        </div>
+
+                        <div class="d-flex gap-2 p-3 overflow-auto" id="thumbnailStrip">
+                            @for (int i = 0; i < images.Count; i++)
+                            {
+                                var img = images[i];
+                                <img src="@(img.ThumbnailUrl ?? img.Url)"
+                                     class="listing-thumbnail @(i == 0 ? "active-thumb" : "")"
+                                     data-index="@i" data-full="@img.Url"
+                                     onclick="goToImage(@i)"
+                                     style="width:80px;height:80px;object-fit:cover;cursor:pointer;border-radius:8px;border:2px solid transparent;flex-shrink:0;"
+                                     alt="@Model.Listing.Title - image @(i+1)">
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-items-center justify-content-center bg-light" style="height:480px;">
+                            <i class="bi bi-image text-muted" style="font-size:4rem;"></i>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Title + Price/Buy/Bid -->
+        <div class="col-lg-5">
+            @if (isAuction)
+            {
+                <span class="auction-badge mb-3" style="font-size:0.875rem;padding:0.4rem 1rem;">
+                    <i class="bi bi-fire"></i> Auction · @Model.TimeLeft
+                </span>
+            }
+            else if (isActive && Model.Listing?.AuctionStartDate > DateTime.UtcNow)
+            {
+                <span class="auction-badge-outline mb-3" style="font-size:0.875rem;padding:0.4rem 1rem;">
+                    <i class="bi bi-calendar-event"></i> Auction starts @Model.Listing.AuctionStartDate?.ToString("dd MMM yyyy") · from €@Model.Listing.MinPrice.ToString("N0")
+                </span>
+            }
+            else if (isActive && Model.Listing?.AuctionStartDate == null)
+            {
+                <span class="auction-badge-outline-dark mb-3" style="font-size:0.875rem;padding:0.4rem 1rem;">
+                    <i class="bi bi-calendar-x"></i> Fixed price · Expires @Model.Listing?.SellByDate.ToString("dd MMM yyyy")
+                </span>
+            }
+
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h1 class="h3 mb-0 me-2">@Model.Listing?.Title@if (Model.Listing?.IsNew == true){<span class="badge bg-warning ms-2" style="font-size:0.7rem;vertical-align:middle;">New</span>}</h1>
+                @if (!Model.IsOwner)
+                {
+                    <button id="favBtn"
+                            class="fav-icon-btn flex-shrink-0 @(Model.IsFavourited ? "text-danger" : "text-secondary")"
+                            data-listing-id="@Model.Listing?.Id"
+                            data-authenticated="@(User.Identity?.IsAuthenticated == true ? "true" : "false")"
+                            data-login-url="/Identity/Account/Login?returnUrl=@(Uri.EscapeDataString($"/Listing/{Model.Listing?.Id}"))"
+                            title="@(Model.IsFavourited ? "Remove from favourites" : "Add to favourites")">
+                        <i class="bi bi-heart@(Model.IsFavourited ? "-fill" : "") fs-4"></i>
+                    </button>
+                }
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+
+                    @if (isAuction)
+                    {
+                        <div class="mb-3">
+                            <small class="text-muted">Current Bid</small>
+                            <div class="h2 text-warning mb-0">€@Model.CurrentBid?.ToString("N0")</div>
+                            <small class="text-muted">@Model.BidCount bid(s)</small>
+                            @if (Model.IsTopBidder)
+                            {
+                                <div class="mt-1">
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-trophy-fill me-1"></i>You're leading!
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Must go before</span>
+                            <span class="fw-bold">@Model.Listing?.SellByDate.ToString("dd MMM yyyy")</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="text-muted">Buy Now Price</span>
+                            <span class="fw-semibold text-primary">€@Model.Listing?.DesiredPrice.ToString("N0")</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            <small class="text-muted">Buy Now Price</small>
+                            <div class="h2 text-primary mb-0">€@Model.Listing?.DesiredPrice.ToString("N0")</div>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="text-muted">Must go before</span>
+                            <span class="fw-bold">@Model.Listing?.SellByDate.ToString("dd MMM yyyy")</span>
+                        </div>
+                    }
+
+                    <div>
+                        @if (isActive || isAuction)
+                        {
+                            @if (!Model.IsOwner)
+                            {
+                                @if (User.Identity?.IsAuthenticated == true && !Model.HasProfile)
+                                {
+                                    <p class="text-muted small mb-0">
+                                        <i class="bi bi-info-circle me-1"></i>Admin accounts cannot make purchases. Use a regular buyer account.
+                                    </p>
+                                }
+                                else if (Model.Listing?.Seller?.StripeOnboardingComplete == true)
+                                {
+                                    @if (User.Identity?.IsAuthenticated == true)
+                                    {
+                                        <form method="post" asp-page-handler="BuyNow">
+                                            <button type="submit" class="btn btn-primary btn-lg w-100 mb-2">
+                                                <i class="bi bi-cart-check me-2"></i>Buy Now for €@Model.Listing?.DesiredPrice.ToString("N0")
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <a href="/Identity/Account/Login?returnUrl=@Uri.EscapeDataString(Request.Path)" class="btn btn-primary btn-lg w-100 mb-2">
+                                            <i class="bi bi-cart-check me-2"></i>Buy Now for €@Model.Listing?.DesiredPrice.ToString("N0")
+                                        </a>
+                                    }
+
+                                    @if (isActive)
+                                    {
+                                        @if (!User.Identity!.IsAuthenticated)
+                                        {
+                                            <div class="mb-2">
+                                                <a href="/Identity/Account/Login?returnUrl=@Uri.EscapeDataString(Request.Path)" class="btn btn-outline-warning w-100">
+                                                    <i class="bi bi-tag me-2"></i>Make an Offer
+                                                </a>
+                                            </div>
+                                        }
+                                        else if (Model.ActiveOffer == null)
+                                        {
+                                            <div class="mb-2">
+                                                <button class="btn btn-outline-warning w-100" type="button"
+                                                        data-bs-toggle="collapse" data-bs-target="#offerForm">
+                                                    <i class="bi bi-tag me-2"></i>Make an Offer
+                                                </button>
+                                                <div class="collapse mt-2" id="offerForm">
+                                                    <p class="small text-muted mb-2">
+                                                        Your offer will be sent to the seller. They can accept or decline.
+                                                        If accepted, you'll be able to buy the item at your offered price via the chat.
+                                                        If someone buys the item before the seller responds, the offer will be cancelled automatically.
+                                                        Offers are valid for 24 hours.
+                                                    </p>
+                                                    <form method="post" asp-page-handler="MakeOffer">
+                                                        <input type="hidden" name="id" value="@Model.Listing!.Id" />
+                                                        <div class="input-group mb-1">
+                                                            <span class="input-group-text">€</span>
+                                                            <input type="number" name="OfferAmount" class="form-control"
+                                                                   min="1" max="@((int)Model.Listing.DesiredPrice - 1)" step="1"
+                                                                   placeholder="Your offer" required />
+                                                            <button type="submit" class="btn btn-warning">Send</button>
+                                                        </div>
+                                                        <small class="text-muted">Below €@Model.Listing.DesiredPrice.ToString("N0")</small>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        }
+                                        else if (Model.ActiveOffer.Status == MaltasGarage.Domain.Enums.PriceOfferStatus.Pending)
+                                        {
+                                            <div class="mb-2">
+                                                <div class="fw-semibold text-warning"><i class="bi bi-clock me-1"></i>Offer sent: €@Model.ActiveOffer.Amount.ToString("N0")</div>
+                                                <small class="text-muted">Waiting for seller · expires @Model.ActiveOffer.ExpiresAt.ToString("dd MMM, HH:mm") UTC</small>
+                                            </div>
+                                        }
+                                        else if (Model.ActiveOffer.Status == MaltasGarage.Domain.Enums.PriceOfferStatus.Accepted)
+                                        {
+                                            <div class="mb-2">
+                                                <div class="fw-semibold text-success"><i class="bi bi-check-circle me-1"></i>Offer accepted: €@Model.ActiveOffer.Amount.ToString("N0")</div>
+                                                <small class="text-muted">Go to the chat to complete your purchase.</small>
+                                            </div>
+                                        }
+                                    }
+
+                                    @if (isActive && Model.SellerHasMoreListings)
+                                    {
+                                        <div class="mb-2">
+                                            <a href="/BundleOffer/@Model.Listing!.SellerId" class="btn btn-outline-blue w-100">
+                                                <i class="bi bi-collection me-2"></i>Make a Bundle Offer
+                                            </a>
+                                        </div>
+                                    }
+
+                                    @if (isAuction)
+                                    {
+                                        @if (User.Identity?.IsAuthenticated == true)
+                                        {
+                                            var currentBid = Model.CurrentBid ?? Model.Listing.MinPrice;
+                                            var increment = (int)MaltasGarage.Infrastructure.Services.BiddingService.GetBidIncrement(currentBid);
+                                            var minNextBid = (int)currentBid + increment;
+                                            <form method="get" action="/Bid">
+                                                <input type="hidden" name="listingId" value="@Model.Listing.Id">
+                                                <div class="input-group mb-1">
+                                                    <span class="input-group-text">€</span>
+                                                    <input type="number" name="amount" class="form-control"
+                                                           min="@minNextBid" step="@increment" value="@minNextBid">
+                                                    <button type="submit" class="btn btn-warning fw-semibold">
+                                                        Place Bid
+                                                    </button>
+                                                </div>
+                                                <small class="text-muted">Minimum bid: €@minNextBid</small>
+                                                <small class="text-muted d-block mt-1">
+                                                    <i class="bi bi-arrow-counterclockwise me-1"></i>Full refund if you're outbid.
+                                                </small>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <a href="/Identity/Account/Login?returnUrl=@(Uri.EscapeDataString($"/Listing/{Model.Listing.Id}"))"
+                                               class="btn btn-outline-primary w-100">
+                                                <i class="bi bi-box-arrow-in-right me-2"></i>Login to Place Bid
+                                            </a>
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="text-muted small mb-0">
+                                        <i class="bi bi-clock me-1"></i>Payments not yet set up by seller - check back soon.
+                                    </p>
+                                }
+                            }
+                            else
+                            {
+                                <a href="/Listings/Edit/@Model.Listing.Id" class="btn btn-outline-primary w-100 mb-2">
+                                    <i class="bi bi-pencil me-2"></i>Edit Listing
+                                </a>
+                                @if (Model.BidCount == 0)
+                                {
+                                    <form method="post" asp-page-handler="Delete" id="deleteListingForm"></form>
+                                    <button type="button" class="btn btn-outline-danger w-100"
+                                            onclick="confirmDeleteListing(@System.Text.Json.JsonSerializer.Serialize(Model.Listing!.Title))">
+                                        <i class="bi bi-trash me-2"></i>Delete Listing
+                                    </button>
+                                }
+                            }
+                        }
+                        else
+                        {
+                            <div class="alert alert-secondary mb-0">
+                                <p class="mb-2">This listing is no longer available.</p>
+                                @if (Model.Listing?.Category != null)
+                                {
+                                    <a href="/Category/@Model.Listing.Category.Slug" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-grid me-1"></i>Browse more in @Model.Listing.Category.Name
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: Location + Seller -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="mb-2"><i class="bi bi-geo-alt me-2"></i>Pickup Location</h6>
+                    <p class="mb-0 fw-semibold">@Model.Listing?.PickupCity</p>
+                    <small class="text-muted">Full address shown after purchase</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="mb-3">Seller</h6>
+                    <a href="/Seller/@Model.Listing?.Seller?.Id" class="text-decoration-none">
+                        <div class="d-flex align-items-center">
+                            @if (!string.IsNullOrEmpty(Model.Listing?.Seller?.AvatarUrl))
+                            {
+                                <img src="@Model.Listing.Seller.AvatarUrl" alt="@Model.Listing.Seller.DisplayName"
+                                     class="rounded-circle me-3" style="width:50px;height:50px;object-fit:cover;">
+                            }
+                            else
+                            {
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                                     style="width:50px;height:50px;">
+                                    <i class="bi bi-person fs-4"></i>
+                                </div>
+                            }
+                            <div>
+                                <div class="fw-bold text-dark">@Model.Listing?.Seller?.DisplayName</div>
+                                <div class="small mb-1">
+                                    <partial name="_StarRating"
+                                             model="@((Model.Listing?.Seller?.Rating ?? 0m, Model.Listing?.Seller?.TotalReviews ?? 0))" />
+                                </div>
+                                <div class="small text-muted">
+                                    @Model.Listing?.Seller?.TotalSales sales · Member since @Model.Listing?.Seller?.CreatedAt.ToString("MMM yyyy")
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Description (full width) -->
+    @if (!string.IsNullOrEmpty(Model.Listing?.Description))
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Description</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0" style="white-space: pre-line;">@Model.Listing.Description</p>
+            </div>
+        </div>
+    }
+
+    <!-- Bid History (full width) -->
+    @if (isAuction && Model.BidCount > 0)
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-list-ol me-2"></i>Bid History (@Model.BidCount)</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Bidder</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var bid in Model.Listing.Bids.OrderByDescending(b => b.CreatedAt))
+                        {
+                            <tr>
+                                <td>@bid.Bidder.DisplayName</td>
+                                <td class="fw-bold">€@bid.Amount.ToString("N0")</td>
+                                <td class="text-muted small">@bid.CreatedAt.ToString("dd MMM yyyy, HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .listing-thumbnail:hover { border-color: var(--color-primary) !important; }
+    .listing-thumbnail.active-thumb { border-color: var(--color-primary) !important; }
+
+    .fav-icon-btn {
+        background: none; border: none; padding: 4px;
+        line-height: 1; cursor: pointer; transition: transform 0.15s, color 0.15s;
+    }
+    .fav-icon-btn:hover { transform: scale(1.2); }
+    .fav-icon-btn.text-secondary:hover { color: #dc3545 !important; }
+
+    /* Carousel arrows */
+    .carousel-arrow {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        background: rgba(255,255,255,0.88); border: none;
+        width: 40px; height: 40px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem; color: var(--color-text);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        cursor: pointer; z-index: 10;
+        transition: background 0.15s, transform 0.15s;
+    }
+    .carousel-arrow:hover { background: white; transform: translateY(-50%) scale(1.08); }
+    .carousel-arrow-left  { left: 10px; }
+    .carousel-arrow-right { right: 10px; }
+
+    /* Counter badge */
+    .carousel-counter {
+        position: absolute; bottom: 10px; right: 10px;
+        background: rgba(0,0,0,0.45); color: white;
+        font-size: 0.75rem; padding: 2px 8px; border-radius: 20px;
+    }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // ── Image carousel ────────────────────────────────────────────────
+        (function () {
+            const thumbs = [...document.querySelectorAll('#thumbnailStrip .listing-thumbnail')];
+            if (!thumbs.length) return;
+
+            const mainImg = document.getElementById('mainImage');
+            const counter = document.getElementById('carouselCounter');
+            let current = 0;
+
+            window.goToImage = function (idx) {
+                current = idx;
+                mainImg.src = thumbs[idx].dataset.full;
+                thumbs.forEach((t, i) => t.classList.toggle('active-thumb', i === idx));
+                if (counter) counter.textContent = `${idx + 1} / ${thumbs.length}`;
+                // Scroll thumbnail into view
+                thumbs[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            };
+
+            window.slideImage = function (dir) {
+                const next = (current + dir + thumbs.length) % thumbs.length;
+                goToImage(next);
+            };
+
+            // Keyboard navigation
+            document.addEventListener('keydown', e => {
+                if (e.key === 'ArrowLeft')  slideImage(-1);
+                if (e.key === 'ArrowRight') slideImage(1);
+            });
+        })();
+
+        // ── Favourite toggle ──────────────────────────────────────────────
+        document.getElementById('favBtn')?.addEventListener('click', async function () {
+            if (this.dataset.authenticated !== 'true') {
+                window.location.href = this.dataset.loginUrl;
+                return;
+            }
+
+            const btn = this;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+
+            const res = await fetch('/Api/ToggleFavourite', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': token
+                },
+                body: `listingId=${btn.dataset.listingId}`
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                const icon = btn.querySelector('i');
+                if (data.isFavourited) {
+                    btn.classList.replace('text-secondary', 'text-danger');
+                    icon.classList.replace('bi-heart', 'bi-heart-fill');
+                    btn.title = 'Remove from favourites';
+                } else {
+                    btn.classList.replace('text-danger', 'text-secondary');
+                    icon.classList.replace('bi-heart-fill', 'bi-heart');
+                    btn.title = 'Add to favourites';
+                }
+            }
+        });
+
+        // ── Delete listing ────────────────────────────────────────────────
+        window.confirmDeleteListing = function (title) {
+            Swal.fire({
+                title: 'Delete listing?',
+                text: title + ' will be permanently deleted.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete it',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then(result => {
+                if (result.isConfirmed) {
+                    document.getElementById('deleteListingForm').submit();
+                }
+            });
+        };
+
+    </script>
+}

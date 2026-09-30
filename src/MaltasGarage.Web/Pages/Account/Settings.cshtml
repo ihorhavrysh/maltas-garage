@@ -1,0 +1,253 @@
+@page
+@model MaltasGarage.Web.Pages.Account.SettingsModel
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<div class="container py-5">
+    <div class="row">
+
+        <!-- Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    @if (!string.IsNullOrEmpty(Model.Profile?.AvatarUrl))
+                    {
+                        <img src="@Model.Profile.AvatarUrl" alt="Avatar"
+                             class="rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover;">
+                    }
+                    else
+                    {
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                             style="width: 80px; height: 80px; font-size: 2rem;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                    }
+                    <h6 class="mb-1">@(Model.Profile?.DisplayName ?? "User")</h6>
+                    <small class="text-muted">Member since @Model.Profile?.CreatedAt.ToString("MMM yyyy")</small>
+                </div>
+            </div>
+
+            <div class="list-group mt-3">
+                <a href="/Account/Profile" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person me-2"></i>Profile
+                </a>
+                <a href="/Account/MyListings" class="list-group-item list-group-item-action">
+                    <i class="bi bi-collection me-2"></i>My Listings
+                </a>
+                <a href="/Account/Sales" class="list-group-item list-group-item-action">
+                    <i class="bi bi-graph-up me-2"></i>My Sales
+                </a>
+                <a href="/Orders" class="list-group-item list-group-item-action">
+                    <i class="bi bi-bag me-2"></i>My Orders
+                </a>
+                <a href="/Account/Favourites" class="list-group-item list-group-item-action">
+                    <i class="bi bi-heart me-2"></i>Favourites
+                </a>
+                <a href="/Account/Settings" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-gear me-2"></i>Settings
+                </a>
+            </div>
+        </div>
+
+        <!-- Main -->
+        <div class="col-lg-9">
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success mb-4">
+                    <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+                </div>
+            }
+
+            <!-- Account Security -->
+            <div class="card mb-4">
+                <div class="card-header fw-semibold">
+                    <i class="bi bi-shield-lock me-2"></i>Account Security
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div>
+                            <div class="text-muted small mb-1">Email address</div>
+                            <div class="fw-semibold">@(Model.CurrentEmail ?? "-")</div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="/Account/ChangeEmail" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-envelope me-1"></i>Change Email
+                            </a>
+                            <a href="/Account/ChangePassword" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-key me-1"></i>Change Password
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Preferences -->
+            <div class="card">
+                <div class="card-header fw-semibold">
+                    <i class="bi bi-bell me-2"></i>Email Notification Preferences
+                </div>
+                <div class="card-body p-0">
+                    <p class="text-muted small px-4 pt-3 pb-0 mb-0">
+                        All activity is always visible in your <a href="/Messages">in-app notifications</a>.
+                        Turn on email alerts for the events that matter most to you.
+                    </p>
+
+                    <form method="post">
+                        <!-- Selling -->
+                        <div class="px-4 pt-4 pb-1">
+                            <span class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:.07em;">Selling</span>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+                            <label class="form-check-label me-3" for="NewBidOnListing">
+                                <div class="fw-semibold">New bid on your listing</div>
+                                <small class="text-muted">Someone placed a bid on an item you're selling.</small>
+                            </label>
+                            <div class="form-check form-switch mb-0 flex-shrink-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       asp-for="Notifications.NewBidOnListing" id="NewBidOnListing"
+                                       style="width:2.75em;height:1.4em;cursor:pointer;">
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+                            <label class="form-check-label me-3" for="NewOrder">
+                                <div class="fw-semibold">New order</div>
+                                <small class="text-muted">Someone bought one of your items.</small>
+                            </label>
+                            <div class="form-check form-switch mb-0 flex-shrink-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       asp-for="Notifications.NewOrder" id="NewOrder"
+                                       style="width:2.75em;height:1.4em;cursor:pointer;">
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+                            <label class="form-check-label me-3" for="OfferUpdate">
+                                <div class="fw-semibold">Offer updates</div>
+                                <small class="text-muted">Someone made you a price offer or bundle offer, or your offer was accepted/declined.</small>
+                            </label>
+                            <div class="form-check form-switch mb-0 flex-shrink-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       asp-for="Notifications.OfferUpdate" id="OfferUpdate"
+                                       style="width:2.75em;height:1.4em;cursor:pointer;">
+                            </div>
+                        </div>
+
+                        <!-- Buying -->
+                        <div class="px-4 pt-4 pb-1">
+                            <span class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:.07em;">Buying</span>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+                            <label class="form-check-label me-3" for="BidOutbid">
+                                <div class="fw-semibold">You've been outbid</div>
+                                <small class="text-muted">Someone placed a higher bid on a listing you bid on.</small>
+                            </label>
+                            <div class="form-check form-switch mb-0 flex-shrink-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       asp-for="Notifications.BidOutbid" id="BidOutbid"
+                                       style="width:2.75em;height:1.4em;cursor:pointer;">
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+                            <label class="form-check-label me-3" for="AuctionWon">
+                                <div class="fw-semibold">Auction won</div>
+                                <small class="text-muted">You won an auction you participated in.</small>
+                            </label>
+                            <div class="form-check form-switch mb-0 flex-shrink-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       asp-for="Notifications.AuctionWon" id="AuctionWon"
+                                       style="width:2.75em;height:1.4em;cursor:pointer;">
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+                            <label class="form-check-label me-3" for="OrderShipped">
+                                <div class="fw-semibold">Order shipped</div>
+                                <small class="text-muted">Seller has shipped your order with a tracking number.</small>
+                            </label>
+                            <div class="form-check form-switch mb-0 flex-shrink-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       asp-for="Notifications.OrderShipped" id="OrderShipped"
+                                       style="width:2.75em;height:1.4em;cursor:pointer;">
+                            </div>
+                        </div>
+
+                        <!-- General -->
+                        <div class="px-4 pt-4 pb-1">
+                            <span class="text-muted text-uppercase fw-semibold" style="font-size:0.7rem;letter-spacing:.07em;">General</span>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+                            <label class="form-check-label me-3" for="OrderCompleted">
+                                <div class="fw-semibold">Order completed</div>
+                                <small class="text-muted">An order has been completed and payment released.</small>
+                            </label>
+                            <div class="form-check form-switch mb-0 flex-shrink-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       asp-for="Notifications.OrderCompleted" id="OrderCompleted"
+                                       style="width:2.75em;height:1.4em;cursor:pointer;">
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+                            <label class="form-check-label me-3" for="NewChatMessage">
+                                <div class="fw-semibold">New message</div>
+                                <small class="text-muted">Someone sent you a message in chat.</small>
+                            </label>
+                            <div class="form-check form-switch mb-0 flex-shrink-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       asp-for="Notifications.NewChatMessage" id="NewChatMessage"
+                                       style="width:2.75em;height:1.4em;cursor:pointer;">
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+                            <label class="form-check-label me-3" for="DisputeUpdate">
+                                <div class="fw-semibold">Dispute updates</div>
+                                <small class="text-muted">A dispute for one of your orders was opened or resolved.</small>
+                            </label>
+                            <div class="form-check form-switch mb-0 flex-shrink-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       asp-for="Notifications.DisputeUpdate" id="DisputeUpdate"
+                                       style="width:2.75em;height:1.4em;cursor:pointer;">
+                            </div>
+                        </div>
+
+                        <div class="px-4 py-3 d-flex align-items-center gap-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-2"></i>Save
+                            </button>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>Order confirmations and password resets are always sent.
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="card mt-4 border-danger">
+                <div class="card-header fw-semibold text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Danger Zone
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div>
+                            <div class="fw-semibold">Delete your account</div>
+                            <small class="text-muted">Permanently delete your account and all personal data. This cannot be undone.</small>
+                        </div>
+                        <a href="/Account/DeleteAccount" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>Delete Account
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

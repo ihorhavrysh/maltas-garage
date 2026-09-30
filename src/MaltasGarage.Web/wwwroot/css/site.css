@@ -1,0 +1,565 @@
+/* ========================================
+   Malta's Garage - Main Stylesheet
+   ======================================== */
+
+/* CSS Variables */
+:root {
+    /* Primary Colors */
+    --color-primary: #7CB342;
+    --color-primary-dark: #689F38;
+    --color-primary-light: #9CCC65;
+
+    /* Secondary Colors */
+    --color-secondary: #87CEEB;
+    --color-secondary-dark: #5DADE2;
+
+    /* Accent Colors */
+    --color-accent: #FFD54F;
+    --color-urgent: #FF7043;
+
+    /* Neutrals */
+    --color-text: #424242;
+    --color-text-light: #757575;
+    --color-bg-light: #F5F5F5;
+    --color-white: #FFFFFF;
+    --color-border: #E0E0E0;
+
+    /* Typography */
+    --font-heading: 'Nunito', sans-serif;
+    --font-body: 'Inter', sans-serif;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 20px;
+}
+
+/* ========================================
+   Base Styles
+   ======================================== */
+
+body {
+    font-family: var(--font-body);
+    color: var(--color-text);
+    background-color: var(--color-bg-light);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+}
+
+main {
+    flex: 1;
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--color-primary-dark);
+}
+
+/* ========================================
+   Bootstrap Overrides
+   ======================================== */
+
+.btn-primary {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+}
+
+.btn-outline-primary {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.text-primary {
+    color: var(--color-primary) !important;
+}
+
+.bg-primary {
+    background-color: var(--color-primary) !important;
+}
+
+/* ========================================
+   Header Styles
+   ======================================== */
+
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.site-header .navbar {
+    padding: 0.75rem 0;
+}
+
+.site-header .navbar-brand {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-text);
+}
+
+.site-header .brand-text {
+    color: var(--color-primary);
+}
+
+.site-header .nav-link {
+    color: var(--color-text);
+    font-weight: 500;
+    padding: 0.5rem 1rem !important;
+    transition: color 0.2s ease;
+}
+
+.site-header .nav-link:hover {
+    color: var(--color-primary);
+}
+
+.site-header .btn-sell-nav {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.site-header .btn-sell-nav:hover {
+    color: var(--color-primary-dark);
+}
+
+/* ========================================
+   Footer Styles
+   ======================================== */
+
+.site-footer {
+    background-color: var(--color-bg-light);
+}
+
+.site-footer .footer-main {
+    border-top: 1px solid var(--color-border);
+}
+
+.site-footer .footer-links li {
+    margin-bottom: 0.5rem;
+}
+
+.site-footer .footer-links a {
+    color: var(--color-text-light);
+    transition: color 0.2s ease;
+}
+
+.site-footer .footer-links a:hover {
+    color: var(--color-primary);
+}
+
+.site-footer .social-links a {
+    color: var(--color-text-light);
+    transition: color 0.2s ease;
+}
+
+.site-footer .social-links a:hover {
+    color: var(--color-primary);
+}
+
+.site-footer .footer-bottom {
+    background-color: var(--color-white);
+    border-top: 1px solid var(--color-border);
+}
+
+/* ========================================
+   Hero Section
+   ======================================== */
+
+.hero-section {
+    min-height: 420px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-bg-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.20);
+    z-index: 1;
+}
+
+.hero-section .hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+    .hero-section .hero-title {
+        font-family: 'Lobster', cursive;
+        font-size: 6rem;
+        font-weight: 800;
+        color: rgba(255,255,255,0.95);
+        text-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        line-height: 1.1;
+    }
+
+.hero-section .hero-subtitle {
+    font-family: 'Lobster', cursive;
+    font-size: 2.4rem;
+    font-weight: 400;
+    color: rgba(255,255,255,0.95);
+    text-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    margin-top: 2rem !important;
+}
+
+/* ========================================
+   Category Cards
+   ======================================== */
+
+.category-card {
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.category-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.category-card .category-icon-img {
+    width: 3.5rem;
+    height: 3.5rem;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 0.75rem;
+}
+
+.category-card .category-icon {
+    font-size: 2.5rem;
+    color: var(--color-primary);
+    margin-bottom: 0.75rem;
+    display: block;
+    height: 3.5rem;
+    line-height: 3.5rem;
+}
+
+.category-card .category-name {
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+}
+
+/* ========================================
+   Listing Cards
+   ======================================== */
+
+.listing-card {
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.listing-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+}
+
+.listing-card .listing-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background-color: var(--color-bg-light);
+}
+
+.listing-card .listing-body {
+    padding: 1rem;
+}
+
+.listing-card .listing-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 0.5rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.listing-card .listing-price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.listing-card .listing-location {
+    font-size: 0.875rem;
+    color: var(--color-text-light);
+}
+
+.auction-badge {
+    background-color: var(--color-urgent);
+    color: var(--color-white);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.auction-badge-outline {
+    background-color: transparent;
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.auction-badge-outline-fire {
+    background-color: transparent;
+    color: var(--color-urgent);
+    border: 1px solid var(--color-urgent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.auction-badge-outline-dark {
+    background-color: transparent;
+    color: #0a58ca;
+    border: 1px solid #0a58ca;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* ========================================
+   Benefits Section
+   ======================================== */
+
+.benefit-card {
+    text-align: center;
+    padding: 2rem;
+}
+
+.benefit-card .benefit-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--color-bg-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 2rem;
+    color: var(--color-primary);
+}
+
+.benefit-card .benefit-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.benefit-card .benefit-text {
+    color: var(--color-text-light);
+    font-size: 0.9375rem;
+}
+
+/* ========================================
+   How It Works Section
+   ======================================== */
+
+.how-it-works .nav-tabs {
+    border-bottom: 2px solid var(--color-border);
+}
+
+.how-it-works .nav-tabs .nav-link {
+    border: none;
+    color: var(--color-text-light);
+    font-weight: 600;
+    padding: 1rem 2rem;
+    position: relative;
+}
+
+.how-it-works .nav-tabs .nav-link.active {
+    color: var(--color-primary);
+    background: transparent;
+}
+
+.how-it-works .nav-tabs .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--color-primary);
+}
+
+.step-item {
+    text-align: center;
+    padding: 1rem;
+}
+
+.step-number {
+    width: 50px;
+    height: 50px;
+    background: var(--color-primary);
+    color: var(--color-white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 auto 1rem;
+}
+
+/* ========================================
+   Section Titles
+   ======================================== */
+
+.section-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+    color: var(--color-text-light);
+    margin-bottom: 2rem;
+}
+
+/* ========================================
+   Utilities
+   ======================================== */
+
+.bg-light-custom {
+    background-color: var(--color-bg-light);
+}
+
+.text-urgent {
+    color: var(--color-urgent);
+}
+
+.badge-urgent {
+    background-color: var(--color-urgent);
+}
+
+/* ========================================
+   Responsive
+   ======================================== */
+
+@media (max-width: 768px) {
+
+    .hero-section .hero-title {
+        font-size: 3.5rem;
+    }
+
+    .hero-section .hero-subtitle {
+        font-size: 1rem;
+    }
+
+    .category-card {
+        padding: 1rem;
+    }
+
+    .category-card .category-icon {
+        font-size: 2rem;
+    }
+}
+
+/* Profile sidebar nav - use site primary instead of Bootstrap blue */
+.list-group-item-action.active {
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    color: #fff !important;
+}
+
+.list-group-item-action:hover:not(.active) {
+    color: var(--color-primary) !important;
+}
+
+.btn-outline-blue { color: #0a58ca; border-color: #0a58ca; background: transparent; }
+.btn-outline-blue:hover { color: #fff; background-color: #0a58ca; border-color: #0a58ca; }
+
+/* Pagination - use site primary instead of Bootstrap blue */
+.page-link {
+    color: var(--color-primary);
+}
+.page-link:hover {
+    color: var(--color-primary-dark);
+}
+.page-item.active .page-link {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+}
+.page-link:focus {
+    box-shadow: 0 0 0 0.25rem rgba(124, 179, 66, 0.25);
+}
+
+/* ========================================
+   Demo banner
+   ======================================== */
+
+.demo-banner {
+    background: #fff4d6;
+    color: #5c4400;
+    border-bottom: 1px solid #f0d78c;
+}
+
+.demo-banner a {
+    color: #5c4400;
+    font-weight: 600;
+}
