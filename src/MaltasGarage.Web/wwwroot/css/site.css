@@ -755,3 +755,7 @@ a:hover { color: var(--mg-sea-700); }
 /* Kept for existing markup; same look as btn-outline-primary */
 .btn-outline-blue { color: var(--mg-primary); border-color: var(--mg-primary); background: transparent; }
 .btn-outline-blue:hover { color: #fff; background-color: var(--mg-primary); border-color: var(--mg-primary); }
+
+/* The thread is a fixed-height flex column that scrolls: its messages and offer cards
+   must keep their natural height instead of being squeezed to fit */
+.thread-body > * { flex-shrink: 0; }
