@@ -1,117 +1,119 @@
 @page
 @model MaltasGarage.Web.Pages.Messages.IndexModel
+@using MaltasGarage.Domain.Enums
 @{
     ViewData["Title"] = "Messages";
+    var threadOpen = Model.ShowSystem || Model.ActiveConversation != null;
+    var unreadChats = Model.Conversations.Sum(c => c.UnreadCount);
+
+    string Initials(string? name) => string.Concat((name ?? "?").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
+    string DayLabel(DateTime d) => d.Date == DateTime.UtcNow.Date ? "Today"
+        : d.Date == DateTime.UtcNow.Date.AddDays(-1) ? "Yesterday"
+        : d.ToString("d MMM yyyy");
 }
 
-<style>
-    body { overflow: hidden; }
-    footer { display: none; }
-</style>
+<div class="container py-4">
+    <div class="d-none d-lg-flex justify-content-between align-items-end mb-3">
+        <h1 class="mb-0">Messages</h1>
+    </div>
 
-<div class="container-fluid py-3" style="max-width: 1200px; height: calc(100dvh - 64px); display: flex; flex-direction: column;">
-    <h4 class="mb-2 flex-shrink-0"><i class="bi bi-chat-dots me-2"></i>Messages</h4>
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger"><i class="bi bi-exclamation-circle me-1"></i>@TempData["Error"]</div>
+    }
 
-    <div class="row g-0 flex-grow-1" style="min-height: 0; border: 1px solid #dee2e6; border-radius: 0.5rem; overflow: hidden;">
+    <div class="inbox @(threadOpen ? "thread-open" : "")" style="height: min(780px, calc(100dvh - 190px)); min-height: 520px;">
+        <div class="inbox-list">
+            <div class="list-head">
+                <ul class="nav nav-tabs border-0">
+                    <li class="nav-item">
+                        <a class="nav-link @(!Model.ShowSystem ? "active" : "")" href="/Messages" aria-current="@(!Model.ShowSystem ? "page" : null)">
+                            Chats
+                            @if (unreadChats > 0) { <span class="notif-badge position-static ms-1">@unreadChats</span> }
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(Model.ShowSystem ? "active" : "")" href="/Messages?system=true" aria-current="@(Model.ShowSystem ? "page" : null)">
+                            Notifications
+                            @if (Model.UnreadSystemCount > 0 && !Model.ShowSystem) { <span class="notif-badge position-static ms-1">@Model.UnreadSystemCount</span> }
+                        </a>
+                    </li>
+                </ul>
+            </div>
 
-        <!-- LEFT: conversation list -->
-        <div class="col-4 border-end d-flex flex-column" style="background: #f8f9fa; min-height: 0; height: 100%;">
-
-            <!-- System notifications row -->
-            <a href="/Messages?system=true"
-               class="d-flex align-items-center p-3 text-decoration-none border-bottom @(Model.ShowSystem ? "bg-primary text-white" : "text-dark")"
-               style="@(Model.ShowSystem ? "" : "background: #fff;")">
-                <div class="rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0 @(Model.ShowSystem ? "bg-white" : "bg-secondary")"
-                     style="width:40px;height:40px;">
-                    <i class="bi bi-megaphone-fill @(Model.ShowSystem ? "text-primary" : "text-white")" style="font-size:0.9rem;line-height:1;"></i>
-                </div>
-                <div class="flex-grow-1 overflow-hidden">
-                    <div class="fw-semibold">Malta's Garage</div>
-                    <small class="@(Model.ShowSystem ? "text-white-50" : "text-muted")">System notifications</small>
-                </div>
-                @if (Model.UnreadSystemCount > 0 && !Model.ShowSystem)
-                {
-                    <span class="badge bg-warning text-dark rounded-pill">@Model.UnreadSystemCount</span>
-                }
-            </a>
-
-            <!-- Chat conversations -->
             <div class="overflow-auto flex-grow-1" style="min-height: 0;">
+                <a class="convo @(Model.ShowSystem ? "active" : "") @(Model.UnreadSystemCount > 0 && !Model.ShowSystem ? "is-unread" : "")" href="/Messages?system=true">
+                    <img class="avatar" src="~/images/logo-mark.svg" alt="">
+                    <span class="convo-main">
+                        <span class="convo-top"><span class="convo-name">Malta's Garage</span></span>
+                        <span class="convo-preview d-block">System notifications</span>
+                    </span>
+                    @if (Model.UnreadSystemCount > 0 && !Model.ShowSystem)
+                    {
+                        <span class="unread-dot" aria-label="Unread"></span>
+                    }
+                </a>
+
                 @if (!Model.Conversations.Any())
                 {
-                    <p class="text-muted small p-3">No conversations yet.</p>
+                    <div class="empty-state py-4">
+                        <p class="mb-0">No conversations yet. Make an offer on a listing to start one.</p>
+                    </div>
                 }
                 @foreach (var conv in Model.Conversations)
                 {
-                    <a href="/Messages?c=@conv.Id"
-                       class="d-flex align-items-center p-3 text-decoration-none border-bottom @(conv.IsActive ? "bg-primary text-white" : "text-dark")"
-                       style="@(conv.IsActive ? "" : "background: #fff;")">
-                        <div class="rounded-circle overflow-hidden me-3 flex-shrink-0 bg-light border d-flex align-items-center justify-content-center"
-                             style="width:40px;height:40px;">
-                            @if (!string.IsNullOrEmpty(conv.OtherPartyAvatarUrl))
-                            {
-                                <img src="@conv.OtherPartyAvatarUrl" alt="@conv.OtherPartyName"
-                                     style="width:40px;height:40px;object-fit:cover;" />
-                            }
-                            else
-                            {
-                                <i class="bi bi-person @(conv.IsActive ? "text-white" : "text-secondary")"></i>
-                            }
-                        </div>
-                        <div class="flex-grow-1 overflow-hidden">
-                            <div class="fw-semibold text-truncate">@conv.OtherPartyName</div>
-                            <small class="@(conv.IsActive ? "text-white-50" : "text-muted") text-truncate d-block">
-                                @(conv.LastMessage ?? "No messages yet")
-                            </small>
-                        </div>
-                        <div class="d-flex flex-column align-items-end ms-2 flex-shrink-0">
-                            <small class="@(conv.IsActive ? "text-white-50" : "text-muted") mb-1">
-                                @conv.LastActivity.ToString("dd MMM")
-                            </small>
-                            @if (conv.UnreadCount > 0 && !conv.IsActive)
-                            {
-                                <span class="badge bg-warning text-dark rounded-pill">@conv.UnreadCount</span>
-                            }
-                        </div>
+                    var unread = conv.UnreadCount > 0 && !conv.IsActive;
+                    <a class="convo @(conv.IsActive ? "active" : "") @(unread ? "is-unread" : "")" href="/Messages?c=@conv.Id">
+                        @if (!string.IsNullOrEmpty(conv.OtherPartyAvatarUrl))
+                        {
+                            <img class="avatar" src="@conv.OtherPartyAvatarUrl" alt="" style="object-fit:cover;">
+                        }
+                        else
+                        {
+                            <span class="avatar">@Initials(conv.OtherPartyName)</span>
+                        }
+                        <span class="convo-main">
+                            <span class="convo-top">
+                                <span class="convo-name">@conv.OtherPartyName</span>
+                                <span class="convo-time">@conv.LastActivity.ToString("d MMM")</span>
+                            </span>
+                            <span class="convo-preview d-block">@(conv.LastMessage ?? "No messages yet")</span>
+                        </span>
+                        @if (unread)
+                        {
+                            <span class="unread-dot" aria-label="@conv.UnreadCount unread"></span>
+                        }
                     </a>
                 }
             </div>
         </div>
 
-        <!-- RIGHT: thread -->
-        <div class="col-8 d-flex flex-column" style="min-height: 0; height: 100%;">
-
+        <section class="thread" style="min-height: 0;" aria-label="Conversation">
             @if (Model.ShowSystem)
             {
-                <!-- System messages feed -->
-                <div class="p-3 border-bottom bg-white d-flex align-items-center">
-                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-2 flex-shrink-0"
-                         style="width:32px;height:32px;">
-                        <i class="bi bi-megaphone-fill text-white" style="font-size:0.85rem;line-height:1;"></i>
-                    </div>
-                    <strong>System Notifications</strong>
+                <div class="thread-head">
+                    <a class="icon-btn d-lg-none" href="/Messages" aria-label="Back to conversations"><i class="bi bi-arrow-left" aria-hidden="true"></i></a>
+                    <img class="avatar" src="~/images/logo-mark.svg" alt="">
+                    <div class="flex-grow-1"><div class="fw-bold">System notifications</div></div>
                 </div>
-                <div class="flex-grow-1 overflow-auto p-3" style="min-height: 0;">
+                <div class="thread-body" style="min-height: 0;">
                     @if (!Model.SystemMessages.Any())
                     {
                         <p class="text-muted text-center mt-4">No notifications yet.</p>
                     }
                     @foreach (var msg in Model.SystemMessages)
                     {
-                        <div class="d-flex align-items-start mb-3">
-                            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3 flex-shrink-0"
-                                 style="width:36px;height:36px;">
-                                <i class="bi @GetSystemIcon(msg.Type) text-white" style="font-size:0.9rem;line-height:1;"></i>
-                            </div>
+                        <div class="msg msg-in d-flex gap-2 align-items-start">
+                            <i class="bi @GetSystemIcon(msg.Type) text-success" aria-hidden="true"></i>
                             <div class="flex-grow-1">
-                                <div class="bg-light rounded p-2">
-                                    <p class="mb-1 small">@msg.Body</p>
+                                <div>@msg.Body</div>
+                                <div class="d-flex justify-content-between align-items-center gap-2 mt-1">
+                                    <span class="msg-time">@msg.CreatedAt.ToString("d MMM yyyy, HH:mm")</span>
                                     @if (!string.IsNullOrEmpty(msg.Link))
                                     {
-                                        <a href="@msg.Link" class="btn btn-outline-warning mt-1">View</a>
+                                        <a href="@msg.Link" class="btn btn-secondary btn-sm">View</a>
                                     }
                                 </div>
-                                <small class="text-muted">@msg.CreatedAt.ToString("dd MMM yyyy, HH:mm")</small>
                             </div>
                         </div>
                     }
@@ -122,226 +124,184 @@
                 var other = Model.ActiveConversation.BuyerId == Model.CurrentProfile!.Id
                     ? Model.ActiveConversation.Seller
                     : Model.ActiveConversation.Buyer;
+                var iAmSeller = Model.ActiveConversation.SellerId == Model.CurrentProfile!.Id;
+                var iAmBuyer = Model.ActiveConversation.BuyerId == Model.CurrentProfile!.Id;
+                DateTime? lastDay = null;
 
-                <!-- Chat header -->
-                <div class="p-3 border-bottom bg-white d-flex align-items-center">
-                    <a href="/Seller/@other?.Id" class="d-flex align-items-center text-decoration-none text-dark">
-                        <div class="rounded-circle overflow-hidden me-2 flex-shrink-0 bg-light border d-flex align-items-center justify-content-center"
-                             style="width:36px;height:36px;">
-                            @if (!string.IsNullOrEmpty(other?.AvatarUrl))
-                            {
-                                <img src="@other.AvatarUrl" alt="@(other.DisplayName ?? "User")"
-                                     style="width:36px;height:36px;object-fit:cover;" />
-                            }
-                            else
-                            {
-                                <i class="bi bi-person text-secondary"></i>
-                            }
-                        </div>
-                        <strong>@(other?.DisplayName ?? "User")</strong>
-                    </a>
+                <div class="thread-head">
+                    <a class="icon-btn d-lg-none" href="/Messages" aria-label="Back to conversations"><i class="bi bi-arrow-left" aria-hidden="true"></i></a>
+                    @if (!string.IsNullOrEmpty(other?.AvatarUrl))
+                    {
+                        <img class="avatar" src="@other.AvatarUrl" alt="" style="object-fit:cover;">
+                    }
+                    else
+                    {
+                        <span class="avatar">@Initials(other?.DisplayName)</span>
+                    }
+                    <div class="flex-grow-1">
+                        <a class="fw-bold text-decoration-none" style="color: inherit" href="/Seller/@other?.Id">@(other?.DisplayName ?? "User")</a>
+                        @if (other != null && other.TotalReviews > 0)
+                        {
+                            <div class="small text-muted"><partial name="_StarRating" model="@((other.Rating, other.TotalReviews))" /></div>
+                        }
+                    </div>
                 </div>
 
-                <!-- Messages -->
-                <div class="flex-grow-1 overflow-auto p-3" id="chatMessages" style="min-height: 0;">
-                    @{
-                        var iAmSeller = Model.ActiveConversation?.SellerId == Model.CurrentProfile!.Id;
-                        var iAmBuyer  = Model.ActiveConversation?.BuyerId  == Model.CurrentProfile!.Id;
-                    }
+                <div class="thread-body" id="chatMessages" style="min-height: 0;">
                     @foreach (var msg in Model.ActiveMessages)
                     {
+                        if (lastDay != msg.CreatedAt.Date)
+                        {
+                            lastDay = msg.CreatedAt.Date;
+                            <span class="day-sep">@DayLabel(msg.CreatedAt)</span>
+                        }
+
                         if (msg.IsSystemNote && msg.OfferRef.HasValue && Model.OffersInThread.TryGetValue(msg.OfferRef.Value, out var offer))
                         {
-                            <div class="d-flex justify-content-center my-3">
-                                <div class="text-center border rounded px-4 py-3 bg-white" style="min-width:260px;max-width:360px;">
-                                    <div class="small mb-1">
-                                        <i class="bi bi-tag text-primary me-1"></i>
-                                        <span class="text-muted">Offer of €@offer.Amount.ToString("N0") for </span>
-                                        <a href="/Listing/@offer.ListingId" class="fw-semibold text-primary text-decoration-none">@(offer.Listing?.Title ?? "listing")</a>
+                            var (offerClass, badgeClass, badgeText) = offer.Status switch
+                            {
+                                PriceOfferStatus.Pending => ("is-pending", "status-offer-pending", "Pending"),
+                                PriceOfferStatus.Accepted => ("is-accepted", "status-offer-accepted", "Accepted"),
+                                PriceOfferStatus.Completed => ("is-accepted", "status-offer-accepted", "Purchased"),
+                                PriceOfferStatus.Rejected => ("is-rejected", "status-offer-rejected", "Declined"),
+                                PriceOfferStatus.Expired => ("is-expired", "status-offer-expired", "Expired"),
+                                _ => ("is-expired", "status-offer-expired", offer.Status.ToString())
+                            };
+                            var mine = msg.FromUserId == Model.CurrentProfile!.Id;
+                            <div class="offer-card @offerClass @(mine ? "align-self-end" : "align-self-start")">
+                                <div class="offer-head">
+                                    <span class="d-flex align-items-center gap-2"><i class="bi bi-tag" aria-hidden="true"></i>Price offer</span>
+                                    <span class="status-badge @badgeClass">@badgeText</span>
+                                </div>
+                                <div class="offer-body">
+                                    <div>
+                                        <a class="small text-muted text-decoration-none" href="/Listing/@offer.ListingId">@(offer.Listing?.Title ?? "Listing")</a>
+                                        <div>
+                                            <span class="offer-price">€@offer.Amount.ToString("N0")</span>
+                                            @if (offer.Listing != null)
+                                            {
+                                                <span class="offer-was">€@offer.Listing.DesiredPrice.ToString("N0")</span>
+                                            }
+                                        </div>
                                     </div>
-
-                                    @if (offer.Status == MaltasGarage.Domain.Enums.PriceOfferStatus.Pending)
+                                </div>
+                                @if (offer.Listing?.IsShowcase == true)
+                                {
+                                    <div class="offer-foot"><i class="bi bi-eye me-1" aria-hidden="true"></i>Showcase offer: accepting and declining are switched off in the demo.</div>
+                                }
+                                else if (offer.Status == PriceOfferStatus.Pending && iAmSeller)
+                                {
+                                    <div class="offer-actions">
+                                        <form method="post" asp-page-handler="AcceptOffer" class="d-flex flex-fill">
+                                            <input type="hidden" name="OfferId" value="@offer.Id" />
+                                            <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-check-lg" aria-hidden="true"></i>Accept</button>
+                                        </form>
+                                        <form method="post" asp-page-handler="RejectOffer" class="d-flex flex-fill">
+                                            <input type="hidden" name="OfferId" value="@offer.Id" />
+                                            <button type="submit" class="btn btn-secondary btn-sm flex-fill">Decline</button>
+                                        </form>
+                                    </div>
+                                }
+                                else if (offer.Status == PriceOfferStatus.Accepted && iAmBuyer && offer.Listing?.Status == ListingStatus.Active)
+                                {
+                                    <div class="offer-actions">
+                                        <form method="post" asp-page="/Listing" asp-route-id="@offer.ListingId" asp-page-handler="BuyAtOfferPrice" class="d-flex flex-fill">
+                                            <input type="hidden" name="offerId" value="@offer.Id" />
+                                            <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-cart3" aria-hidden="true"></i>Buy for €@offer.Amount.ToString("N0")</button>
+                                        </form>
+                                    </div>
+                                }
+                                <div class="offer-foot">
+                                    @if (offer.Status == PriceOfferStatus.Pending)
                                     {
-                                        <div class="small text-warning fw-semibold mb-1"><i class="bi bi-clock me-1"></i>Pending</div>
-                                        <div class="small text-muted mb-2">Expires @offer.ExpiresAt.ToString("dd MMM, HH:mm") UTC</div>
-                                        @if (iAmSeller)
-                                        {
-                                            <form method="post" asp-page-handler="AcceptOffer" class="d-inline me-2">
-                                                <input type="hidden" name="OfferId" value="@offer.Id" />
-                                                <button type="submit" class="btn btn-primary btn-sm">
-                                                    <i class="bi bi-check-lg me-1"></i>Accept
-                                                </button>
-                                            </form>
-                                            <form method="post" asp-page-handler="RejectOffer" class="d-inline">
-                                                <input type="hidden" name="OfferId" value="@offer.Id" />
-                                                <button type="submit" class="btn btn-outline-danger btn-sm">
-                                                    <i class="bi bi-x-lg me-1"></i>Decline
-                                                </button>
-                                            </form>
-                                        }
-                                    }
-                                    else if (offer.Status == MaltasGarage.Domain.Enums.PriceOfferStatus.Accepted)
-                                    {
-                                        @if (iAmBuyer && offer.Listing?.Status == MaltasGarage.Domain.Enums.ListingStatus.Active)
-                                        {
-                                            <div class="small text-success fw-semibold mb-2">Accepted</div>
-                                            <form method="post" asp-page="/Listing" asp-route-id="@offer.ListingId" asp-page-handler="BuyAtOfferPrice">
-                                                <input type="hidden" name="offerId" value="@offer.Id" />
-                                                <button type="submit" class="btn btn-primary btn-sm">
-                                                    <i class="bi bi-cart-check me-1"></i>Buy for €@offer.Amount.ToString("N0")
-                                                </button>
-                                            </form>
-                                        }
-                                        else
-                                        {
-                                            <div class="small text-success fw-semibold">Accepted</div>
-                                        }
-                                    }
-                                    else if (offer.Status == MaltasGarage.Domain.Enums.PriceOfferStatus.Rejected)
-                                    {
-                                        <div class="small text-danger fw-semibold">Declined</div>
-                                    }
-                                    else if (offer.Status == MaltasGarage.Domain.Enums.PriceOfferStatus.Completed)
-                                    {
-                                        <div class="small text-success fw-semibold"><i class="bi bi-bag-check me-1"></i>Purchased</div>
+                                        @:Expires @offer.ExpiresAt.ToString("d MMM, HH:mm") UTC
                                     }
                                     else
                                     {
-                                        <div class="small text-muted">@offer.Status</div>
+                                        @:Sent @msg.CreatedAt.ToString("d MMM, HH:mm")
                                     }
                                 </div>
-                            </div>
-                        }
-                        else if (msg.IsSystemNote && msg.OfferRef.HasValue)
-                        {
-                            @* Offer message but offer not loaded — no icon fallback *@
-                            <div class="d-flex justify-content-center my-3">
-                                <div class="small text-muted border rounded px-3 py-2">Offer</div>
                             </div>
                         }
                         else if (msg.IsSystemNote && msg.BundleOfferRef.HasValue && Model.BundleOffersInThread.TryGetValue(msg.BundleOfferRef.Value, out var bundleOffer))
                         {
-                            <div class="d-flex justify-content-center my-3">
-                                <div class="border rounded px-4 py-3 bg-white" style="min-width:300px;max-width:420px;">
-                                    <div class="small mb-2">
-                                        <i class="bi bi-collection text-primary me-1"></i>
-                                        <span class="text-muted">Bundle offer of </span>
-                                        <span class="fw-semibold text-primary">€@bundleOffer.OfferAmount.ToString("N0")</span>
-                                        <span class="text-muted"> for @bundleOffer.Items.Count items</span>
+                            var (offerClass, badgeClass, badgeText) = bundleOffer.Status switch
+                            {
+                                BundleOfferStatus.Pending => ("is-pending", "status-offer-pending", "Pending"),
+                                BundleOfferStatus.Accepted => ("is-accepted", "status-offer-accepted", "Accepted"),
+                                BundleOfferStatus.Completed => ("is-accepted", "status-offer-accepted", "Purchased"),
+                                BundleOfferStatus.Rejected => ("is-rejected", "status-offer-rejected", "Declined"),
+                                BundleOfferStatus.Expired => ("is-expired", "status-offer-expired", "Expired"),
+                                _ => ("is-expired", "status-offer-expired", "Cancelled")
+                            };
+                            var mine = msg.FromUserId == Model.CurrentProfile!.Id;
+                            <div class="offer-card @offerClass @(mine ? "align-self-end" : "align-self-start")">
+                                <div class="offer-head">
+                                    <span class="d-flex align-items-center gap-2"><i class="bi bi-collection" aria-hidden="true"></i>Bundle offer · @bundleOffer.Items.Count items</span>
+                                    <span class="status-badge @badgeClass">@badgeText</span>
+                                </div>
+                                <div class="offer-body d-block">
+                                    <ul class="list-unstyled small mb-2">
+                                        @foreach (var item in bundleOffer.Items.OrderBy(i => i.Listing.Title))
+                                        {
+                                            <li class="d-flex justify-content-between gap-2">
+                                                <a class="text-decoration-none" href="/Listing/@item.ListingId">@item.Listing.Title</a>
+                                                <span class="text-muted">€@item.ListedPrice.ToString("N0")</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                    <span class="offer-price">€@bundleOffer.OfferAmount.ToString("N0")</span>
+                                    <span class="offer-was">€@bundleOffer.TotalListedPrice.ToString("N0")</span>
+                                </div>
+                                @if (bundleOffer.Items.Any(i => i.Listing.IsShowcase))
+                                {
+                                    <div class="offer-foot"><i class="bi bi-eye me-1" aria-hidden="true"></i>Showcase offer: accepting and declining are switched off in the demo.</div>
+                                }
+                                else if (bundleOffer.Status == BundleOfferStatus.Pending && iAmSeller)
+                                {
+                                    <div class="offer-actions">
+                                        <form method="post" asp-page-handler="AcceptBundleOffer" class="d-flex flex-fill">
+                                            <input type="hidden" name="BundleOfferId" value="@bundleOffer.Id" />
+                                            <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-check-lg" aria-hidden="true"></i>Accept</button>
+                                        </form>
+                                        <form method="post" asp-page-handler="RejectBundleOffer" class="d-flex flex-fill">
+                                            <input type="hidden" name="BundleOfferId" value="@bundleOffer.Id" />
+                                            <button type="submit" class="btn btn-secondary btn-sm flex-fill">Decline</button>
+                                        </form>
                                     </div>
-                                    <table class="table table-sm table-borderless mb-2" style="font-size:0.8rem;">
-                                        <tbody>
-                                            @foreach (var item in bundleOffer.Items.OrderBy(i => i.Listing.Title))
-                                            {
-                                                <tr>
-                                                    <td class="py-1"><a href="/Listing/@item.ListingId" class="text-primary text-decoration-none">@item.Listing.Title</a></td>
-                                                    <td class="py-1 text-end text-muted">€@item.ListedPrice.ToString("N0")</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                        <tfoot>
-                                            <tr class="border-top">
-                                                <td class="pt-1 text-muted">Listed total</td>
-                                                <td class="pt-1 text-end text-muted text-decoration-line-through">€@bundleOffer.TotalListedPrice.ToString("N0")</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="fw-semibold text-primary">Offer</td>
-                                                <td class="fw-semibold text-primary text-end">€@bundleOffer.OfferAmount.ToString("N0")</td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-
-                                    @if (bundleOffer.Status == MaltasGarage.Domain.Enums.BundleOfferStatus.Pending)
+                                }
+                                else if (bundleOffer.Status == BundleOfferStatus.Accepted && iAmBuyer && bundleOffer.Items.All(i => i.Listing.Status == ListingStatus.Active))
+                                {
+                                    <div class="offer-actions">
+                                        <a href="/BundleCheckout?bundleOfferId=@bundleOffer.Id" class="btn btn-primary btn-sm"><i class="bi bi-cart3" aria-hidden="true"></i>Complete purchase, €@bundleOffer.OfferAmount.ToString("N0")</a>
+                                    </div>
+                                }
+                                <div class="offer-foot">
+                                    @if (bundleOffer.Status == BundleOfferStatus.Pending)
                                     {
-                                        <div class="small text-warning fw-semibold mb-1"><i class="bi bi-clock me-1"></i>Pending</div>
-                                        <div class="small text-muted mb-2">Expires @bundleOffer.ExpiresAt.ToString("dd MMM, HH:mm") UTC</div>
-                                        @if (iAmSeller)
-                                        {
-                                            <form method="post" asp-page-handler="AcceptBundleOffer" class="d-inline me-2">
-                                                <input type="hidden" name="BundleOfferId" value="@bundleOffer.Id" />
-                                                <button type="submit" class="btn btn-primary btn-sm">
-                                                    <i class="bi bi-check-lg me-1"></i>Accept
-                                                </button>
-                                            </form>
-                                            <form method="post" asp-page-handler="RejectBundleOffer" class="d-inline">
-                                                <input type="hidden" name="BundleOfferId" value="@bundleOffer.Id" />
-                                                <button type="submit" class="btn btn-outline-danger btn-sm">
-                                                    <i class="bi bi-x-lg me-1"></i>Decline
-                                                </button>
-                                            </form>
-                                        }
+                                        @:Expires @bundleOffer.ExpiresAt.ToString("d MMM, HH:mm") UTC
                                     }
-                                    else if (bundleOffer.Status == MaltasGarage.Domain.Enums.BundleOfferStatus.Accepted)
+                                    else
                                     {
-                                        <div class="small text-success fw-semibold mb-2">Accepted</div>
-                                        @if (iAmBuyer && bundleOffer.Items.All(i => i.Listing.Status == MaltasGarage.Domain.Enums.ListingStatus.Active))
-                                        {
-                                            <a href="/BundleCheckout?bundleOfferId=@bundleOffer.Id" class="btn btn-primary btn-sm">
-                                                <i class="bi bi-cart-check me-1"></i>Complete Purchase - €@bundleOffer.OfferAmount.ToString("N0")
-                                            </a>
-                                        }
-                                    }
-                                    else if (bundleOffer.Status == MaltasGarage.Domain.Enums.BundleOfferStatus.Rejected)
-                                    {
-                                        <div class="small text-danger fw-semibold">Declined</div>
-                                    }
-                                    else if (bundleOffer.Status == MaltasGarage.Domain.Enums.BundleOfferStatus.Expired)
-                                    {
-                                        <div class="small text-muted">Expired</div>
-                                    }
-                                    else if (bundleOffer.Status == MaltasGarage.Domain.Enums.BundleOfferStatus.Cancelled)
-                                    {
-                                        <div class="small text-muted">Cancelled</div>
-                                    }
-                                    else if (bundleOffer.Status == MaltasGarage.Domain.Enums.BundleOfferStatus.Completed)
-                                    {
-                                        <div class="small text-success fw-semibold"><i class="bi bi-bag-check me-1"></i>Purchased</div>
+                                        @:Sent @msg.CreatedAt.ToString("d MMM, HH:mm")
                                     }
                                 </div>
                             </div>
                         }
-                        else if (msg.IsSystemNote && msg.BundleOfferRef.HasValue)
+                        else if (msg.IsSystemNote && (msg.OfferRef.HasValue || msg.BundleOfferRef.HasValue))
                         {
-                            <div class="d-flex justify-content-center my-3">
-                                <div class="small text-muted border rounded px-3 py-2">Bundle Offer</div>
-                            </div>
+                            <span class="msg-system">@(msg.BundleOfferRef.HasValue ? "Bundle offer" : "Offer")</span>
                         }
                         else if (msg.IsSystemNote)
                         {
-                            <div class="d-flex justify-content-center my-2">
-                                <a href="/Orders/Details/@msg.OrderRef"
-                                   class="badge bg-light text-secondary border text-decoration-none px-3 py-2"
-                                   style="font-size:0.78rem;">
-                                    <i class="bi bi-bag me-1"></i>@msg.Body
-                                </a>
-                            </div>
+                            <a class="msg-system text-decoration-none" href="/Orders/Details/@msg.OrderRef"><i class="bi bi-bag me-1" aria-hidden="true"></i>@msg.Body</a>
                         }
                         else
                         {
-                            bool isMine = msg.FromUserId == Model.CurrentProfile!.Id;
-                            <div class="d-flex mb-2 @(isMine ? "justify-content-end" : "justify-content-start")">
-                                @if (!isMine)
-                                {
-                                    <div class="rounded-circle overflow-hidden me-2 flex-shrink-0 bg-light border d-flex align-items-center justify-content-center align-self-end"
-                                         style="width:28px;height:28px;">
-                                        @if (!string.IsNullOrEmpty(msg.FromUser?.AvatarUrl))
-                                        {
-                                            <img src="@msg.FromUser.AvatarUrl" alt="@(msg.FromUser.DisplayName ?? "")"
-                                                 style="width:28px;height:28px;object-fit:cover;" />
-                                        }
-                                        else
-                                        {
-                                            <i class="bi bi-person text-secondary" style="font-size:0.75rem;"></i>
-                                        }
-                                    </div>
-                                }
-                                <div class="px-3 py-2 rounded-3 @(isMine ? "bg-primary text-white" : "bg-light text-dark")"
-                                     style="max-width:70%; word-break:break-word;">
-                                    <div>@msg.Body</div>
-                                    <small class="@(isMine ? "text-white-50" : "text-muted")" style="font-size:0.7rem;">
-                                        @msg.CreatedAt.ToString("HH:mm")
-                                    </small>
-                                </div>
+                            var isMine = msg.FromUserId == Model.CurrentProfile!.Id;
+                            <div class="msg @(isMine ? "msg-out" : "msg-in")" style="word-break: break-word;">
+                                <div>@msg.Body</div>
+                                <div class="msg-time" style="@(isMine ? "color: rgba(255,255,255,.75)" : "")">@msg.CreatedAt.ToString("HH:mm")</div>
                             </div>
                         }
                     }
@@ -351,58 +311,49 @@
                     }
                 </div>
 
-                <!-- Send form -->
-                <div class="p-3 border-top bg-white">
-                    <form method="post">
-                        <input type="hidden" name="ConversationId" value="@Model.ActiveConversation.Id" />
-                        <input type="hidden" name="FromOrder" value="@Model.PendingOrderRef" />
-                        <div class="d-flex gap-2">
-                            <input type="text" name="Body" class="form-control" placeholder="Type a message…"
-                                   maxlength="2000" autocomplete="off" required />
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-send"></i>
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                <form method="post" class="composer">
+                    <input type="hidden" name="ConversationId" value="@Model.ActiveConversation.Id" />
+                    <input type="hidden" name="FromOrder" value="@Model.PendingOrderRef" />
+                    <label class="visually-hidden" for="messageBody">Message</label>
+                    <input id="messageBody" type="text" name="Body" class="form-control" placeholder="Write a message..." maxlength="2000" autocomplete="off" required />
+                    <button type="submit" class="btn btn-primary btn-icon" aria-label="Send"><i class="bi bi-send" aria-hidden="true"></i></button>
+                </form>
             }
             else
             {
-                <div class="flex-grow-1 d-flex align-items-center justify-content-center text-muted">
-                    <div class="text-center">
-                        <i class="bi bi-chat-dots display-4 mb-3"></i>
-                        <p>Select a conversation to start messaging.</p>
-                    </div>
+                <div class="empty-state flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+                    <span class="empty-icon"><i class="bi bi-chat-dots" aria-hidden="true"></i></span>
+                    <p>Select a conversation to start messaging.</p>
                 </div>
             }
-        </div>
+        </section>
     </div>
 </div>
 
 @functions {
-    string GetSystemIcon(MaltasGarage.Domain.Enums.SystemMessageType type) => type switch
+    string GetSystemIcon(SystemMessageType type) => type switch
     {
-        MaltasGarage.Domain.Enums.SystemMessageType.BidOutbid         => "bi-arrow-up-circle",
-        MaltasGarage.Domain.Enums.SystemMessageType.NewBidOnListing   => "bi-cash-coin",
-        MaltasGarage.Domain.Enums.SystemMessageType.AuctionWon        => "bi-trophy",
-        MaltasGarage.Domain.Enums.SystemMessageType.ItemPurchased     => "bi-bag-check",
-        MaltasGarage.Domain.Enums.SystemMessageType.OrderShipped      => "bi-truck",
-        MaltasGarage.Domain.Enums.SystemMessageType.EscrowReleased    => "bi-currency-euro",
-        MaltasGarage.Domain.Enums.SystemMessageType.DisputeOpened     => "bi-exclamation-triangle",
-        MaltasGarage.Domain.Enums.SystemMessageType.DisputeResolved  => "bi-shield-check",
-        MaltasGarage.Domain.Enums.SystemMessageType.AuctionSold      => "bi-trophy-fill",
-        MaltasGarage.Domain.Enums.SystemMessageType.AuctionExpired        => "bi-calendar-x",
-        MaltasGarage.Domain.Enums.SystemMessageType.DeliveryMethodSelected => "bi-truck",
-        MaltasGarage.Domain.Enums.SystemMessageType.OfferReceived          => "bi-tag",
-        MaltasGarage.Domain.Enums.SystemMessageType.OfferAccepted          => "bi-check-circle",
-        MaltasGarage.Domain.Enums.SystemMessageType.OfferRejected          => "bi-x-circle",
-        _                                                                    => "bi-bell"
+        SystemMessageType.BidOutbid              => "bi-arrow-up-circle",
+        SystemMessageType.NewBidOnListing        => "bi-cash-coin",
+        SystemMessageType.AuctionWon             => "bi-trophy",
+        SystemMessageType.ItemPurchased          => "bi-bag-check",
+        SystemMessageType.OrderShipped           => "bi-truck",
+        SystemMessageType.EscrowReleased         => "bi-currency-euro",
+        SystemMessageType.DisputeOpened          => "bi-exclamation-triangle",
+        SystemMessageType.DisputeResolved        => "bi-shield-check",
+        SystemMessageType.AuctionSold            => "bi-trophy-fill",
+        SystemMessageType.AuctionExpired         => "bi-calendar-x",
+        SystemMessageType.DeliveryMethodSelected => "bi-truck",
+        SystemMessageType.OfferReceived          => "bi-tag",
+        SystemMessageType.OfferAccepted          => "bi-check-circle",
+        SystemMessageType.OfferRejected          => "bi-x-circle",
+        _                                        => "bi-bell"
     };
 }
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
+@section Scripts {
+    <script>
         const chat = document.getElementById('chatMessages');
         if (chat) chat.scrollTop = chat.scrollHeight;
-    });
-</script>
+    </script>
+}
