@@ -71,7 +71,9 @@ public class IndexModel : PageModel
                 Status           = l.Status,
                 SellByDate       = l.SellByDate,
                 AuctionStartDate = l.AuctionStartDate,
-                IsNew            = l.IsNew
+                IsNew            = l.IsNew,
+                IsShowcase       = l.IsShowcase,
+                BidCount         = l.Bids.Count()
             })
             .ToListAsync();
 

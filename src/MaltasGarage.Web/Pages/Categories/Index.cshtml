@@ -37,7 +37,7 @@
                         <div class="category-card">
                             <i class="@iconFull category-icon" style="font-size:3.25rem; color:@iconColor"></i>
                             <h5 class="category-name">@category.Name</h5>
-                            <small class="text-muted">@category.ListingCount items</small>
+                            <small class="text-muted">@(category.ListingCount switch { 0 => "Coming soon", 1 => "1 item", var n => $"{n} items" })</small>
                         </div>
                     </a>
                 </div>
@@ -102,12 +102,10 @@
 
         @if (Model.Listings.Any())
         {
-            <div class="row g-4">
+            <div class="listing-grid cols-4">
                 @foreach (var listing in Model.Listings)
                 {
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <partial name="_ListingCard" model="listing" />
-                    </div>
+                    <partial name="_ListingCard" model="listing" />
                 }
             </div>
 
