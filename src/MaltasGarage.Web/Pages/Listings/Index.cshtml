@@ -74,12 +74,10 @@
 
     @if (Model.Listings.Any())
     {
-        <div class="row g-4">
+        <div class="listing-grid cols-4">
             @foreach (var listing in Model.Listings)
             {
-                <div class="col-6 col-md-4 col-lg-3">
-                    <partial name="_ListingCard" model="listing" />
-                </div>
+                <partial name="_ListingCard" model="listing" />
             }
         </div>
 

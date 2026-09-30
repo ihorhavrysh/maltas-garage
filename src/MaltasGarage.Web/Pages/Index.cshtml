@@ -30,300 +30,212 @@
 }}";
 }
 
-<!-- Hero Section -->
-<section class="hero-section py-5">
-    <img class="hero-bg-img" src="/images/Hero/hero.svg"
-         alt="" fetchpriority="high">
-    <div class="hero-overlay"></div>
+@{
+    ViewData["HideHeaderSearch"] = true;
+    var tones = new[] { "tone-coral", "tone-sea", "tone-sun", "tone-green" };
+    var popular = Model.Categories.Where(c => c.ListingCount > 0).OrderByDescending(c => c.ListingCount).Take(4).ToList();
+}
+
+<section class="hero">
     <div class="container">
-        <div class="row" style="min-height:340px;">
-            <div class="col-lg-6 hero-content text-center text-lg-start d-flex flex-column" style="padding-top:1.5rem; padding-bottom:2rem;">
-                <h1 class="hero-title mb-0">Malta's Garage</h1>
-                <p class="hero-subtitle mt-auto mb-0">Malta's online marketplace for second-hand goods</p>
+        <div class="hero-grid">
+            <div>
+                <span class="hero-eyebrow"><i class="bi bi-geo-alt" aria-hidden="true"></i>Second-hand marketplace for Malta &amp; Gozo</span>
+                <h1 class="hero-title">Pre-loved finds, <em>fair prices</em>, just round the corner.</h1>
+                <p class="hero-lead">Buy it now, make an offer or join a live auction. Your payment stays in escrow until the item is in your hands.</p>
+                <form class="hero-search" role="search" action="/Listings" method="get">
+                    <label class="visually-hidden" for="homeSearchInput">What are you looking for?</label>
+                    <input id="homeSearchInput" class="form-control" type="search" name="q" placeholder="Search for anything" autocomplete="off">
+                    <button class="btn btn-primary" type="submit"><i class="bi bi-search" aria-hidden="true"></i>Search</button>
+                </form>
+                @if (popular.Any())
+                {
+                    <div class="hero-links">
+                        <span>Popular:</span>
+                        @foreach (var category in popular)
+                        {
+                            <a href="/Category/@category.Slug">@category.Name</a>
+                        }
+                    </div>
+                }
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <a class="btn btn-outline-primary" href="/Listings/Create"><i class="bi bi-plus-lg" aria-hidden="true"></i>Sell an item</a>
+                    <a class="btn btn-ghost" href="/HowItWorks">How it works <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                </div>
+            </div>
+            <div class="hero-art">
+                <img src="/images/Hero/hero.svg" alt="Illustration of a Maltese street market with limestone houses, coloured balconies and a church dome by the sea" fetchpriority="high">
             </div>
         </div>
     </div>
 </section>
 
-<!-- Categories Section -->
-<section class="py-5">
+<section class="section pt-0">
     <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-3">
+        <div class="section-head">
             <div>
-                <div class="d-flex align-items-center gap-2 mb-1">
-                    <h2 class="section-title mb-0">Browse Categories</h2>
-                    <a href="/Categories" class="btn btn-outline-primary btn-sm">View all</a>
-                </div>
-                <p class="section-subtitle mb-0">Find what you need or list what you're selling</p>
+                <h2>Browse categories</h2>
+                <p>Find what you need, or list what you are clearing out</p>
             </div>
-            <form action="/Listings" method="get" class="d-flex" style="min-width:240px;">
-                <div class="input-group">
-                    <input type="text" id="homeSearchInput" name="q" class="form-control" placeholder="Search listings..." autocomplete="off" />
-                    <button class="btn btn-primary" type="submit">
-                        <i class="bi bi-search"></i>
-                    </button>
-                </div>
-            </form>
+            <a class="section-link" href="/Categories">All categories <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
         </div>
-
-        @{
-            var categoryColors = new Dictionary<string, string>
+        <div class="category-grid">
+            @for (var i = 0; i < Model.Categories.Count; i++)
             {
-                ["pets"]           = "#eab308",
-                ["electronics"]    = "#6366f1",
-                ["clothing"]       = "#14b8a6",
-                ["home-kitchen"]   = "#f97316",
-                ["sports-leisure"] = "#22c55e",
-                ["garden-outdoor"] = "#16a34a",
-                ["kids-baby"]      = "#ec4899",
-                ["other"]          = "#a855f7",
-            };
-            var iconOverrides = new Dictionary<string, string>();
-        }
-        <div class="row g-3 mt-1">
-            @foreach (var category in Model.Categories)
-            {
-                var iconColor = categoryColors.TryGetValue(category.Slug, out var col) ? col : "var(--color-primary)";
-                var iconClass = iconOverrides.TryGetValue(category.Slug, out var ov) ? ov : category.IconClass;
-                var iconFull  = iconClass.Contains(' ') ? iconClass : "bi " + iconClass;
-                <div class="col-6 col-md-4 col-lg-3">
-                    <a href="/Category/@category.Slug" class="text-decoration-none">
-                        <div class="category-card">
-                            <i class="@iconFull category-icon" style="font-size:3.25rem; color:@iconColor"></i>
-                            <h5 class="category-name">@category.Name</h5>
-                            <small class="text-muted">@category.ListingCount items</small>
-                        </div>
-                    </a>
-                </div>
+                var category = Model.Categories[i];
+                var icon = string.IsNullOrEmpty(category.IconClass) ? "bi bi-box"
+                    : category.IconClass.Contains(' ') ? category.IconClass : "bi " + category.IconClass;
+                var count = category.ListingCount switch
+                {
+                    0 => "Coming soon",
+                    1 => "1 item",
+                    var n => $"{n} items"
+                };
+                <a class="category-card" href="/Category/@category.Slug">
+                    <span class="category-icon @tones[i % tones.Length]"><i class="@icon" aria-hidden="true"></i></span>
+                    <span>
+                        <span class="category-name d-block">@category.Name</span>
+                        <span class="category-count @(category.ListingCount == 0 ? "is-empty" : "")">@count</span>
+                    </span>
+                </a>
             }
         </div>
     </div>
 </section>
 
-<!-- Benefits Section -->
-<section class="py-5 bg-light-custom">
-    <div class="container">
-        <h2 class="section-title text-center">Why Malta's Garage?</h2>
-        <p class="section-subtitle text-center">Safe, fair, and fast way to buy and sell</p>
-
-        <div class="row">
-            <div class="col-md-4">
-                <div class="benefit-card">
-                    <div class="benefit-icon">
-                        <i class="bi bi-shield-lock"></i>
-                    </div>
-                    <h4 class="benefit-title">Secure Payments</h4>
-                    <p class="benefit-text">
-                        Your money is protected until you receive your item.
-                        We hold payments in escrow for your safety.
-                    </p>
+@if (Model.EndingSoon.Any())
+{
+    <section class="section section-alt">
+        <div class="container">
+            <div class="section-head">
+                <div>
+                    <h2><i class="bi bi-fire text-urgent" aria-hidden="true"></i> Ending soon</h2>
+                    <p>Live auctions closing next</p>
                 </div>
+                <a class="section-link" href="/Listings?sort=ending">See all auctions <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
             </div>
-            <div class="col-md-4">
-                <div class="benefit-card">
-                    <div class="benefit-icon">
-                        <i class="bi bi-graph-up-arrow"></i>
-                    </div>
-                    <h4 class="benefit-title">Fair Prices</h4>
-                    <p class="benefit-text">
-                        Our auction system ensures fair market value.
-                        Set your price and let buyers compete.
-                    </p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="benefit-card">
-                    <div class="benefit-icon">
-                        <i class="bi bi-lightning"></i>
-                    </div>
-                    <h4 class="benefit-title">Quick Sales</h4>
-                    <p class="benefit-text">
-                        Set your deadline and our smart pricing
-                        helps you sell in time - guaranteed.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Expiring Soon Section -->
-<section class="py-5">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="section-title mb-0">
-                    <i class="bi bi-fire text-urgent me-2"></i>Expiring Soon
-                </h2>
-                <p class="text-muted mb-0">Last chance to grab these deals!</p>
-            </div>
-            <a href="/Listings?sort=ending" class="btn btn-outline-primary">View All</a>
-        </div>
-
-        @if (Model.ExpiringSoon.Any())
-        {
-            <div class="row g-4">
-                @foreach (var listing in Model.ExpiringSoon)
+            <div class="listing-grid cols-4">
+                @foreach (var listing in Model.EndingSoon)
                 {
-                    <div class="col-6 col-lg-3">
-                        <a href="/Listing/@listing.Id" class="text-decoration-none">
-                            <div class="listing-card h-100">
-                                @if (!string.IsNullOrEmpty(listing.ImageUrl))
-                                {
-                                    <img src="@listing.ImageUrl" alt="@listing.Title" class="listing-image">
-                                }
-                                else
-                                {
-                                    <div class="listing-image d-flex align-items-center justify-content-center text-muted">
-                                        <i class="bi bi-image fs-1"></i>
-                                    </div>
-                                }
-                                <div class="listing-body">
-                                    @if (listing.Status == MaltasGarage.Domain.Enums.ListingStatus.AuctionPhase)
-                                    {
-                                        <span class="auction-badge-outline-fire mb-2">
-                                            <i class="bi bi-fire"></i> @listing.TimeLeft
-                                        </span>
-                                    }
-                                    else if (listing.Status == MaltasGarage.Domain.Enums.ListingStatus.Active && listing.AuctionStartDate > DateTime.UtcNow)
-                                    {
-                                        <span class="auction-badge-outline mb-2">
-                                            <i class="bi bi-calendar-event"></i>Auction starts @listing.AuctionStartDate?.ToString("dd MMM") · from €@listing.MinPrice.ToString("N0")
-                                        </span>
-                                    }
-                                    else if (listing.AuctionStartDate == null && (listing.SellByDate - DateTime.UtcNow).TotalDays <= 7)
-                                    {
-                                        <span class="auction-badge-outline-fire mb-2">
-                                            <i class="bi bi-fire"></i> @listing.TimeLeft
-                                        </span>
-                                    }
-                                    else if (listing.AuctionStartDate == null)
-                                    {
-                                        <span class="auction-badge-outline-dark mb-2">
-                                            <i class="bi bi-calendar-x"></i>Fixed price · Expires @listing.SellByDate.ToString("dd MMM")
-                                        </span>
-                                    }
-                                    <h5 class="listing-title">@listing.Title@if (listing.IsNew){<span class="badge bg-warning ms-2" style="font-size:0.65rem;vertical-align:middle;">New</span>}</h5>
-                                    <p class="listing-price mb-1">€@listing.CurrentPrice.ToString("N0")</p>
-                                    @if (!string.IsNullOrEmpty(listing.City))
-                                    {
-                                        <p class="listing-location mb-0">
-                                            <i class="bi bi-geo-alt me-1"></i>@listing.City
-                                        </p>
-                                    }
-                                </div>
-                            </div>
-                        </a>
-                    </div>
+                    <partial name="_ListingCard" model="listing" />
                 }
             </div>
-        }
-        else
-        {
-            <div class="text-center py-5">
-                <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
-                <h5 class="mt-3">No listings yet</h5>
-                <p class="text-muted">Be the first to list something!</p>
-                <a href="/Listings/Create" class="btn btn-primary">
-                    <i class="bi bi-plus-circle me-2"></i>Create Listing
-                </a>
-            </div>
-        }
-    </div>
-</section>
+        </div>
+    </section>
+}
 
-<!-- How It Works Section -->
-<section class="py-5 bg-light-custom how-it-works">
+<section class="section">
     <div class="container">
-        <h2 class="section-title text-center">How It Works</h2>
-        <p class="section-subtitle text-center">Simple steps to buy or sell</p>
+        <div class="section-head">
+            <div>
+                <h2>How Malta's Garage works</h2>
+                <p>Safe for buyers, simple for sellers</p>
+            </div>
+            <a class="section-link" href="/HowItWorks">Read the full guide <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        </div>
 
-        <ul class="nav nav-tabs justify-content-center mb-4" role="tablist">
-            <li class="nav-item">
-                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#buyer-tab">
-                    <i class="bi bi-cart me-2"></i>I'm a Buyer
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="buyer-tab-btn" data-bs-toggle="tab" data-bs-target="#buyer-tab" type="button" role="tab" aria-controls="buyer-tab" aria-selected="true">
+                    <i class="bi bi-cart me-2" aria-hidden="true"></i>I'm a buyer
                 </button>
             </li>
-            <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#seller-tab">
-                    <i class="bi bi-tag me-2"></i>I'm a Seller
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="seller-tab-btn" data-bs-toggle="tab" data-bs-target="#seller-tab" type="button" role="tab" aria-controls="seller-tab" aria-selected="false">
+                    <i class="bi bi-tag me-2" aria-hidden="true"></i>I'm a seller
                 </button>
             </li>
         </ul>
 
         <div class="tab-content">
-            <div class="tab-pane fade show active" id="buyer-tab">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="step-item">
-                            <div class="step-number">1</div>
-                            <h5>Browse Items</h5>
-                            <p class="text-muted">Find great deals from motivated sellers</p>
-                        </div>
+            <div class="tab-pane fade show active" id="buyer-tab" role="tabpanel" aria-labelledby="buyer-tab-btn">
+                <div class="steps">
+                    <div class="step">
+                        <span class="step-num">1</span>
+                        <span class="step-icon category-icon tone-sea"><i class="bi bi-search" aria-hidden="true"></i></span>
+                        <h3>Find something good</h3>
+                        <p>Search or browse by category. Every listing shows its pickup town.</p>
                     </div>
-                    <div class="col-md-3">
-                        <div class="step-item">
-                            <div class="step-number">2</div>
-                            <h5>Buy, Bid, or Offer</h5>
-                            <p class="text-muted">Buy instantly, place a bid at auction, make a price offer, or bundle items for a better deal</p>
-                        </div>
+                    <div class="step">
+                        <span class="step-num">2</span>
+                        <span class="step-icon category-icon tone-sun"><i class="bi bi-hammer" aria-hidden="true"></i></span>
+                        <h3>Buy, offer or bid</h3>
+                        <p>Buy now at the fixed price, send the seller an offer, bundle items, or join the live auction.</p>
                     </div>
-                    <div class="col-md-3">
-                        <div class="step-item">
-                            <div class="step-number">3</div>
-                            <h5>Receive Item</h5>
-                            <p class="text-muted">Get it delivered or pick up in person</p>
-                        </div>
+                    <div class="step">
+                        <span class="step-num">3</span>
+                        <span class="step-icon category-icon tone-green"><i class="bi bi-shield-check" aria-hidden="true"></i></span>
+                        <h3>Pay into escrow</h3>
+                        <p>Pay by card with Stripe. The seller is paid only after you confirm you have the item.</p>
                     </div>
-                    <div class="col-md-3">
-                        <div class="step-item">
-                            <div class="step-number">4</div>
-                            <h5>Confirm & Review</h5>
-                            <p class="text-muted">Confirm receipt and leave a review</p>
-                        </div>
+                    <div class="step">
+                        <span class="step-num">4</span>
+                        <span class="step-icon category-icon tone-coral"><i class="bi bi-truck" aria-hidden="true"></i></span>
+                        <h3>Receive and review</h3>
+                        <p>MaltaPost tracked delivery, or meet up and confirm with a 6-digit handover code.</p>
                     </div>
                 </div>
             </div>
 
-            <div class="tab-pane fade" id="seller-tab">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="step-item">
-                            <div class="step-number">1</div>
-                            <h5>List Your Item</h5>
-                            <p class="text-muted">Take photos, set your prices and deadline</p>
-                        </div>
+            <div class="tab-pane fade" id="seller-tab" role="tabpanel" aria-labelledby="seller-tab-btn">
+                <div class="steps">
+                    <div class="step">
+                        <span class="step-num">1</span>
+                        <span class="step-icon category-icon tone-sea"><i class="bi bi-camera" aria-hidden="true"></i></span>
+                        <h3>List your item</h3>
+                        <p>Add photos, set a buy-now price, a starting price and the date it must go by.</p>
                     </div>
-                    <div class="col-md-3">
-                        <div class="step-item">
-                            <div class="step-number">2</div>
-                            <h5>Get Offers</h5>
-                            <p class="text-muted">Buyers can purchase instantly, bid at auction, or make a price offer - even as a bundle with other items</p>
-                        </div>
+                    <div class="step">
+                        <span class="step-num">2</span>
+                        <span class="step-icon category-icon tone-sun"><i class="bi bi-chat-square-text" aria-hidden="true"></i></span>
+                        <h3>Get buyers</h3>
+                        <p>Buyers purchase instantly, make offers or bundles, and bid in the final auction week.</p>
                     </div>
-                    <div class="col-md-3">
-                        <div class="step-item">
-                            <div class="step-number">3</div>
-                            <h5>Ship or Meet</h5>
-                            <p class="text-muted">Choose MaltaPost or hand-to-hand delivery</p>
-                        </div>
+                    <div class="step">
+                        <span class="step-num">3</span>
+                        <span class="step-icon category-icon tone-green"><i class="bi bi-box-seam" aria-hidden="true"></i></span>
+                        <h3>Ship or meet</h3>
+                        <p>Send it with MaltaPost or hand it over in person with the buyer's code.</p>
                     </div>
-                    <div class="col-md-3">
-                        <div class="step-item">
-                            <div class="step-number">4</div>
-                            <h5>Get Paid</h5>
-                            <p class="text-muted">Receive payment after buyer confirms</p>
-                        </div>
+                    <div class="step">
+                        <span class="step-num">4</span>
+                        <span class="step-icon category-icon tone-coral"><i class="bi bi-cash-coin" aria-hidden="true"></i></span>
+                        <h3>Get paid</h3>
+                        <p>The escrow is released to your Stripe account once the buyer confirms.</p>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</section>
 
-        <div class="text-center mt-4">
-            <a href="/HowItWorks" class="btn btn-primary">
-                <i class="bi bi-info-circle me-2"></i>Learn more about how it works
-            </a>
+<section class="section pt-0">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <h2>Just listed</h2>
+                <p>Fresh from sellers across the islands</p>
+            </div>
+            <a class="section-link" href="/Listings">Browse all <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
         </div>
+        @if (Model.JustListed.Any())
+        {
+            <div class="listing-grid cols-4">
+                @foreach (var listing in Model.JustListed)
+                {
+                    <partial name="_ListingCard" model="listing" />
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <span class="empty-icon"><i class="bi bi-inbox" aria-hidden="true"></i></span>
+                <h3>No listings yet</h3>
+                <p>Be the first to list something.</p>
+                <a href="/Listings/Create" class="btn btn-primary"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create listing</a>
+            </div>
+        }
     </div>
 </section>
 
