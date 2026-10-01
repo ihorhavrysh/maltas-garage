@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', function () {
     popoverTriggerList.forEach(function (popoverTriggerEl) {
         new bootstrap.Popover(popoverTriggerEl);
     });
+
+    // Header search (desktop and mobile copies)
+    initSearchAutocomplete(document.getElementById('q-top'));
+    initSearchAutocomplete(document.getElementById('q-mob'));
 });
 
 // Search autocomplete

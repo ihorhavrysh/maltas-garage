@@ -211,11 +211,20 @@ public class OrderService : IOrderService
         if (order.Status is not (OrderStatus.Paid or OrderStatus.Shipped or OrderStatus.Delivered or OrderStatus.Disputed))
             throw new Exception($"Cannot release escrow for order {orderId}: order status is {order.Status}");
 
-        // Transfer seller's payout — this is when money actually moves from platform to seller
-        if (order.Payment?.StripePaymentIntentId != null &&
-            order.Seller?.StripeAccountId != null &&
-            order.Payment.Status == PaymentStatus.Captured)
+        if (order.Payment == null)
+            throw new Exception($"Cannot release escrow for order {orderId}: Payment is null");
+
+        // No PaymentIntent means no money went through Stripe (seeded demo orders), so there is
+        // nothing to transfer: release in the database only, as RefundBuyerAsync and
+        // AutoReleaseDueEscrowAsync already do
+        if (order.Payment.StripePaymentIntentId != null)
         {
+            if (order.Seller?.StripeAccountId == null)
+                throw new Exception($"Cannot release escrow for order {orderId}: Seller StripeAccountId is null");
+            if (order.Payment.Status != PaymentStatus.Captured)
+                throw new Exception($"Cannot release escrow for order {orderId}: Payment.Status is {order.Payment.Status} (expected Captured)");
+
+            // Transfer seller's payout — this is when money actually moves from platform to seller
             var transferred = await _payment.CreateTransferAsync(
                 order.SellerPayout,
                 order.Seller.StripeAccountId,
@@ -224,18 +233,9 @@ public class OrderService : IOrderService
 
             if (!transferred)
                 throw new Exception($"Stripe transfer failed for order {orderId}.");
+        }
 
-            order.Payment.ReleasedAt = DateTime.UtcNow;
-        }
-        else
-        {
-            // Log why transfer was skipped
-            var reason = order.Payment == null ? "Payment is null"
-                : order.Payment.StripePaymentIntentId == null ? "StripePaymentIntentId is null"
-                : order.Seller?.StripeAccountId == null ? "Seller StripeAccountId is null"
-                : $"Payment.Status is {order.Payment.Status} (expected Captured)";
-            throw new Exception($"Cannot release escrow for order {orderId}: {reason}");
-        }
+        order.Payment.ReleasedAt = DateTime.UtcNow;
 
         order.Status = OrderStatus.Completed;
         order.CompletedAt = DateTime.UtcNow;

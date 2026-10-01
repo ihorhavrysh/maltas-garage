@@ -11,8 +11,6 @@
     MaltasGarage.Domain.Entities.UserProfile? headerProfile = null;
     bool isSignedIn = SignInManager.IsSignedIn(User);
     bool isAdminOrManager = User.IsInRole("Admin") || User.IsInRole("Manager");
-    // The home page has its own large search in the hero, so the header one is hidden there
-    bool showSearch = ViewData["HideHeaderSearch"] as bool? != true;
     string query = Context.Request.Query["q"].ToString();
 
     if (isSignedIn && !string.IsNullOrEmpty(CurrentUserService.UserId))
@@ -45,22 +43,18 @@
                 <span class="brand-name">Malta's <span>Garage</span></span>
             </a>
 
-            @if (showSearch)
-            {
-                <form class="header-search" role="search" action="/Listings" method="get">
-                    <label class="visually-hidden" for="q-top">Search listings</label>
-                    <span class="search-icon"><i class="bi bi-search" aria-hidden="true"></i></span>
-                    <input id="q-top" class="form-control" type="search" name="q" value="@query" placeholder="Search bikes, lamps, cameras...">
-                    <button class="btn btn-primary btn-sm" type="submit">Search</button>
-                </form>
-            }
+            <form class="header-search" role="search" action="/Listings" method="get">
+                <label class="visually-hidden" for="q-top">Search listings</label>
+                <span class="search-icon"><i class="bi bi-search" aria-hidden="true"></i></span>
+                <input id="q-top" class="form-control" type="search" name="q" value="@query" placeholder="Search bikes, lamps, cameras..." autocomplete="off">
+                <button class="btn btn-primary btn-sm" type="submit">Search</button>
+            </form>
 
             <nav class="header-nav" aria-label="Main">
-                <a class="nav-link-plain hide-md" href="/Listings">Browse</a>
+                <a class="nav-link-plain hide-md" href="/HowItWorks">How it works</a>
 
                 @if (!isSignedIn)
                 {
-                    <a class="nav-link-plain hide-md" href="/HowItWorks">How it works</a>
                     <a class="btn btn-ghost btn-sm hide-md" href="/Identity/Account/Login">Log in</a>
                     <a class="btn btn-primary btn-sm" href="/Identity/Account/Register">Sign up</a>
                 }
@@ -84,7 +78,7 @@
                         }
                     </a>
                     <div class="dropdown">
-                        <button class="icon-btn gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu">
+                        <button class="icon-btn account-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu">
                             <span class="avatar">@initials</span>
                             <i class="bi bi-chevron-down small" aria-hidden="true"></i>
                         </button>
@@ -95,7 +89,8 @@
                             <li><a class="dropdown-item" href="/Orders"><i class="bi bi-bag me-2"></i>My orders</a></li>
                             <li><a class="dropdown-item" href="/Account/Sales"><i class="bi bi-graph-up me-2"></i>My sales</a></li>
                             <li><a class="dropdown-item" href="/Account/Favourites"><i class="bi bi-heart me-2"></i>Favourites</a></li>
-                            <li><a class="dropdown-item d-md-none" href="/Listings/Create"><i class="bi bi-plus-lg me-2"></i>Sell an item</a></li>
+                            <li><a class="dropdown-item d-lg-none" href="/Listings/Create"><i class="bi bi-plus-lg me-2"></i>Sell an item</a></li>
+                            <li><a class="dropdown-item d-lg-none" href="/HowItWorks"><i class="bi bi-question-circle me-2"></i>How it works</a></li>
                             <li><a class="dropdown-item" href="/Account/Settings"><i class="bi bi-gear me-2"></i>Settings</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
@@ -124,7 +119,6 @@
                             <i class="bi bi-list" aria-hidden="true"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/Listings">Browse</a></li>
                             <li><a class="dropdown-item" href="/HowItWorks">How it works</a></li>
                             <li><a class="dropdown-item" href="/Identity/Account/Login">Log in</a></li>
                         </ul>
@@ -133,16 +127,13 @@
             </nav>
         </div>
 
-        @if (showSearch)
-        {
-            <div class="header-mobile-search">
-                <form class="header-search" role="search" action="/Listings" method="get">
-                    <label class="visually-hidden" for="q-mob">Search listings</label>
-                    <span class="search-icon"><i class="bi bi-search" aria-hidden="true"></i></span>
-                    <input id="q-mob" class="form-control" type="search" name="q" value="@query" placeholder="Search bikes, lamps, cameras...">
-                    <button class="btn btn-primary btn-sm" type="submit">Search</button>
-                </form>
-            </div>
-        }
+        <div class="header-mobile-search">
+            <form class="header-search" role="search" action="/Listings" method="get">
+                <label class="visually-hidden" for="q-mob">Search listings</label>
+                <span class="search-icon"><i class="bi bi-search" aria-hidden="true"></i></span>
+                <input id="q-mob" class="form-control" type="search" name="q" value="@query" placeholder="Search bikes, lamps, cameras..." autocomplete="off">
+                <button class="btn btn-primary btn-sm" type="submit">Search</button>
+            </form>
+        </div>
     </div>
 </header>

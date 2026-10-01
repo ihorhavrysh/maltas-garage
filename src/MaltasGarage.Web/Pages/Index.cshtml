@@ -31,9 +31,7 @@
 }
 
 @{
-    ViewData["HideHeaderSearch"] = true;
     var tones = new[] { "tone-coral", "tone-sea", "tone-sun", "tone-green" };
-    var popular = Model.Categories.Where(c => c.ListingCount > 0).OrderByDescending(c => c.ListingCount).Take(4).ToList();
 }
 
 <section class="hero">
@@ -43,25 +41,6 @@
                 <span class="hero-eyebrow"><i class="bi bi-geo-alt" aria-hidden="true"></i>Second-hand marketplace for Malta &amp; Gozo</span>
                 <h1 class="hero-title">Pre-loved finds, <em>fair prices</em>, just round the corner.</h1>
                 <p class="hero-lead">Buy it now, make an offer or join a live auction. Your payment stays in escrow until the item is in your hands.</p>
-                <form class="hero-search" role="search" action="/Listings" method="get">
-                    <label class="visually-hidden" for="homeSearchInput">What are you looking for?</label>
-                    <input id="homeSearchInput" class="form-control" type="search" name="q" placeholder="Search for anything" autocomplete="off">
-                    <button class="btn btn-primary" type="submit"><i class="bi bi-search" aria-hidden="true"></i>Search</button>
-                </form>
-                @if (popular.Any())
-                {
-                    <div class="hero-links">
-                        <span>Popular:</span>
-                        @foreach (var category in popular)
-                        {
-                            <a href="/Category/@category.Slug">@category.Name</a>
-                        }
-                    </div>
-                }
-                <div class="d-flex flex-wrap gap-2 mt-4">
-                    <a class="btn btn-outline-primary" href="/Listings/Create"><i class="bi bi-plus-lg" aria-hidden="true"></i>Sell an item</a>
-                    <a class="btn btn-ghost" href="/HowItWorks">How it works <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                </div>
             </div>
             <div class="hero-art">
                 <img src="/images/Hero/hero.svg" alt="Illustration of a Maltese street market with limestone houses, coloured balconies and a church dome by the sea" fetchpriority="high">
@@ -239,8 +218,3 @@
     </div>
 </section>
 
-@section Scripts {
-    <script>
-        initSearchAutocomplete(document.getElementById('homeSearchInput'));
-    </script>
-}

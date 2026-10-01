@@ -234,6 +234,7 @@ a:hover { color: var(--mg-sea-700); }
 .demo-banner .container { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 36px; padding-block: .375rem; flex-wrap: wrap; text-align: center; }
 .demo-banner a { color: var(--mg-sun-800); font-weight: 700; }
 .demo-banner code { color: var(--mg-sun-800); background: rgba(107, 78, 0, .08); padding: .05rem .35rem; border-radius: 4px; font-size: .8125rem; }
+.demo-notice { position: fixed; top: 1rem; right: 1rem; z-index: 1080; width: min(420px, calc(100vw - 2rem)); box-shadow: var(--mg-shadow-lg); }
 .demo-banner .demo-pill { font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: .6875rem; background: var(--mg-sun-400); color: var(--mg-stone-900); padding: .1rem .5rem; border-radius: var(--mg-radius-pill); }
 
 /* ---------------------------------------------------------------------
@@ -261,6 +262,8 @@ a:hover { color: var(--mg-sea-700); }
 .header-nav .nav-link-plain:hover { background: var(--mg-stone-100); color: var(--mg-stone-900); }
 .icon-btn { position: relative; width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--mg-stone-700); background: transparent; border: 0; }
 .icon-btn:hover { background: var(--mg-stone-100); color: var(--mg-stone-900); }
+/* Avatar + chevron do not fit a 44px circle: a pill keeps the hover shape around both */
+.icon-btn.account-btn { width: auto; gap: .25rem; padding: 0 .5rem 0 .25rem; border-radius: var(--mg-radius-pill); }
 .notif-badge {
   position: absolute; top: 5px; right: 3px;
   min-width: 18px; height: 18px; padding: 0 5px;
@@ -303,21 +306,13 @@ a:hover { color: var(--mg-sea-700); }
 .hero-title { font-size: clamp(2.25rem, 1.5rem + 3vw, 3.5rem); font-weight: 900; line-height: 1.05; letter-spacing: -.025em; margin: 1rem 0; text-wrap: balance; }
 .hero-title em { font-style: normal; color: var(--mg-green-600); }
 .hero-lead { font-size: var(--mg-fs-lg); color: var(--mg-stone-700); max-width: 34ch; text-wrap: pretty; }
-.hero-search { display: flex; gap: .5rem; background: #fff; padding: .5rem; border-radius: var(--mg-radius-pill); box-shadow: var(--mg-shadow-lg); border: 1px solid var(--mg-border); margin-top: 1.5rem; max-width: 560px; }
-.hero-search .form-control { border: 0; background: transparent; min-height: 48px; padding-left: 1rem; box-shadow: none; }
-.hero-search .form-select { border: 0; border-left: 1px solid var(--mg-border); border-radius: 0; background-color: transparent; max-width: 170px; }
-.hero-search .btn { flex-shrink: 0; }
-.hero-links { display: flex; gap: .75rem 1.5rem; flex-wrap: wrap; margin-top: 1.25rem; font-size: var(--mg-fs-sm); color: var(--mg-text-muted); }
 .hero-art { border-radius: var(--mg-radius-xl); overflow: hidden; box-shadow: var(--mg-shadow-md); aspect-ratio: 6 / 5; background: var(--mg-sea-50); }
 .hero-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Desktop: same height as a 90%-wide 6:5 box, stretched 10% wider */
+@media (min-width: 992px) { .hero-art { width: 99%; justify-self: end; aspect-ratio: 33 / 25; } }
 .hero-stats { display: flex; gap: 2rem; margin-top: 1.75rem; }
 .hero-stats strong { display: block; font-family: var(--mg-font-display); font-size: var(--mg-fs-2xl); font-weight: 900; }
 .hero-stats span { font-size: var(--mg-fs-sm); color: var(--mg-text-muted); }
-@media (max-width: 575.98px) {
-  .hero-search { flex-wrap: wrap; border-radius: var(--mg-radius-lg); }
-  .hero-search .form-select { display: none; }
-  .hero-search .btn { width: 100%; }
-}
 
 /* ---------------------------------------------------------------------
    8. Sections
@@ -728,6 +723,21 @@ a:hover { color: var(--mg-sea-700); }
    (seller profile, favourites, category, how it works, account pages).
    Same meaning as before, recoloured to the v2 palette.
    --------------------------------------------------------------------- */
+/* v1 colour variables still referenced by inline <style> blocks of those pages */
+:root {
+  --color-primary: var(--mg-green-600);
+  --color-primary-dark: var(--mg-green-700);
+  --color-primary-light: var(--mg-green-400);
+  --color-secondary: var(--mg-sea-600);
+  --color-secondary-dark: var(--mg-sea-700);
+  --color-accent: var(--mg-sun-400);
+  --color-urgent: var(--mg-coral-700);
+  --color-text: var(--mg-stone-900);
+  --color-text-light: var(--mg-stone-500);
+  --color-bg-light: var(--mg-stone-100);
+  --color-white: var(--mg-stone-0);
+  --color-border: var(--mg-stone-200);
+}
 .auction-badge,
 .auction-badge-outline,
 .auction-badge-outline-fire,
