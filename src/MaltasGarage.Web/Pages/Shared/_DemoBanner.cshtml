@@ -15,11 +15,10 @@
 
     @if (!string.IsNullOrEmpty(notice))
     {
-        <div class="container mt-3">
-            <div class="alert alert-warning alert-dismissible fade show mb-0" role="alert">
-                <i class="bi bi-shield-lock me-1"></i>@notice
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+        @* Floats over the page so it does not push the layout down *@
+        <div class="demo-notice alert alert-warning alert-dismissible fade show mb-0" role="alert">
+            <i class="bi bi-shield-lock me-1"></i>@notice
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 }

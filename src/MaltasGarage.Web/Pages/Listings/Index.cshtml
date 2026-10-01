@@ -59,18 +59,13 @@
                     <option value="used" selected="@(Model.Condition == "used")">Used</option>
                 </select>
             </form>
+            @if (!string.IsNullOrEmpty(Model.Condition) || Model.Sort != "newest")
+            {
+                @* Resets sort and condition, keeps the search query *@
+                <a href="?pageNum=1@q" class="btn btn-sm btn-ghost"><i class="bi bi-x-lg me-1"></i>Clear filters</a>
+            }
         </div>
     </div>
-
-    @if (!string.IsNullOrEmpty(Model.Q))
-    {
-        <form action="/Listings" method="get" class="mb-4" style="max-width:400px;">
-            <div class="input-group">
-                <input type="text" name="q" value="@Model.Q" class="form-control" placeholder="Search listings..." />
-                <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
-            </div>
-        </form>
-    }
 
     @if (Model.Listings.Any())
     {

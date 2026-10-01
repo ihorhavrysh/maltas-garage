@@ -170,6 +170,24 @@ public class OrderServiceTests
         Assert.Equal(1, updated.Seller.TotalSales);
     }
 
+    [Fact]
+    public async Task ReleaseEscrow_WithoutPaymentIntent_CompletesWithoutStripeTransfer()
+    {
+        // Seeded demo orders: no money went through Stripe and the seller has no Stripe account
+        var ctx = TestDbContextFactory.Create();
+        var (service, orderId) = await SeedPaidOrderAsync(ctx, OrderStatus.Disputed);
+        var order = await ctx.Orders.Include(o => o.Payment).Include(o => o.Seller).FirstAsync(o => o.Id == orderId);
+        order.Payment!.StripePaymentIntentId = null;
+        order.Seller.StripeAccountId = null;
+        await ctx.SaveChangesAsync();
+
+        await service.ReleaseEscrowAsync(orderId);
+
+        Assert.Equal(OrderStatus.Completed, order.Status);
+        Assert.Equal(PaymentStatus.Released, order.Payment.Status);
+        Assert.NotNull(order.Payment.ReleasedAt);
+    }
+
     // ── RefundBuyerAsync ─────────────────────────────────────────────────────
 
     [Fact]
