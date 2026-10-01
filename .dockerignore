@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+**/.vs/
+**/*.user
+**/node_modules/
+**/appsettings.*.local.json
+src/MaltasGarage.Web/wwwroot/uploads/
+tests/
+docs/
+.git/
+.github/
+.claude/
+.env
+.env.*
