@@ -5,6 +5,7 @@ using MaltasGarage.Infrastructure.Data.Seed;
 using MaltasGarage.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -39,7 +40,10 @@ public static class DependencyInjection
                     // back-off, and commands get enough time to wait for the resume.
                     b.EnableRetryOnFailure(maxRetryCount: 6, maxRetryDelay: TimeSpan.FromSeconds(20), errorNumbersToAdd: null);
                     b.CommandTimeout(60);
-                }));
+                })
+            // The only explicit transactions (demo seed and reset) run inside the execution
+            // strategy and are retried as a whole, so they never rely on savepoints
+            .ConfigureWarnings(w => w.Ignore(SqlServerEventId.SavepointsDisabledBecauseOfMARS)));
 
         services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>());
