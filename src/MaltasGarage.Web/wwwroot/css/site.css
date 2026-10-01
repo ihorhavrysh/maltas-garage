@@ -677,7 +677,8 @@ a:hover { color: var(--mg-sea-700); }
 .empty-state .empty-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--mg-stone-100); color: var(--mg-stone-500); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
 .empty-state h3 { font-size: var(--mg-fs-xl); }
 .empty-state p { color: var(--mg-text-muted); max-width: 40ch; margin: .25rem auto 1.25rem; }
-.alert { --bs-alert-border-radius: var(--mg-radius-md); display: flex; gap: .75rem; align-items: flex-start; font-size: var(--mg-fs-sm); }
+/* Not flex: many alerts mix text with <strong> and <a>, which flex would split into columns */
+.alert { --bs-alert-border-radius: var(--mg-radius-md); font-size: var(--mg-fs-sm); }
 .alert-success { --bs-alert-bg: var(--mg-green-50); --bs-alert-color: var(--mg-green-700); --bs-alert-border-color: var(--mg-green-100); }
 .alert-info { --bs-alert-bg: var(--mg-sea-50); --bs-alert-color: var(--mg-sea-700); --bs-alert-border-color: #C7E6F3; }
 .alert-warning { --bs-alert-bg: var(--mg-sun-100); --bs-alert-color: var(--mg-sun-800); --bs-alert-border-color: #F2DE8A; }
