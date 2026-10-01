@@ -3,94 +3,86 @@
 @using MaltasGarage.Infrastructure.Data.Seed
 @inject Microsoft.Extensions.Options.IOptions<MaltasGarage.Application.Common.Models.DemoSettings> DemoOptions
 @{
-    ViewData["Title"] = "Sign In";
+    ViewData["Title"] = "Log in";
     var demoAccounts = new[]
     {
-        ("Buyer", DemoAccounts.BuyerEmail, "bi-bag"),
-        ("Seller", DemoAccounts.SellerEmail, "bi-shop"),
-        ("Admin", DemoAccounts.AdminEmail, "bi-shield-lock")
+        ("Buyer", "Orders & offers", DemoAccounts.BuyerEmail, "bi-bag"),
+        ("Seller", "Listings & chats", DemoAccounts.SellerEmail, "bi-shop"),
+        ("Admin", "Admin panel", DemoAccounts.AdminEmail, "bi-shield-lock")
     };
 }
 
 <div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            <div class="card shadow-sm">
-                <div class="card-body p-4">
-                    <div class="text-center mb-4">
-                        <i class="bi bi-person-circle text-primary" style="font-size: 3rem;"></i>
-                        <h2 class="mt-2">Welcome Back</h2>
-                        <p class="text-muted">Sign in to your account</p>
-                    </div>
-
-                    @if (DemoOptions.Value.Enabled)
-                    {
-                        <div class="border rounded p-3 mb-4 bg-light">
-                            <div class="small fw-semibold mb-2">Try a demo account (password <code>@DemoAccounts.Password</code>)</div>
-                            <div class="d-flex flex-wrap gap-2">
-                                @foreach (var (role, email, icon) in demoAccounts)
-                                {
-                                    <button type="button" class="btn btn-outline-primary btn-sm demo-login"
-                                            data-email="@email" data-password="@DemoAccounts.Password">
-                                        <i class="bi @icon me-1"></i>@role
-                                    </button>
-                                }
-                            </div>
-                        </div>
-                        <script>
-                            document.querySelectorAll('.demo-login').forEach(b => b.addEventListener('click', () => {
-                                document.getElementById('Input_Email').value = b.dataset.email;
-                                document.getElementById('Input_Password').value = b.dataset.password;
-                                document.getElementById('loginForm').submit();
-                            }));
-                        </script>
-                    }
-
-                    <form id="loginForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-                        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
-
-                        <div class="mb-3">
-                            <label asp-for="Input.Email" class="form-label">Email</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                <input asp-for="Input.Email" class="form-control" placeholder="your@email.com" />
-                            </div>
-                            <span asp-validation-for="Input.Email" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="Input.Password" class="form-label">Password</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                                <input asp-for="Input.Password" class="form-control" placeholder="••••••••" />
-                            </div>
-                            <span asp-validation-for="Input.Password" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-4 d-flex justify-content-between align-items-center">
-                            <div class="form-check mb-0">
-                                <input asp-for="Input.RememberMe" class="form-check-input" />
-                                <label asp-for="Input.RememberMe" class="form-check-label">Remember me</label>
-                            </div>
-                            <a asp-page="./ForgotPassword" class="small">Forgot password?</a>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100 py-2">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
-                        </button>
-                    </form>
-
-                    <hr class="my-4">
-
-                    <p class="text-center mb-0">
-                        Don't have an account? <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Create one</a>
-                    </p>
-                </div>
+    <div class="auth-wrap">
+        <div class="auth-side d-none d-lg-flex">
+            <img src="/images/Hero/hero.svg" alt="">
+            <div class="position-relative bg-white rounded-4 p-3 shadow-sm" style="max-width: 360px">
+                <div class="fw-bold mb-1"><i class="bi bi-shield-check me-1" aria-hidden="true"></i>Escrow on every order</div>
+                <div class="small text-muted">Pay by card, the seller is paid after you confirm you have the item.</div>
             </div>
+        </div>
+
+        <div class="auth-form">
+            <h1 class="mb-1">Welcome back</h1>
+            <p class="text-muted mb-4">Log in to buy, bid and chat with sellers.</p>
+
+            @if (DemoOptions.Value.Enabled)
+            {
+                <div class="demo-accounts">
+                    <div class="title"><i class="bi bi-lightning-charge" aria-hidden="true"></i>Try it instantly with a demo account</div>
+                    <div class="demo-grid">
+                        @foreach (var (role, hint, email, icon) in demoAccounts)
+                        {
+                            <button class="demo-btn demo-login" type="button" data-email="@email" data-password="@DemoAccounts.Password">
+                                <i class="bi @icon" aria-hidden="true"></i>@role<small>@hint</small>
+                            </button>
+                        }
+                    </div>
+                </div>
+                <div class="or-sep">or log in with email</div>
+            }
+
+            <form id="loginForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="d-grid gap-3">
+                <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
+                <div>
+                    <label asp-for="Input.Email" class="form-label">Email</label>
+                    <input asp-for="Input.Email" class="form-control" placeholder="you@example.com" autocomplete="username" />
+                    <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                </div>
+
+                <div>
+                    <div class="d-flex justify-content-between">
+                        <label asp-for="Input.Password" class="form-label">Password</label>
+                        <a asp-page="./ForgotPassword" class="small fw-semibold">Forgot password?</a>
+                    </div>
+                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
+                    <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                </div>
+
+                <div class="form-check">
+                    <input asp-for="Input.RememberMe" class="form-check-input" />
+                    <label asp-for="Input.RememberMe" class="form-check-label">Keep me logged in</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg">Log in</button>
+            </form>
+
+            <p class="text-center mt-4 mb-0">
+                New to Malta's Garage? <a class="fw-bold" asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Create an account</a>
+            </p>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Demo accounts: fill the real login form and submit it, so the normal sign-in path is used
+        document.querySelectorAll('.demo-login').forEach(b => b.addEventListener('click', () => {
+            document.getElementById('Input_Email').value = b.dataset.email;
+            document.getElementById('Input_Password').value = b.dataset.password;
+            document.getElementById('loginForm').submit();
+        }));
+    </script>
 }

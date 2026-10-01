@@ -1,4 +1,5 @@
 using MaltasGarage.Application.Common.Models;
+using MaltasGarage.Domain.Common;
 using MaltasGarage.Domain.Entities;
 using MaltasGarage.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
@@ -499,9 +500,10 @@ public class DemoDataSeeder
     private Order Order(Listing listing, UserProfile buyer, decimal price, OrderStatus status,
         DeliveryMethod delivery, int daysAgo, int? shippedDaysAgo = null)
     {
-        var platformFee = Math.Max(Math.Round(price * 0.10m, 2), 1.00m);
+        var platformFee = PlatformFee.Calculate(price);
         var paidAt = _now.AddDays(-daysAgo);
         var done = status == OrderStatus.Completed;
+        listing.CurrentPrice = price; // what it actually sold for, as OrderService does
 
         var order = new Order
         {

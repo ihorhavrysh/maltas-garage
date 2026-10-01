@@ -1,72 +1,72 @@
 @page
 @model RegisterModel
+@inject Microsoft.Extensions.Options.IOptions<MaltasGarage.Application.Common.Models.DemoSettings> DemoOptions
 @{
-    ViewData["Title"] = "Create Account";
+    ViewData["Title"] = "Create account";
 }
 
 <div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            <div class="card shadow-sm">
-                <div class="card-body p-4">
-                    <div class="text-center mb-4">
-                        <i class="bi bi-person-plus-fill text-primary" style="font-size: 3rem;"></i>
-                        <h2 class="mt-2">Create Account</h2>
-                        <p class="text-muted">Join Malta's Garage today</p>
-                    </div>
-
-                    <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
-
-                        <div class="mb-3">
-                            <label asp-for="Input.Email" class="form-label">Email</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                <input asp-for="Input.Email" class="form-control" placeholder="your@email.com" />
-                            </div>
-                            <span asp-validation-for="Input.Email" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="Input.Password" class="form-label">Password</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                                <input asp-for="Input.Password" class="form-control" placeholder="••••••••" />
-                            </div>
-                            <span asp-validation-for="Input.Password" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-4">
-                            <label asp-for="Input.ConfirmPassword" class="form-label">Confirm Password</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                                <input asp-for="Input.ConfirmPassword" class="form-control" placeholder="••••••••" />
-                            </div>
-                            <span asp-validation-for="Input.ConfirmPassword" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-4">
-                            <div class="form-check">
-                                <input asp-for="Input.AgreeToTerms" class="form-check-input" type="checkbox" id="agreeToTerms" />
-                                <label class="form-check-label small" for="agreeToTerms">
-                                    I agree to the <a href="/Terms" target="_blank">Terms of Service</a> and <a href="/Privacy" target="_blank">Privacy Policy</a>
-                                </label>
-                            </div>
-                            <span asp-validation-for="Input.AgreeToTerms" class="text-danger small"></span>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100 py-2">
-                            <i class="bi bi-person-plus me-2"></i>Create Account
-                        </button>
-                    </form>
-
-                    <hr class="my-4">
-
-                    <p class="text-center mb-0">
-                        Already have an account? <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Sign in</a>
-                    </p>
-                </div>
+    <div class="auth-wrap">
+        <div class="auth-side d-none d-lg-flex">
+            <img src="/images/Hero/hero.svg" alt="">
+            <div class="position-relative bg-white rounded-4 p-3 shadow-sm" style="max-width: 360px">
+                <div class="fw-bold mb-1"><i class="bi bi-shield-check me-1" aria-hidden="true"></i>Escrow on every order</div>
+                <div class="small text-muted">Pay by card, the seller is paid after you confirm you have the item.</div>
             </div>
+        </div>
+
+        <div class="auth-form">
+            <h1 class="mb-1">Create your account</h1>
+            <p class="text-muted mb-4">Free to join. Start selling in a couple of minutes.</p>
+
+            <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="row g-3">
+                <div asp-validation-summary="ModelOnly" class="col-12 alert alert-danger mb-0" role="alert"></div>
+
+                <div class="col-12">
+                    <label asp-for="Input.Email" class="form-label">Email</label>
+                    <input asp-for="Input.Email" class="form-control" placeholder="you@example.com" autocomplete="email" />
+                    <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                </div>
+
+                <div class="col-sm-6">
+                    <label asp-for="Input.Password" class="form-label">Password</label>
+                    <input asp-for="Input.Password" class="form-control" autocomplete="new-password" />
+                    <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                </div>
+
+                <div class="col-sm-6">
+                    <label asp-for="Input.ConfirmPassword" class="form-label">Confirm password</label>
+                    <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" />
+                    <span asp-validation-for="Input.ConfirmPassword" class="text-danger small"></span>
+                </div>
+                <div class="col-12 form-text mt-1">At least 6 characters, with a number and a lowercase letter.</div>
+
+                <div class="col-12">
+                    <div class="form-check">
+                        <input asp-for="Input.AgreeToTerms" class="form-check-input" type="checkbox" id="agreeToTerms" />
+                        <label class="form-check-label" for="agreeToTerms">
+                            I agree to the <a href="/Terms" target="_blank">terms</a> and <a href="/Privacy" target="_blank">privacy policy</a>
+                        </label>
+                    </div>
+                    <span asp-validation-for="Input.AgreeToTerms" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">Create account</button>
+                </div>
+            </form>
+
+            @if (DemoOptions.Value.Enabled)
+            {
+                <div class="alert alert-warning mt-4 mb-0 d-flex gap-2">
+                    <i class="bi bi-lightning-charge" aria-hidden="true"></i>
+                    <span>Just looking around? <a href="/Identity/Account/Login" class="fw-bold" style="color: inherit">Use a demo account</a> instead, no sign-up needed.</span>
+                </div>
+            }
+
+            <p class="text-center mt-4 mb-0">
+                Already have an account? <a class="fw-bold" asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Log in</a>
+            </p>
         </div>
     </div>
 </div>

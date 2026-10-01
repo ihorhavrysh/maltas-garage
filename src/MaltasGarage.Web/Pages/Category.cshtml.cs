@@ -43,6 +43,8 @@ public class CategoryModel : PageModel
         public DateTime SellByDate { get; set; }
         public DateTime? AuctionStartDate { get; set; }
         public bool IsNew { get; set; }
+        public bool IsShowcase { get; set; }
+        public int BidCount { get; set; }
         public string TimeLeft
         {
             get
@@ -148,7 +150,9 @@ public class CategoryModel : PageModel
                 Status = l.Status,
                 SellByDate = l.SellByDate,
                 AuctionStartDate = l.AuctionStartDate,
-                IsNew = l.IsNew
+                IsNew = l.IsNew,
+                IsShowcase = l.IsShowcase,
+                BidCount = l.Bids.Count()
             })
             .ToListAsync();
 

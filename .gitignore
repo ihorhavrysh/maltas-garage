@@ -72,5 +72,5 @@ src/MaltasGarage.Web/wwwroot/uploads/
 
 ## Windows artifacts
 nul
-/.claude/settings.local.json
+/.claude/
 /TODO.md

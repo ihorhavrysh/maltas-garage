@@ -14,15 +14,19 @@
 
     @if (TempData["Success"] != null)
     {
-        <p class="text-success mb-3"><i class="bi bi-check-circle me-2"></i>@TempData["Success"]</p>
+        <div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>@TempData["Success"]</div>
     }
     @if (TempData["Error"] != null)
     {
-        <p class="text-danger mb-3"><i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]</p>
+        <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]</div>
     }
 
     @if (Model.Order != null)
     {
+        <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+            <h1 class="mb-0">Order #@Model.Order.Id.ToString()[..8].ToUpperInvariant()</h1>
+            <span class="status-badge status-scheduled">@Model.GetDisplayStatus()</span>
+        </div>
         <div class="row">
             <!-- Left column -->
             <div class="col-lg-8">
@@ -30,28 +34,19 @@
                 <!-- Order Status + Timeline -->
                 <div class="card mb-4">
                     <div class="card-body">
-                        <h5 class="card-title">Order Status</h5>
-                        <div class="d-flex align-items-center mb-4">
-                            <span class="badge @Model.GetStatusBadgeClass() fs-6 me-3">
-                                @Model.GetDisplayStatus()
-                            </span>
-                            <span class="text-muted">@Model.GetStatusDescription()</span>
-                        </div>
+                        <h2 class="h5 mb-1">Status</h2>
+                        <p class="text-muted small mb-4">@Model.GetStatusDescription()</p>
 
                         @{ var steps = Model.GetStatusSteps(); }
-                        <div class="d-flex justify-content-between">
+                        <ol class="order-timeline">
                             @foreach (var step in steps)
                             {
-                                <div class="text-center" style="width: @(100 / steps.Count)%;">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2
-                                        @(step.IsCompleted ? "bg-primary text-white" : step.IsCurrent ? "border border-2 border-warning text-warning" : "border border-2 border-secondary text-muted")"
-                                         style="width: 40px; height: 40px;">
-                                        <i class="bi @step.Icon"></i>
-                                    </div>
-                                    <small class="@(step.IsCompleted ? "text-primary fw-semibold" : step.IsCurrent ? "text-warning fw-semibold" : "text-muted")">@step.Label</small>
-                                </div>
+                                <li class="@(step.IsCompleted ? "is-done" : step.IsCurrent ? "is-current" : "")" aria-current="@(step.IsCurrent ? "step" : null)">
+                                    <span class="node"><i class="bi @step.Icon" aria-hidden="true"></i></span>
+                                    <span class="step-label">@step.Label</span>
+                                </li>
                             }
-                        </div>
+                        </ol>
                     </div>
                 </div>
 
@@ -192,11 +187,11 @@
                                         </div>
                                     </label>
                                 </div>
-                                <button type="submit" class="btn btn-warning w-100 mb-2">
+                                <button type="submit" class="btn btn-accent w-100 mb-2">
                                     <i class="bi bi-check-circle me-2"></i>Confirm Delivery Method
                                 </button>
                             </form>
-                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning w-100">
+                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-secondary w-100">
                                 <i class="bi bi-chat me-1"></i>Contact Seller
                             </a>
                         </div>
@@ -208,7 +203,7 @@
                     <div class="mb-4">
                         <p class="fw-semibold mb-1"><i class="bi bi-hourglass-split me-2 text-warning"></i>Waiting for buyer to select delivery method.</p>
                         <p class="text-muted mb-2">Contact the buyer to agree on delivery while you wait.</p>
-                        <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                        <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-secondary">
                             <i class="bi bi-chat me-1"></i>Contact Buyer
                         </a>
                     </div>
@@ -226,7 +221,7 @@
                             <a href="/Orders/Ship/@Model.Order.Id" class="btn btn-primary">
                                 <i class="bi bi-truck me-2"></i>Enter Tracking Number
                             </a>
-                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-secondary">
                                 <i class="bi bi-chat me-1"></i>Contact Buyer
                             </a>
                         </div>
@@ -239,7 +234,7 @@
                     <div class="mb-4">
                         <p class="fw-semibold mb-1"><i class="bi bi-truck me-2 text-primary"></i>Item Shipped</p>
                         <p class="text-muted mb-2">The item is on its way. Payment will be released once the buyer confirms receipt or after 5 days.</p>
-                        <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                        <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-secondary">
                             <i class="bi bi-chat me-1"></i>Contact Buyer
                         </a>
                     </div>
@@ -251,7 +246,7 @@
                     <div class="mb-4">
                         <p class="fw-semibold mb-1"><i class="bi bi-person-check me-2 text-primary"></i>Awaiting Meetup</p>
                         <p class="text-muted mb-2">Meet the buyer to hand over the item. Payment will be released once the buyer confirms receipt.</p>
-                        <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                        <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-secondary">
                             <i class="bi bi-chat me-1"></i>Contact Buyer
                         </a>
                     </div>
@@ -272,7 +267,7 @@
                             }
                         </p>
                         <div class="d-flex gap-2 flex-wrap">
-                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-secondary">
                                 <i class="bi bi-chat me-1"></i>Contact Seller
                             </a>
                             @if (Model.CanCancelOrder)
@@ -332,7 +327,7 @@
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmReceiptModal">
                                 <i class="bi bi-check-circle me-2"></i>Confirm Receipt
                             </button>
-                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-secondary">
                                 <i class="bi bi-chat me-1"></i>Contact Seller
                             </a>
                             @if (!Model.Order.HasDispute || Model.Order.DisputeStatus == "Withdrawn")
@@ -400,7 +395,7 @@
                                     <span class="ms-2 text-muted small">Our team is reviewing this dispute.</span>
                                 }
                             </div>
-                            <a href="/Orders/DisputeView/@Model.Order.Id" class="btn btn-sm btn-warning">
+                            <a href="/Orders/DisputeView/@Model.Order.Id" class="btn btn-sm btn-accent">
                                 <i class="bi bi-eye me-1"></i>View Dispute
                             </a>
                         </div>
@@ -416,10 +411,10 @@
                             <p class="fw-semibold mb-1"><i class="bi bi-star me-2 text-warning"></i>How was your experience?</p>
                             <p class="text-muted mb-2">Your feedback helps the community.</p>
                             <div class="d-flex gap-2 flex-wrap">
-                                <a href="/Orders/LeaveReview/@Model.Order.Id" class="btn btn-outline-warning">
+                                <a href="/Orders/LeaveReview/@Model.Order.Id" class="btn btn-secondary">
                                     <i class="bi bi-star me-2"></i>Leave a Review
                                 </a>
-                                <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                                <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-secondary">
                                     <i class="bi bi-chat me-1"></i>Contact @(Model.IsBuyer ? "Seller" : "Buyer")
                                 </a>
                             </div>
@@ -429,7 +424,7 @@
                     {
                         <div class="mb-4 d-flex gap-2 align-items-center flex-wrap">
                             <p class="text-muted mb-0"><i class="bi bi-check-circle me-2"></i>You've already reviewed this order.</p>
-                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-outline-warning">
+                            <a href="/Messages?orderId=@Model.Order.Id" class="btn btn-secondary">
                                 <i class="bi bi-chat me-1"></i>Contact @(Model.IsBuyer ? "Seller" : "Buyer")
                             </a>
                         </div>
@@ -587,12 +582,14 @@
                     <div class="card mb-4">
                         <div class="card-header"><i class="bi bi-truck me-2"></i>Tracking</div>
                         <div class="card-body">
-                            <p class="mb-1 small text-muted">Carrier: @(Model.Order.TrackingNumber.StartsWith("RR") ? "MaltaPost" : "Other")</p>
-                            <p class="mb-3"><strong>@Model.Order.TrackingNumber</strong></p>
-                            <a href="https://www.maltapost.com/track/@Model.Order.TrackingNumber"
-                               target="_blank" class="btn btn-outline-primary btn-sm w-100">
-                                <i class="bi bi-box-arrow-up-right me-1"></i>Track on MaltaPost
-                            </a>
+                            <div class="tracking-box">
+                                <i class="bi bi-truck" aria-hidden="true"></i>
+                                <div class="flex-grow-1">
+                                    <div class="small text-muted">@(Model.Order.TrackingNumber.StartsWith("RR") ? "MaltaPost" : "Carrier") tracking number</div>
+                                    <code>@Model.Order.TrackingNumber</code>
+                                </div>
+                                <a class="btn btn-secondary btn-sm" href="https://www.maltapost.com/track/@Model.Order.TrackingNumber" target="_blank" rel="noopener">Track <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>
+                            </div>
                         </div>
                     </div>
                 }
