@@ -22,7 +22,6 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>, IApplicatio
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<Shipment> Shipments => Set<Shipment>();
-    public DbSet<HandoverCode> HandoverCodes => Set<HandoverCode>();
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<Dispute> Disputes => Set<Dispute>();
     public DbSet<DisputeAttachment> DisputeAttachments => Set<DisputeAttachment>();

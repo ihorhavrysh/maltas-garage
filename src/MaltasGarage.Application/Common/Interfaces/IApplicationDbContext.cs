@@ -13,7 +13,6 @@ public interface IApplicationDbContext
     DbSet<Order> Orders { get; }
     DbSet<Payment> Payments { get; }
     DbSet<Shipment> Shipments { get; }
-    DbSet<HandoverCode> HandoverCodes { get; }
     DbSet<Review> Reviews { get; }
     DbSet<Dispute> Disputes { get; }
     DbSet<DisputeAttachment> DisputeAttachments { get; }

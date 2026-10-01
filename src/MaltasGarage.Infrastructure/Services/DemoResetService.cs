@@ -85,7 +85,6 @@ public class DemoResetService
             await _context.Reviews.ExecuteDeleteAsync();
             await _context.DisputeAttachments.ExecuteDeleteAsync();
             await _context.Disputes.ExecuteDeleteAsync();
-            await _context.HandoverCodes.ExecuteDeleteAsync();
             await _context.Shipments.ExecuteDeleteAsync();
             await _context.Payments.ExecuteDeleteAsync();
             await _context.OrderItems.ExecuteDeleteAsync();
