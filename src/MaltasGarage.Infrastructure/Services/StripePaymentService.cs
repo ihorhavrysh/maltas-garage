@@ -69,7 +69,7 @@ public class StripePaymentService : IPaymentService
         return account.ChargesEnabled && account.PayoutsEnabled;
     }
 
-    public async Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string connectedAccountId)
+    public async Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string connectedAccountId, IReadOnlyDictionary<string, string>? metadata = null)
     {
         try
         {
@@ -77,9 +77,10 @@ public class StripePaymentService : IPaymentService
             // via CreateTransferAsync when the buyer confirms receipt (escrow release).
             var options = new PaymentIntentCreateOptions
             {
-                Amount = (long)(amount * 100),
+                Amount = ToCents(amount),
                 Currency = "eur",
                 PaymentMethodTypes = new List<string> { "card" },
+                Metadata = metadata?.ToDictionary(kv => kv.Key, kv => kv.Value)
             };
 
             var service = new PaymentIntentService();
@@ -135,20 +136,47 @@ public class StripePaymentService : IPaymentService
         }
     }
 
-    public async Task<(string PaymentIntentId, string ClientSecret)> CreateBidPaymentAsync(decimal amount, string connectedAccountId)
+    public async Task<(string PaymentIntentId, string ClientSecret)> CreateBidPaymentAsync(decimal amount, string connectedAccountId, IReadOnlyDictionary<string, string>? metadata = null)
     {
         // Same pattern: capture on platform, transfer to seller on escrow release
         var options = new PaymentIntentCreateOptions
         {
-            Amount = (long)(amount * 100),
+            Amount = ToCents(amount),
             Currency = "eur",
             PaymentMethodTypes = new List<string> { "card" },
+            Metadata = metadata?.ToDictionary(kv => kv.Key, kv => kv.Value)
         };
 
         var service = new PaymentIntentService();
         var intent = await service.CreateAsync(options);
         return (intent.Id, intent.ClientSecret);
     }
+
+    public async Task<ConfirmedPayment?> GetSucceededPaymentAsync(string paymentIntentId)
+    {
+        PaymentIntent intent;
+        try
+        {
+            intent = await new PaymentIntentService().GetAsync(paymentIntentId);
+        }
+        catch (StripeException ex)
+        {
+            // An id from a URL can be anything; one Stripe does not know is not a payment
+            _logger.LogWarning("PaymentIntent {PaymentIntentId} could not be read: {Message}", paymentIntentId, ex.Message);
+            return null;
+        }
+
+        if (intent.Status != "succeeded")
+            return null;
+
+        return new ConfirmedPayment(
+            intent.Id,
+            intent.AmountReceived / 100m,
+            intent.Metadata ?? new Dictionary<string, string>());
+    }
+
+    // EUR has two decimal places: a longer amount is rounded to the cent, not truncated
+    private static long ToCents(decimal amount) => (long)Math.Round(amount * 100, MidpointRounding.AwayFromZero);
 
     public async Task<string> CreateLoginLinkAsync(string accountId)
     {

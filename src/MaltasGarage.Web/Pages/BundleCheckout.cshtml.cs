@@ -1,4 +1,5 @@
 using MaltasGarage.Application.Common.Interfaces;
+using MaltasGarage.Application.Common.Models;
 using MaltasGarage.Domain.Enums;
 using MaltasGarage.Domain.Exceptions;
 using MaltasGarage.Infrastructure.Data;
@@ -76,7 +77,9 @@ public class BundleCheckoutModel : PageModel
 
         SellerStripeAccountId = BundleOffer.Seller.StripeAccountId;
 
-        var result = await _paymentService.CreatePaymentIntentAsync(BundleOffer.OfferAmount, SellerStripeAccountId);
+        // The metadata lets BundlePaymentComplete check what this payment was for and who made it
+        var result = await _paymentService.CreatePaymentIntentAsync(BundleOffer.OfferAmount, SellerStripeAccountId,
+            PaymentMetadata.For(PaymentMetadata.Bundle, BundleOffer.Id, userProfile.Id));
         if (!result.Success)
         {
             TempData["Error"] = result.Error;

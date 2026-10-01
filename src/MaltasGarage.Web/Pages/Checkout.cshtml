@@ -95,9 +95,7 @@
         const stripe = Stripe('@StripeSettings.Value.PublishableKey');
         const clientSecret = '@Model.ClientSecret';
         const listingId = '@Model.ListingId';
-        const price = '@Model.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)';
         const returnBase = window.location.origin + '/Orders/PaymentComplete';
-        const offerId = '@(Model.OfferId?.ToString() ?? "")';
 
         let elements;
 
@@ -119,8 +117,8 @@
             errorsDiv.classList.add('d-none');
 
             const deliveryMethod = document.querySelector('input[name="deliveryMethod"]:checked').value;
-            const offerParam = offerId ? `&offerId=${offerId}` : '';
-            const returnUrl = `${returnBase}?listingId=${listingId}&price=${price}&deliveryMethod=${deliveryMethod}${offerParam}`;
+            // Price and offer are read back from the Stripe payment, not from this URL
+            const returnUrl = `${returnBase}?listingId=${listingId}&deliveryMethod=${deliveryMethod}`;
 
             const { error } = await stripe.confirmPayment({
                 elements,

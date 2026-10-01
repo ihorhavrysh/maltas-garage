@@ -3,6 +3,7 @@ using MaltasGarage.Application.Common.Models;
 using MaltasGarage.Domain.Enums;
 using MaltasGarage.Domain.Exceptions;
 using MaltasGarage.Infrastructure.Data;
+using MaltasGarage.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -85,10 +86,12 @@ public class BidModel : PageModel
             return RedirectToPage("/Listing", new { id = listingId });
         }
 
+        // Same minimum as BiddingService.PlaceBidAsync, so a bid it would reject is never charged
         var currentHigh = listing.Bids.Any() ? listing.Bids.Max(b => b.Amount) : listing.MinPrice;
-        if (amount <= currentHigh)
+        var minimumBid = currentHigh + BiddingService.GetBidIncrement(currentHigh);
+        if (amount < minimumBid)
         {
-            TempData["Error"] = $"Bid must be higher than €{currentHigh:N2}.";
+            TempData["Error"] = $"Minimum bid is €{minimumBid:N0}.";
             return RedirectToPage("/Listing", new { id = listingId });
         }
 
@@ -111,7 +114,9 @@ public class BidModel : PageModel
             return RedirectToPage("/Listing", new { id = listingId });
         }
 
-        var (_, clientSecret) = await _paymentService.CreateBidPaymentAsync(amount, listing.Seller.StripeAccountId);
+        // The metadata lets BidComplete check what this payment was for and who made it
+        var (_, clientSecret) = await _paymentService.CreateBidPaymentAsync(amount, listing.Seller.StripeAccountId,
+            PaymentMetadata.For(PaymentMetadata.Bid, listingId, userProfile.Id));
 
         ListingTitle = listing.Title;
         ListingImageUrl = listing.Images.OrderBy(i => i.SortOrder).Select(i => i.ThumbnailUrl ?? i.Url).FirstOrDefault();

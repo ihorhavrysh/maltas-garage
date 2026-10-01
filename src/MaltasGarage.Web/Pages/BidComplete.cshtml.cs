@@ -1,10 +1,10 @@
 using MaltasGarage.Application.Common.Interfaces;
+using MaltasGarage.Application.Common.Models;
 using MaltasGarage.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using Stripe;
 
 namespace MaltasGarage.Web.Pages;
 
@@ -25,28 +25,33 @@ public class BidCompleteModel : PageModel
         _paymentService = paymentService;
     }
 
-    public async Task<IActionResult> OnGetAsync(Guid listingId, decimal amount, string payment_intent, string redirect_status)
+    public async Task<IActionResult> OnGetAsync(Guid listingId, string payment_intent, string redirect_status)
     {
-        if (redirect_status != "succeeded")
+        if (redirect_status != "succeeded" || string.IsNullOrEmpty(payment_intent))
         {
             TempData["Error"] = "Payment was not completed.";
             return RedirectToPage("/Listing", new { id = listingId });
         }
 
-        // Verify payment with Stripe
-        var service = new PaymentIntentService();
-        var intent = await service.GetAsync(payment_intent);
-        if (intent.Status != "succeeded")
-        {
-            TempData["Error"] = "Payment verification failed.";
+        // A refresh of this page must not record the same paid bid twice
+        if (await _context.Bids.AnyAsync(b => b.StripePaymentIntentId == payment_intent))
             return RedirectToPage("/Listing", new { id = listingId });
-        }
 
         var userProfile = await _context.UserProfiles
             .FirstOrDefaultAsync(p => p.UserId == _currentUser.UserId);
 
         if (userProfile == null)
             return RedirectToPage("/Listing", new { id = listingId });
+
+        // The bid is what Stripe charged, for this listing, by this account; nothing from the URL
+        var payment = await _paymentService.GetSucceededPaymentAsync(payment_intent);
+        if (payment == null || !payment.IsFor(PaymentMetadata.Bid, listingId, userProfile.Id))
+        {
+            TempData["Error"] = "Payment verification failed.";
+            return RedirectToPage("/Listing", new { id = listingId });
+        }
+
+        var amount = payment.Amount;
 
         // Find previous top bidder (different user) to refund if outbid
         var previousTopBid = await _context.Bids

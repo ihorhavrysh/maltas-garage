@@ -1,3 +1,5 @@
+using MaltasGarage.Application.Common.Models;
+
 namespace MaltasGarage.Application.Common.Interfaces;
 
 public interface IPaymentService
@@ -5,14 +7,23 @@ public interface IPaymentService
     Task<string> CreateConnectedAccountAsync(string email, string country = "MT");
     Task<string> CreateAccountLinkAsync(string accountId, string returnUrl, string refreshUrl);
     Task<bool> IsAccountReadyAsync(string accountId);
-    Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string connectedAccountId);
+    /// <summary>
+    /// Creates a PaymentIntent for an amount the server computed. <paramref name="metadata"/>
+    /// (see <see cref="PaymentMetadata"/>) ties it to what is being paid for and by whom.
+    /// </summary>
+    Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string connectedAccountId, IReadOnlyDictionary<string, string>? metadata = null);
     /// <summary>
     /// Pays the seller their share. <paramref name="transferGroup"/> must be the order id: it is
     /// also the idempotency key, so repeating the call for the same order never pays twice.
     /// </summary>
     Task<bool> CreateTransferAsync(decimal sellerPayout, string connectedAccountId, string transferGroup, string? paymentIntentId = null);
     Task<bool> RefundPaymentAsync(string paymentIntentId, decimal? amount = null);
-    Task<(string PaymentIntentId, string ClientSecret)> CreateBidPaymentAsync(decimal amount, string connectedAccountId);
+    Task<(string PaymentIntentId, string ClientSecret)> CreateBidPaymentAsync(decimal amount, string connectedAccountId, IReadOnlyDictionary<string, string>? metadata = null);
+    /// <summary>
+    /// The payment as Stripe reports it, or null when it has not succeeded. The amount and
+    /// metadata come from Stripe, so they cannot be changed by the buyer.
+    /// </summary>
+    Task<ConfirmedPayment?> GetSucceededPaymentAsync(string paymentIntentId);
     Task<string> CreateLoginLinkAsync(string accountId);
 }
 

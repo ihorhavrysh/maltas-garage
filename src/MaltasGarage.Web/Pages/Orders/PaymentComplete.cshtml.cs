@@ -1,11 +1,11 @@
 using MaltasGarage.Application.Common.Interfaces;
+using MaltasGarage.Application.Common.Models;
 using MaltasGarage.Domain.Enums;
 using MaltasGarage.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using Stripe;
 
 namespace MaltasGarage.Web.Pages.Orders;
 
@@ -34,24 +34,13 @@ public class PaymentCompleteModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(
         Guid listingId,
-        decimal price,
         string deliveryMethod,
-        Guid? offerId,
         string? payment_intent,
         string? redirect_status)
     {
         if (redirect_status != "succeeded" || string.IsNullOrEmpty(payment_intent))
         {
             TempData["Error"] = "Payment was not completed. Please try again.";
-            return RedirectToPage("/Listing", new { id = listingId });
-        }
-
-        // Verify with Stripe
-        var intentService = new PaymentIntentService();
-        var intent = await intentService.GetAsync(payment_intent);
-        if (intent.Status != "succeeded")
-        {
-            TempData["Error"] = "Payment verification failed.";
             return RedirectToPage("/Listing", new { id = listingId });
         }
 
@@ -66,6 +55,18 @@ public class PaymentCompleteModel : PageModel
             .FirstOrDefaultAsync(p => p.UserId == _currentUser.UserId);
         if (userProfile == null)
             return RedirectToPage("/Listing", new { id = listingId });
+
+        // The amount and the offer come from Stripe: everything in this URL is the buyer's to edit.
+        // A payment made for another listing or by another account is not used here.
+        var payment = await _paymentService.GetSucceededPaymentAsync(payment_intent);
+        if (payment == null || !payment.IsFor(PaymentMetadata.BuyNow, listingId, userProfile.Id))
+        {
+            TempData["Error"] = "Payment verification failed.";
+            return RedirectToPage("/Listing", new { id = listingId });
+        }
+
+        var price = payment.Amount;
+        Guid? offerId = Guid.TryParse(payment.Get(PaymentMetadata.OfferId), out var parsedOfferId) ? parsedOfferId : null;
 
         // If the listing was in AuctionPhase, refund the current top bidder (Buy Now beats the auction)
         var listing = await _context.Listings

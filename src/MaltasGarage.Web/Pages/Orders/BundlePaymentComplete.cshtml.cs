@@ -1,11 +1,11 @@
 using MaltasGarage.Application.Common.Interfaces;
+using MaltasGarage.Application.Common.Models;
 using MaltasGarage.Domain.Enums;
 using MaltasGarage.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using Stripe;
 
 namespace MaltasGarage.Web.Pages.Orders;
 
@@ -28,7 +28,6 @@ public class BundlePaymentCompleteModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(
         Guid bundleOfferId,
-        decimal price,
         string deliveryMethod,
         string? payment_intent,
         string? redirect_status)
@@ -36,14 +35,6 @@ public class BundlePaymentCompleteModel : PageModel
         if (redirect_status != "succeeded" || string.IsNullOrEmpty(payment_intent))
         {
             TempData["Error"] = "Payment was not completed. Please try again.";
-            return RedirectToPage("/BundleCheckout", new { bundleOfferId });
-        }
-
-        var intentService = new PaymentIntentService();
-        var intent = await intentService.GetAsync(payment_intent);
-        if (intent.Status != "succeeded")
-        {
-            TempData["Error"] = "Payment verification failed.";
             return RedirectToPage("/BundleCheckout", new { bundleOfferId });
         }
 
@@ -57,6 +48,16 @@ public class BundlePaymentCompleteModel : PageModel
             .FirstOrDefaultAsync(p => p.UserId == _currentUser.UserId);
         if (userProfile == null)
             return RedirectToPage("/Messages/Index");
+
+        // The amount is what Stripe charged for this bundle offer, by this account; nothing from the URL
+        var payment = await _paymentService.GetSucceededPaymentAsync(payment_intent);
+        if (payment == null || !payment.IsFor(PaymentMetadata.Bundle, bundleOfferId, userProfile.Id))
+        {
+            TempData["Error"] = "Payment verification failed.";
+            return RedirectToPage("/BundleCheckout", new { bundleOfferId });
+        }
+
+        var price = payment.Amount;
 
         if (!Enum.TryParse<DeliveryMethod>(deliveryMethod, out var method))
             method = DeliveryMethod.HandToHand;

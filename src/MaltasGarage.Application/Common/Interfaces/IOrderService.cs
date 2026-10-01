@@ -5,6 +5,12 @@ namespace MaltasGarage.Application.Common.Interfaces;
 
 public interface IOrderService
 {
+    /// <summary>
+    /// What a buyer pays for a listing: the accepted offer when <paramref name="offerId"/> is
+    /// that buyer's accepted offer on that listing, otherwise the Buy Now price. Never a price
+    /// taken from the request. Throws when the offer cannot be used.
+    /// </summary>
+    Task<decimal> GetCheckoutPriceAsync(Guid listingId, Guid buyerId, Guid? offerId);
     Task<Order> CreateOrderAsync(Guid listingId, Guid buyerId, decimal price, DeliveryMethod deliveryMethod);
     Task<Order> CreateBundleOrderAsync(Guid bundleOfferId, Guid buyerId, decimal totalPrice, DeliveryMethod deliveryMethod);
     Task<Order?> GetOrderAsync(Guid orderId);

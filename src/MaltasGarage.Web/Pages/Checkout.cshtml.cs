@@ -1,4 +1,5 @@
 using MaltasGarage.Application.Common.Interfaces;
+using MaltasGarage.Application.Common.Models;
 using MaltasGarage.Domain.Enums;
 using MaltasGarage.Domain.Exceptions;
 using MaltasGarage.Infrastructure.Data;
@@ -35,8 +36,8 @@ public class CheckoutModel : PageModel
     [BindProperty(SupportsGet = true)]
     public Guid ListingId { get; set; }
 
-    [BindProperty(SupportsGet = true)]
-    public decimal Price { get; set; }
+    // Computed on the server (Buy Now price or this buyer's accepted offer), never bound from the URL
+    public decimal Price { get; private set; }
 
     [BindProperty(SupportsGet = true)]
     public Guid? OfferId { get; set; }
@@ -106,8 +107,20 @@ public ListingViewModel? Listing { get; set; }
             SellerStripeAccountId = listing.Seller.StripeAccountId
         };
 
-        // Create PaymentIntent - platform captures full amount, transfer to seller on escrow release
-        var paymentResult = await _paymentService.CreatePaymentIntentAsync(Price, Listing.SellerStripeAccountId!);
+        try
+        {
+            Price = await _orderService.GetCheckoutPriceAsync(ListingId, userProfile.Id, OfferId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
+            return RedirectToPage("/Listing", new { id = ListingId });
+        }
+
+        // Create PaymentIntent - platform captures full amount, transfer to seller on escrow release.
+        // The metadata lets PaymentComplete check what this payment was for and who made it.
+        var paymentResult = await _paymentService.CreatePaymentIntentAsync(Price, Listing.SellerStripeAccountId!,
+            PaymentMetadata.For(PaymentMetadata.BuyNow, ListingId, userProfile.Id, OfferId));
 
         if (!paymentResult.Success)
         {
