@@ -1,0 +1,44 @@
+# Runs the app with demo data and a SQL Server container: docker compose up --build
+# Then open http://localhost:8080 and log in with a demo account (password Demo1234).
+# Browsing works with the placeholder Stripe values below; payments need your own
+# Stripe test keys in a .env file (see .env.example).
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:-LocalDev_Passw0rd!}
+    ports:
+      - "14333:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=db;Database=MaltasGarage;User Id=sa;Password=${SQL_SA_PASSWORD:-LocalDev_Passw0rd!};TrustServerCertificate=True;MultipleActiveResultSets=true"
+      App__BaseUrl: http://localhost:8080
+      Demo__Enabled: "true"
+      Demo__SellerStripeAccountId: ${DEMO_SELLER_STRIPE_ACCOUNT_ID:-acct_placeholder}
+      Stripe__SecretKey: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      Stripe__PublishableKey: ${STRIPE_PUBLISHABLE_KEY:-pk_test_placeholder}
+      Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:-whsec_placeholder}
+      Email__Provider: Log
+    volumes:
+      - uploads:/data/uploads
+
+volumes:
+  sqldata:
+  uploads:
