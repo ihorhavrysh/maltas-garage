@@ -211,6 +211,40 @@ public class OrderServiceTests
         Assert.Equal(ListingStatus.Active, updatedListing!.Status);
     }
 
+    [Fact]
+    public async Task RefundBuyer_BundleOrder_ReleasesEveryListing()
+    {
+        // A bundle order has no single Listing, only Items
+        var ctx = TestDbContextFactory.Create();
+        var sellerId = Guid.NewGuid();
+        var first = MakeListing(sellerId, ListingStatus.Sold, 40m);
+        var second = MakeListing(sellerId, ListingStatus.Sold, 60m);
+        ctx.Listings.AddRange(first, second);
+        var order = new Order
+        {
+            Id = Guid.NewGuid(),
+            IsBundleOrder = true,
+            BuyerId = Guid.NewGuid(),
+            SellerId = sellerId,
+            FinalPrice = 90m,
+            Status = OrderStatus.Disputed,
+            Items =
+            {
+                new OrderItem { ListingId = first.Id, Price = 40m },
+                new OrderItem { ListingId = second.Id, Price = 60m }
+            }
+        };
+        ctx.Orders.Add(order);
+        await ctx.SaveChangesAsync();
+
+        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment);
+        await service.RefundBuyerAsync(order.Id);
+
+        Assert.Equal(OrderStatus.Refunded, (await ctx.Orders.FindAsync(order.Id))!.Status);
+        Assert.Equal(ListingStatus.Active, (await ctx.Listings.FindAsync(first.Id))!.Status);
+        Assert.Equal(ListingStatus.Active, (await ctx.Listings.FindAsync(second.Id))!.Status);
+    }
+
     // ── UpdateStatusAsync ────────────────────────────────────────────────────
 
     [Fact]

@@ -98,7 +98,7 @@ public class DetailsModel : PageModel
         var order = await _context.Orders
             .AsNoTracking()
             .AsSplitQuery()
-            .Include(o => o.Listing).ThenInclude(l => l.Images)
+            .Include(o => o.Listing).ThenInclude(l => l!.Images)
             .Include(o => o.Items).ThenInclude(i => i.Listing).ThenInclude(l => l.Images)
             .Include(o => o.Buyer)
             .Include(o => o.Seller)
