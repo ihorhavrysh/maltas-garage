@@ -4,21 +4,21 @@
 {
     var notice = TempData[DemoGuardPageFilter.NoticeKey] as string;
 
-    <div class="demo-banner text-center small py-2 px-3" role="note">
-        <i class="bi bi-info-circle me-1"></i>
-        <strong>Demo project.</strong>
-        Payments run in Stripe test mode (card 4242 4242 4242 4242, any future date, any CVC).
-        Data may be reset.
-        <a href="/Identity/Account/Login" class="ms-1">Demo accounts</a>
+    <div class="demo-banner" role="region" aria-label="Demo notice">
+        <div class="container">
+            <span class="demo-pill">Demo</span>
+            <span class="d-none d-md-inline">Payments run in Stripe test mode: card <code>4242 4242 4242 4242</code>, any future date, any CVC. Data may be reset.</span>
+            <span class="d-md-none">Test payments only</span>
+            <a href="/Identity/Account/Login">Demo accounts</a>
+        </div>
     </div>
 
     @if (!string.IsNullOrEmpty(notice))
     {
-        <div class="container mt-3">
-            <div class="alert alert-warning alert-dismissible fade show mb-0" role="alert">
-                <i class="bi bi-shield-lock me-1"></i>@notice
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+        @* Floats over the page so it does not push the layout down *@
+        <div class="demo-notice alert alert-warning alert-dismissible fade show mb-0" role="alert">
+            <i class="bi bi-shield-lock me-1"></i>@notice
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 }

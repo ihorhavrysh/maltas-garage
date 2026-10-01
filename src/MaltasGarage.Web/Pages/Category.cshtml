@@ -98,6 +98,17 @@
                     <i class="bi bi-funnel me-1"></i>Filter
                 </button>
             </div>
+
+            @if (!string.IsNullOrEmpty(Model.Q) || Model.MinPrice.HasValue || Model.MaxPrice.HasValue
+                 || !string.IsNullOrEmpty(Model.Condition) || Model.Sort != "newest")
+            {
+                <div class="col-auto">
+                    @* Clears the form filters but keeps the selected subcategory *@
+                    <a class="btn btn-ghost" href="?@(string.IsNullOrEmpty(Model.SelectedSubcategory) ? "" : $"sub={Uri.EscapeDataString(Model.SelectedSubcategory)}")">
+                        <i class="bi bi-x-lg me-1"></i>Clear filters
+                    </a>
+                </div>
+            }
         </form>
     </div>
 </section>
@@ -107,12 +118,10 @@
     <div class="container">
         @if (Model.Listings.Any())
         {
-            <div class="row g-4">
+            <div class="listing-grid cols-4">
                 @foreach (var listing in Model.Listings)
                 {
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <partial name="_ListingCard" model="listing" />
-                    </div>
+                    <partial name="_ListingCard" model="listing" />
                 }
             </div>
 

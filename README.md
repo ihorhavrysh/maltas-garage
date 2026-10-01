@@ -1,5 +1,7 @@
 # Malta's Garage
 
+[![CI/CD](https://github.com/ihorhavrysh/maltas-garage/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/ihorhavrysh/maltas-garage/actions/workflows/ci-cd.yml)
+
 A peer-to-peer marketplace for expats in Malta to buy and sell second-hand items.
 
 ## Features

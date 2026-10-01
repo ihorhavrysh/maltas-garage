@@ -5,122 +5,90 @@
     ViewData["Title"] = "Checkout";
 }
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <h1 class="mb-4">Checkout</h1>
+<div class="container py-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/Listing/@Model.ListingId">@Model.Listing?.Title</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Checkout</li>
+        </ol>
+    </nav>
+    <h1 class="mb-2">Checkout</h1>
+    <ol class="checkout-steps list-unstyled">
+        <li class="is-active">1. Delivery &amp; payment</li>
+        <li><i class="bi bi-chevron-right" aria-hidden="true"></i></li>
+        <li>2. Confirmation</li>
+    </ol>
 
-            <div class="row">
-                <!-- Left column: summary + delivery + payment -->
-                <div class="col-md-7 mb-4">
-                    <!-- Item Summary -->
-                    <div class="card mb-3">
-                        <div class="card-header"><h6 class="mb-0">Order Summary</h6></div>
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                @if (!string.IsNullOrEmpty(Model.Listing?.ImageUrl))
-                                {
-                                    <img src="@Model.Listing.ImageUrl" class="rounded me-3"
-                                         style="width: 80px; height: 80px; object-fit: cover;">
-                                }
-                                else
-                                {
-                                    <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center"
-                                         style="width: 80px; height: 80px;">
-                                        <i class="bi bi-image text-muted fs-4"></i>
-                                    </div>
-                                }
-                                <div>
-                                    <h6 class="mb-1">@Model.Listing?.Title</h6>
-                                    <small class="text-muted">Sold by @Model.Listing?.SellerName</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Delivery Method -->
-                    <div class="card mb-3">
-                        <div class="card-header"><h6 class="mb-0">Delivery Method</h6></div>
-                        <div class="card-body">
-                            <div class="form-check mb-3 p-3 border rounded" style="cursor:pointer;">
-                                <input class="form-check-input" type="radio" name="deliveryMethod"
-                                       id="handToHand" value="HandToHand" checked>
-                                <label class="form-check-label w-100" for="handToHand" style="cursor:pointer;">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <strong><i class="bi bi-person-check me-2"></i>Hand-to-Hand</strong>
-                                            <p class="text-muted small mb-0">Meet the seller in person. Confirm receipt on your order page.</p>
-                                        </div>
-                                        <span class="text-success fw-semibold flex-shrink-0 ms-2">Free</span>
-                                    </div>
-                                </label>
-                            </div>
-                            <div class="form-check mb-3 p-3 border rounded" style="cursor:pointer;">
-                                <input class="form-check-input" type="radio" name="deliveryMethod"
-                                       id="maltaPost" value="MaltaPost">
-                                <label class="form-check-label w-100" for="maltaPost" style="cursor:pointer;">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <strong><i class="bi bi-truck me-2"></i>MaltaPost Delivery</strong>
-                                            <p class="text-muted small mb-0">Seller ships with tracking. 2–5 business days.</p>
-                                        </div>
-                                        <span class="text-muted flex-shrink-0 ms-2">Billed by MaltaPost</span>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Stripe Payment Element -->
-                    <div class="card">
-                        <div class="card-header"><h6 class="mb-0">Payment</h6></div>
-                        <div class="card-body">
-                            <div id="payment-element"></div>
-                            <div id="payment-errors" class="alert alert-danger mt-3 d-none"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right column: price summary + pay button -->
-                <div class="col-md-5">
-                    <div class="card sticky-top" style="top: 100px;">
-                        <div class="card-header"><h6 class="mb-0">Price Details</h6></div>
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Item price</span>
-                                <span>€@Model.Price.ToString("N0")</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Delivery</span>
-                                <span id="deliveryPriceLabel" class="text-success">Free</span>
-                            </div>
-                            <hr>
-                            <div class="d-flex justify-content-between mb-4">
-                                <strong>Total</strong>
-                                <strong class="text-primary fs-4">€@Model.Price.ToString("N0")</strong>
-                            </div>
-
-                            <button type="button" id="submit-payment" class="btn btn-primary btn-lg w-100">
-                                <span id="button-text">
-                                    <i class="bi bi-lock me-2"></i>Pay €@Model.Price.ToString("N0")
-                                </span>
-                                <span id="spinner" class="d-none">
-                                    <span class="spinner-border spinner-border-sm me-2"></span>Processing...
-                                </span>
-                            </button>
-
-                            <div class="mt-3 text-muted small">
-                                <p class="mb-1"><i class="bi bi-shield-check me-1 text-success"></i>Your payment is held securely - nothing goes to the seller yet.</p>
-                                <p class="mb-0"><i class="bi bi-check-circle me-1 text-primary"></i>Funds are only released to the seller once you confirm you've received the item.</p>
-                            </div>
-                        </div>
-                    </div>
+    <div class="checkout-layout">
+        <div class="d-grid gap-3">
+            <div class="info-card m-0">
+                <h2>How do you want to get it?</h2>
+                <div class="d-grid gap-2">
+                    <label class="choice-card" for="handToHand">
+                        <input class="form-check-input" type="radio" name="deliveryMethod" id="handToHand" value="HandToHand" checked>
+                        <span class="flex-grow-1">
+                            <strong class="d-block">Meet in person</strong>
+                            <span class="small text-muted">Arrange a time in chat. Give the seller your 6-digit handover code when you get the item.</span>
+                        </span>
+                        <strong>Free</strong>
+                    </label>
+                    <label class="choice-card" for="maltaPost">
+                        <input class="form-check-input" type="radio" name="deliveryMethod" id="maltaPost" value="MaltaPost">
+                        <span class="flex-grow-1">
+                            <strong class="d-block">MaltaPost tracked delivery</strong>
+                            <span class="small text-muted">The seller ships with tracking, 2 to 5 working days.</span>
+                        </span>
+                        <strong class="small text-muted">Billed by MaltaPost</strong>
+                    </label>
                 </div>
             </div>
+
+            <div class="info-card m-0">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="mb-0">Payment</h2>
+                    <span class="small text-muted d-flex align-items-center gap-1"><i class="bi bi-lock" aria-hidden="true"></i>Secured by Stripe</span>
+                </div>
+                <div id="payment-element"></div>
+                <div class="form-text mt-2">Test mode: use <code>4242 4242 4242 4242</code>, any future date and any CVC.</div>
+                <div id="payment-errors" class="alert alert-danger mt-3 d-none"></div>
+            </div>
         </div>
+
+        <aside class="listing-aside">
+            <div class="buy-panel">
+                <h2 class="h3 mb-3">Order summary</h2>
+                <div class="summary-item">
+                    @if (!string.IsNullOrEmpty(Model.Listing?.ImageUrl))
+                    {
+                        <img src="@Model.Listing.ImageUrl" alt="">
+                    }
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold">@Model.Listing?.Title</div>
+                        <div class="small text-muted">Sold by @Model.Listing?.SellerName</div>
+                    </div>
+                </div>
+                <hr class="panel-divider">
+                <dl class="mb-0">
+                    <div class="kv"><dt>Item price</dt><dd>€@Model.Price.ToString("N2")</dd></div>
+                    <div class="kv"><dt>Delivery</dt><dd id="deliveryPriceLabel">Free</dd></div>
+                </dl>
+                <hr class="panel-divider">
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <span class="fw-bold">Total</span>
+                    <span class="summary-total">€@Model.Price.ToString("N2")</span>
+                </div>
+                <button type="button" id="submit-payment" class="btn btn-primary btn-lg w-100 mt-3">
+                    <span id="button-text"><i class="bi bi-lock" aria-hidden="true"></i> Pay €@Model.Price.ToString("N2")</span>
+                    <span id="spinner" class="d-none"><span class="spinner-border spinner-border-sm me-2"></span>Processing...</span>
+                </button>
+                <div class="escrow-note mt-3">
+                    <i class="bi bi-shield-check" aria-hidden="true"></i>
+                    <span>We hold your payment in escrow. The seller is paid only after you confirm you have the item. If something is wrong you can open a dispute.</span>
+                </div>
+            </div>
+        </aside>
     </div>
 </div>
-
 @section Scripts {
     <script src="https://js.stripe.com/v3/"></script>
     <script>
@@ -175,13 +143,7 @@
         document.querySelectorAll('input[name="deliveryMethod"]').forEach(radio => {
             radio.addEventListener('change', function () {
                 const label = document.getElementById('deliveryPriceLabel');
-                if (this.value === 'MaltaPost') {
-                    label.textContent = 'Billed by MaltaPost';
-                    label.className = 'text-muted small';
-                } else {
-                    label.textContent = 'Free';
-                    label.className = 'text-success';
-                }
+                label.textContent = this.value === 'MaltaPost' ? 'Billed by MaltaPost' : 'Free';
             });
         });
     </script>
