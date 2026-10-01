@@ -38,11 +38,12 @@ public class PayForAuctionModel : PageModel
             .FirstOrDefaultAsync(p => p.UserId == _currentUser.UserId);
 
         var order = await _context.Orders
-            .Include(o => o.Listing).ThenInclude(l => l.Images)
+            .Include(o => o.Listing).ThenInclude(l => l!.Images)
             .Include(o => o.Seller)
             .FirstOrDefaultAsync(o => o.Id == orderId);
 
-        if (order == null)
+        // Auction orders always have exactly one listing; bundle orders never come here
+        if (order?.Listing == null)
             return NotFound();
 
         if (order.BuyerId != userProfile?.Id)

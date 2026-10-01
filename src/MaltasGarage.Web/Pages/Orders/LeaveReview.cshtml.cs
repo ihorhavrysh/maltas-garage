@@ -52,7 +52,7 @@ public class LeaveReviewModel : PageModel
             return RedirectToPage("/Index");
 
         var order = await _context.Orders
-            .Include(o => o.Listing).ThenInclude(l => l.Images)
+            .Include(o => o.Listing).ThenInclude(l => l!.Images)
             .Include(o => o.Items).ThenInclude(i => i.Listing).ThenInclude(l => l.Images)
             .Include(o => o.Buyer)
             .Include(o => o.Seller)

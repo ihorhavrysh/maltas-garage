@@ -148,20 +148,19 @@ public class OrderService : IOrderService
     public async Task<Order?> GetOrderAsync(Guid orderId)
     {
         return await _context.Orders
-            .Include(o => o.Listing).ThenInclude(l => l.Images)
+            .Include(o => o.Listing).ThenInclude(l => l!.Images)
             .Include(o => o.Items).ThenInclude(i => i.Listing).ThenInclude(l => l.Images)
             .Include(o => o.Buyer)
             .Include(o => o.Seller)
             .Include(o => o.Payment)
             .Include(o => o.Shipment)
-            .Include(o => o.HandoverCode)
             .FirstOrDefaultAsync(o => o.Id == orderId);
     }
 
     public async Task<List<Order>> GetBuyerOrdersAsync(Guid buyerId)
     {
         return await _context.Orders
-            .Include(o => o.Listing).ThenInclude(l => l.Images)
+            .Include(o => o.Listing).ThenInclude(l => l!.Images)
             .Include(o => o.Items).ThenInclude(i => i.Listing)
             .Include(o => o.Seller)
             .Where(o => o.BuyerId == buyerId)
@@ -172,7 +171,7 @@ public class OrderService : IOrderService
     public async Task<List<Order>> GetSellerOrdersAsync(Guid sellerId)
     {
         return await _context.Orders
-            .Include(o => o.Listing).ThenInclude(l => l.Images)
+            .Include(o => o.Listing).ThenInclude(l => l!.Images)
             .Include(o => o.Items).ThenInclude(i => i.Listing)
             .Include(o => o.Buyer)
             .Where(o => o.SellerId == sellerId)
@@ -319,6 +318,7 @@ public class OrderService : IOrderService
         var order = await _context.Orders
             .Include(o => o.Payment)
             .Include(o => o.Listing)
+            .Include(o => o.Items).ThenInclude(i => i.Listing)
             .FirstOrDefaultAsync(o => o.Id == orderId)
             ?? throw new Exception("Order not found");
 
@@ -331,7 +331,12 @@ public class OrderService : IOrderService
         }
 
         order.Status = OrderStatus.Refunded;
-        order.Listing.Status = ListingStatus.Active; // re-list the item
+
+        // Re-list what was sold: one listing, or every listing of a bundle order
+        if (order.Listing != null)
+            order.Listing.Status = ListingStatus.Active;
+        foreach (var item in order.Items)
+            item.Listing.Status = ListingStatus.Active;
 
         if (order.Payment != null)
             order.Payment.Status = PaymentStatus.Refunded;

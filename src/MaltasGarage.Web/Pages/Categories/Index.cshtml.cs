@@ -70,7 +70,7 @@ public class IndexModel : PageModel
             .Where(l => l.Status == ListingStatus.Active || l.Status == ListingStatus.AuctionPhase);
 
         if (!string.IsNullOrEmpty(Q))
-            query = query.Where(l => l.Title.Contains(Q) || l.Description.Contains(Q));
+            query = query.Where(l => l.Title.Contains(Q) || (l.Description != null && l.Description.Contains(Q)));
 
         if (minPrice.HasValue)
             query = query.Where(l => l.CurrentPrice >= minPrice.Value);

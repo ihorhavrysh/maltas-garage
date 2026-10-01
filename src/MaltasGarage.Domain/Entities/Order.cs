@@ -31,7 +31,6 @@ public class Order : BaseEntity, IConcurrencyStamped
     public UserProfile Seller { get; set; } = null!;
     public Payment? Payment { get; set; }
     public Shipment? Shipment { get; set; }
-    public HandoverCode? HandoverCode { get; set; }
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
     public Dispute? Dispute { get; set; }
 }

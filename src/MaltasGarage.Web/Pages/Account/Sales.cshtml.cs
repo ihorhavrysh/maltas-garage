@@ -42,7 +42,7 @@ public class SalesModel : PageModel
 
         var all = await _context.Orders
             .Include(o => o.Listing)
-                .ThenInclude(l => l.Images)
+                .ThenInclude(l => l!.Images)
             .Include(o => o.Items)
             .Include(o => o.Buyer)
             .Include(o => o.Payment)

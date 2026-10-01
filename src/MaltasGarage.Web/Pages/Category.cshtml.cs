@@ -108,7 +108,7 @@ public class CategoryModel : PageModel
 
         // Text search
         if (!string.IsNullOrEmpty(Q))
-            query = query.Where(l => l.Title.Contains(Q) || l.Description.Contains(Q));
+            query = query.Where(l => l.Title.Contains(Q) || (l.Description != null && l.Description.Contains(Q)));
 
         // Price filters
         if (minPrice.HasValue)
