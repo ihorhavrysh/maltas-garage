@@ -64,6 +64,31 @@ jobs:
           path: ./publish
           retention-days: 7
 
+  # Keeps the README's "docker compose up" honest: the image builds, migrates a fresh
+  # SQL Server database, seeds the demo data and serves the home page
+  docker:
+    name: Docker Compose
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start
+        run: docker compose up --build --detach --wait --wait-timeout 300
+
+      - name: Home page answers
+        run: |
+          for attempt in $(seq 1 30); do
+            status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ || true)
+            echo "Attempt $attempt: HTTP $status"
+            if [ "$status" = "200" ]; then exit 0; fi
+            sleep 5
+          done
+          exit 1
+
+      - name: Logs
+        if: failure()
+        run: docker compose logs
+
   deploy:
     name: Deploy to Azure App Service
     needs: build-test

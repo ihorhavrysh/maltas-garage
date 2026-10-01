@@ -61,6 +61,7 @@ secrets.json
 appsettings.*.local.json
 .env
 .env.*
+!.env.example
 *.pfx
 *.key
 
