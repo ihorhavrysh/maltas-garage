@@ -226,7 +226,7 @@ public class ListingModel : PageModel
             return RedirectToPage(new { id });
         }
 
-        return RedirectToPage("/Checkout", new { listingId = id, price = offer.Amount, offerId = offer.Id });
+        return RedirectToPage("/Checkout", new { listingId = id, offerId = offer.Id });
     }
 
     public async Task<IActionResult> OnPostBuyNowAsync(Guid id)
@@ -265,6 +265,6 @@ public class ListingModel : PageModel
         // Cancel any pending offers from other buyers
         await _priceOfferService.CancelPendingOffersForListingAsync(id);
 
-        return RedirectToPage("/Checkout", new { listingId = id, price = listing.DesiredPrice });
+        return RedirectToPage("/Checkout", new { listingId = id });
     }
 }

@@ -23,6 +23,23 @@ public class OrderService : IOrderService
         _payment = payment;
     }
 
+    public async Task<decimal> GetCheckoutPriceAsync(Guid listingId, Guid buyerId, Guid? offerId)
+    {
+        if (offerId == null)
+        {
+            var listing = await _context.Listings.AsNoTracking().FirstOrDefaultAsync(l => l.Id == listingId)
+                ?? throw new InvalidOperationException("Listing not found.");
+            return listing.DesiredPrice;
+        }
+
+        var offer = await _context.PriceOffers.AsNoTracking().FirstOrDefaultAsync(o => o.Id == offerId);
+        if (offer == null || offer.ListingId != listingId || offer.BuyerId != buyerId ||
+            offer.Status != PriceOfferStatus.Accepted)
+            throw new InvalidOperationException("This offer is no longer valid.");
+
+        return offer.Amount;
+    }
+
     public async Task<Order> CreateOrderAsync(Guid listingId, Guid buyerId, decimal price, DeliveryMethod deliveryMethod)
     {
         var listing = await _context.Listings

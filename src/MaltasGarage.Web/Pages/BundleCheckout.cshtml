@@ -135,7 +135,6 @@
         const stripe       = Stripe('@StripeSettings.Value.PublishableKey');
         const clientSecret = '@Model.ClientSecret';
         const bundleOfferId = '@Model.BundleOfferId';
-        const price        = '@Model.BundleOffer!.OfferAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)';
         const returnBase   = window.location.origin + '/Orders/BundlePaymentComplete';
 
         let elements;
@@ -158,7 +157,8 @@
             errorsDiv.classList.add('d-none');
 
             const deliveryMethod = document.querySelector('input[name="deliveryMethod"]:checked').value;
-            const returnUrl = `${returnBase}?bundleOfferId=${bundleOfferId}&price=${price}&deliveryMethod=${deliveryMethod}`;
+            // The amount is read back from the Stripe payment, not from this URL
+            const returnUrl = `${returnBase}?bundleOfferId=${bundleOfferId}&deliveryMethod=${deliveryMethod}`;
 
             const { error } = await stripe.confirmPayment({
                 elements,

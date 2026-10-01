@@ -104,6 +104,76 @@ public class OrderServiceTests
             service.CreateOrderAsync(Guid.NewGuid(), Guid.NewGuid(), 100m, DeliveryMethod.MaltaPost));
     }
 
+    // ── GetCheckoutPriceAsync ────────────────────────────────────────────────
+
+    // Seeds a 100 EUR listing and one offer on it; returns the service and the ids involved
+    private static async Task<(OrderService Service, Guid ListingId, Guid BuyerId, Guid OfferId)> SeedOfferAsync(
+        PriceOfferStatus status, Guid? offerBuyerId = null, Guid? offerListingId = null)
+    {
+        var ctx = TestDbContextFactory.Create();
+        var listing = MakeListing(price: 100m);
+        ctx.Listings.Add(listing);
+        var buyerId = Guid.NewGuid();
+        var offer = new PriceOffer
+        {
+            Id = Guid.NewGuid(),
+            ListingId = offerListingId ?? listing.Id,
+            BuyerId = offerBuyerId ?? buyerId,
+            SellerId = listing.SellerId,
+            Amount = 70m,
+            Status = status,
+            ExpiresAt = DateTime.UtcNow.AddHours(24)
+        };
+        ctx.PriceOffers.Add(offer);
+        await ctx.SaveChangesAsync();
+
+        return (new OrderService(ctx, _messaging, _emailNotifications, _payment), listing.Id, buyerId, offer.Id);
+    }
+
+    [Fact]
+    public async Task GetCheckoutPrice_WithoutOffer_IsTheBuyNowPrice()
+    {
+        var (service, listingId, buyerId, _) = await SeedOfferAsync(PriceOfferStatus.Accepted);
+
+        Assert.Equal(100m, await service.GetCheckoutPriceAsync(listingId, buyerId, offerId: null));
+    }
+
+    [Fact]
+    public async Task GetCheckoutPrice_WithOwnAcceptedOffer_IsTheOfferAmount()
+    {
+        var (service, listingId, buyerId, offerId) = await SeedOfferAsync(PriceOfferStatus.Accepted);
+
+        Assert.Equal(70m, await service.GetCheckoutPriceAsync(listingId, buyerId, offerId));
+    }
+
+    [Theory]
+    [InlineData(PriceOfferStatus.Pending)]
+    [InlineData(PriceOfferStatus.Rejected)]
+    [InlineData(PriceOfferStatus.Expired)]
+    [InlineData(PriceOfferStatus.Completed)]
+    public async Task GetCheckoutPrice_WithOfferNotAccepted_Throws(PriceOfferStatus status)
+    {
+        var (service, listingId, buyerId, offerId) = await SeedOfferAsync(status);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetCheckoutPriceAsync(listingId, buyerId, offerId));
+    }
+
+    [Fact]
+    public async Task GetCheckoutPrice_WithSomeoneElsesOffer_Throws()
+    {
+        var (service, listingId, buyerId, offerId) = await SeedOfferAsync(PriceOfferStatus.Accepted, offerBuyerId: Guid.NewGuid());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetCheckoutPriceAsync(listingId, buyerId, offerId));
+    }
+
+    [Fact]
+    public async Task GetCheckoutPrice_WithOfferOnAnotherListing_Throws()
+    {
+        var (service, listingId, buyerId, offerId) = await SeedOfferAsync(PriceOfferStatus.Accepted, offerListingId: Guid.NewGuid());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetCheckoutPriceAsync(listingId, buyerId, offerId));
+    }
+
     // ── ReleaseEscrowAsync ───────────────────────────────────────────────────
 
     // Seeds an order whose payment is captured and whose seller has a Stripe account,

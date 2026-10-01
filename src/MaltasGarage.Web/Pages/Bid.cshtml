@@ -88,8 +88,8 @@
         const stripe = Stripe('@Model.PublishableKey');
         const clientSecret = '@Model.ClientSecret';
         const listingId = '@Model.ListingId';
-        const amount = '@Model.Amount';
-        const returnUrl = `${window.location.origin}/BidComplete?listingId=${listingId}&amount=${amount}`;
+        // The amount is read back from the Stripe payment, not from this URL
+        const returnUrl = `${window.location.origin}/BidComplete?listingId=${listingId}`;
 
         let elements;
 
