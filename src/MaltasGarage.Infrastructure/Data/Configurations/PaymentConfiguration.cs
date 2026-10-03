@@ -15,6 +15,12 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.StripePaymentIntentId)
             .HasMaxLength(100);
 
+        // Payments are looked up by PaymentIntent (webhook, return pages), and one PaymentIntent
+        // pays for one order: the unique index makes a second record for it impossible
+        builder.HasIndex(p => p.StripePaymentIntentId)
+            .IsUnique()
+            .HasFilter("[StripePaymentIntentId] IS NOT NULL");
+
         builder.Property(p => p.StripeTransferId)
             .HasMaxLength(100);
 

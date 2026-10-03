@@ -184,6 +184,11 @@ public class DisputeService : IDisputeService
             .FirstOrDefaultAsync(d => d.Id == disputeId)
             ?? throw new InvalidOperationException("Dispute not found.");
 
+        // A dispute is resolved once. A second POST (double click, two staff members, browser
+        // back) must not refund or pay out again
+        if (dispute.Status != "Open" && dispute.Status != "UnderReview")
+            throw new InvalidOperationException("This dispute has already been closed.");
+
         // Execute Stripe operation first — if it fails, dispute stays unresolved in DB
         if (resolution == DisputeResolution.RefundBuyer)
             await _orderService.RefundBuyerAsync(dispute.OrderId);

@@ -80,11 +80,23 @@ public class IndexModel : PageModel
     public async Task<IActionResult> OnPostBanAsync(string userId)
     {
         var user = await _userManager.FindByIdAsync(userId);
-        if (user != null)
+        if (user == null) return RedirectToPage();
+
+        // Staff accounts are managed on the Staff page. Here nobody bans themselves, nobody bans
+        // an admin, and a manager cannot ban another manager
+        if (user.Id == _userManager.GetUserId(User) ||
+            await _userManager.IsInRoleAsync(user, "Admin") ||
+            (await _userManager.IsInRoleAsync(user, "Manager") && !User.IsInRole("Admin")))
         {
-            await _userManager.SetLockoutEnabledAsync(user, true);
-            await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
+            TempData["Error"] = "This account cannot be banned here.";
+            return RedirectToPage();
         }
+
+        await _userManager.SetLockoutEnabledAsync(user, true);
+        await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
+        // A new security stamp makes the banned user's existing sign-in cookie invalid at the
+        // next validation, instead of letting the session run on
+        await _userManager.UpdateSecurityStampAsync(user);
         return RedirectToPage();
     }
 

@@ -271,6 +271,8 @@ public class OrderServiceTests
         var listingId = listing.Id;
         var service = new OrderService(ctx, _messaging, _emailNotifications, _payment);
         var order = await service.CreateOrderAsync(listingId, Guid.NewGuid(), 100m, DeliveryMethod.HandToHand);
+        order.Status = OrderStatus.Paid;
+        await ctx.SaveChangesAsync();
 
         await service.RefundBuyerAsync(order.Id);
 

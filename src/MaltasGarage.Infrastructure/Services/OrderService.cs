@@ -211,6 +211,47 @@ public class OrderService : IOrderService
         await _context.SaveChangesAsync();
     }
 
+    public async Task<Order> MarkShippedAsync(Guid orderId, Guid sellerId, string trackingNumber)
+    {
+        var order = await _context.Orders
+            .Include(o => o.Listing)
+            .Include(o => o.Items)
+            .Include(o => o.Shipment)
+            .FirstOrDefaultAsync(o => o.Id == orderId)
+            ?? throw new InvalidOperationException("Order not found.");
+
+        if (order.SellerId != sellerId)
+            throw new InvalidOperationException("Only the seller can ship this order.");
+
+        // Checked here, not only on the page: a disputed or hand-to-hand order must never become
+        // Shipped, because Shipped starts the MaltaPost auto-release clock
+        if (order.Status != OrderStatus.Paid)
+            throw new InvalidOperationException("Order is not ready for shipping.");
+        if (order.DeliveryMethod != DeliveryMethod.MaltaPost)
+            throw new InvalidOperationException("This order uses hand-to-hand delivery.");
+        if (order.Shipment != null)
+            throw new InvalidOperationException("This order has already been shipped.");
+
+        _context.Shipments.Add(new Shipment
+        {
+            Id = Guid.NewGuid(),
+            OrderId = orderId,
+            Method = DeliveryMethod.MaltaPost,
+            Carrier = "MaltaPost",
+            TrackingNumber = trackingNumber.Trim(),
+            Status = ShipmentStatus.Shipped,
+            ShippedAt = DateTime.UtcNow,
+            DeliveryDeadline = DateTime.UtcNow.AddDays(7),
+            CreatedAt = DateTime.UtcNow
+        });
+
+        order.Status = OrderStatus.Shipped;
+        order.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return order;
+    }
+
     public async Task ReleaseEscrowAsync(Guid orderId)
     {
         var order = await _context.Orders
@@ -293,12 +334,26 @@ public class OrderService : IOrderService
                 .Include(o => o.Listing)
                 .FirstAsync(o => o.Id == orderId);
 
-            // Transfer first: it is idempotent per order, so a retry or a race is safe
+            // Transfer first: it is idempotent per order, so a retry or a race is safe. A failed
+            // transfer skips this order only; the next sweep tries it again
             if (order.Payment!.StripePaymentIntentId != null && order.Seller.StripeAccountId != null)
             {
-                if (!await _payment.CreateTransferAsync(order.SellerPayout, order.Seller.StripeAccountId,
-                        order.Id.ToString(), order.Payment.StripePaymentIntentId))
+                bool transferred;
+                try
+                {
+                    transferred = await _payment.CreateTransferAsync(order.SellerPayout, order.Seller.StripeAccountId,
+                        order.Id.ToString(), order.Payment.StripePaymentIntentId);
+                }
+                catch (Exception)
+                {
+                    transferred = false;
+                }
+
+                if (!transferred)
+                {
+                    _context.ChangeTracker.Clear();
                     continue;
+                }
             }
 
             order.Status = OrderStatus.Completed;
@@ -339,6 +394,10 @@ public class OrderService : IOrderService
             .FirstOrDefaultAsync(o => o.Id == orderId)
             ?? throw new Exception("Order not found");
 
+        // Only money that is still held in escrow can be refunded. Without this a second
+        // resolution, a double click or a late request would refund an order twice
+        EnsureRefundable(order);
+
         // Refund from platform — money was never transferred to seller
         if (order.Payment?.StripePaymentIntentId != null)
         {
@@ -369,8 +428,14 @@ public class OrderService : IOrderService
             .FirstOrDefaultAsync(o => o.Id == orderId)
             ?? throw new Exception("Order not found.");
 
-        if (partialRefundAmount <= 0 || partialRefundAmount >= order.FinalPrice)
-            throw new Exception($"Partial refund amount must be between €0.01 and €{order.FinalPrice - 0.01m:N2}.");
+        EnsureRefundable(order);
+
+        // The seller bears the refund and the platform keeps its fee, so the refund can be at most
+        // the seller's payout; anything more would make the payout negative
+        if (partialRefundAmount <= 0 || partialRefundAmount > order.SellerPayout)
+            throw new InvalidOperationException($"Partial refund amount must be between €0.01 and €{order.SellerPayout:N2}.");
+
+        var adjustedPayout = order.SellerPayout - partialRefundAmount;
 
         if (order.Payment?.StripePaymentIntentId != null)
         {
@@ -379,15 +444,14 @@ public class OrderService : IOrderService
             if (!refunded)
                 throw new Exception($"Stripe partial refund failed for order {orderId}.");
 
-            // Transfer remaining seller payout (original payout minus the partial refund amount)
-            // Platform keeps its fee; seller bears the cost of the refund.
-            var adjustedPayout = order.SellerPayout - partialRefundAmount;
-            if (adjustedPayout > 0 && order.Seller?.StripeAccountId != null)
-                await _payment.CreateTransferAsync(adjustedPayout, order.Seller.StripeAccountId, orderId.ToString(), order.Payment.StripePaymentIntentId);
-            order.SellerPayout = adjustedPayout;
-
-            order.Payment.ReleasedAt = DateTime.UtcNow;
+            // Transfer the rest of the seller payout. If it fails the order stays open, so the
+            // resolution can be repeated: the refund and the transfer are both idempotent
+            if (adjustedPayout > 0 && order.Seller?.StripeAccountId != null &&
+                !await _payment.CreateTransferAsync(adjustedPayout, order.Seller.StripeAccountId, orderId.ToString(), order.Payment.StripePaymentIntentId))
+                throw new InvalidOperationException($"The buyer was refunded, but the transfer to the seller failed for order {orderId}. Try resolving again.");
         }
+
+        order.SellerPayout = adjustedPayout;
 
         // Partial refund: transaction is complete, item is not re-listed
         order.Status = OrderStatus.Completed;
@@ -404,6 +468,14 @@ public class OrderService : IOrderService
             sellerProfile.TotalSales++;
 
         await _context.SaveChangesAsync();
+    }
+
+    private static void EnsureRefundable(Order order)
+    {
+        if (order.Status is not (OrderStatus.Paid or OrderStatus.Shipped or OrderStatus.Delivered or OrderStatus.Disputed))
+            throw new InvalidOperationException($"Order {order.Id} cannot be refunded: its status is {order.Status}.");
+        if (order.Payment != null && order.Payment.Status != PaymentStatus.Captured)
+            throw new InvalidOperationException($"Order {order.Id} cannot be refunded: the payment is {order.Payment.Status}.");
     }
 
     public decimal CalculatePlatformFee(decimal price) => PlatformFee.Calculate(price);

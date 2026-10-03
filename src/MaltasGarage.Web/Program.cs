@@ -63,7 +63,10 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = false;
     options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 6;
+    options.Password.RequiredLength = 8;
+    // Used by the login page for every account except the shared demo ones (see LoginModel)
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
 })
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
@@ -85,6 +88,11 @@ builder.Services.AddRazorPages()
             options.Filters.Add<DemoGuardPageFilter>();
     });
 
+// A ban or a password change updates the security stamp; signed-in cookies are re-checked
+// against it every 5 minutes (the default is 30), so a banned user is signed out quickly
+builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+    options.ValidationInterval = TimeSpan.FromMinutes(5));
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
@@ -103,21 +111,27 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-    // Bid page: 5 requests/min per IP - prevents payment intent spam
-    options.AddFixedWindowLimiter("bid", o =>
-    {
-        o.PermitLimit = 5;
-        o.Window = TimeSpan.FromMinutes(1);
-        o.QueueLimit = 0;
-    });
+    // Named policies are partitioned by client IP: each visitor has their own counter. A plain
+    // AddFixedWindowLimiter would be one counter for the whole site, which one visitor can use up
 
-    // Contact form: 3 submissions per 10 min per IP
-    options.AddFixedWindowLimiter("contact", o =>
-    {
-        o.PermitLimit = 3;
-        o.Window = TimeSpan.FromMinutes(10);
-        o.QueueLimit = 0;
-    });
+    // Bid page: 5 requests/min per IP - prevents payment intent spam
+    options.AddPolicy("bid", ctx => RateLimitPartition.GetFixedWindowLimiter(
+        $"bid:{ctx.Connection.RemoteIpAddress}", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        }));
+
+    // Contact form: 3 submissions per 10 min per IP (the GET that shows the form is not limited)
+    options.AddPolicy("contact", ctx => HttpMethods.IsPost(ctx.Request.Method)
+        ? RateLimitPartition.GetFixedWindowLimiter($"contact:{ctx.Connection.RemoteIpAddress}", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 3,
+            Window = TimeSpan.FromMinutes(10),
+            QueueLimit = 0
+        })
+        : RateLimitPartition.GetNoLimiter("contact-get"));
 
     // Path-based limits per IP for the endpoints a public demo attracts abuse on
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
@@ -130,6 +144,18 @@ builder.Services.AddRateLimiter(options =>
         if (isPost && path.StartsWith("/identity/account/register"))
         {
             return RateLimitPartition.GetFixedWindowLimiter($"register:{ip}", _ => new()
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromHours(1),
+                QueueLimit = 0
+            });
+        }
+
+        // Password reset emails: 5 per hour, so the form cannot be used to flood someone's inbox
+        if (isPost && (path.StartsWith("/identity/account/forgotpassword") ||
+                       path.StartsWith("/identity/account/resendemailconfirmation")))
+        {
+            return RateLimitPartition.GetFixedWindowLimiter($"reset:{ip}", _ => new()
             {
                 PermitLimit = 5,
                 Window = TimeSpan.FromHours(1),
@@ -163,7 +189,18 @@ builder.Services.AddRateLimiter(options =>
             });
         }
 
-        return RateLimitPartition.GetNoLimiter("nolimit");
+        // Everything else: a generous ceiling per IP. A normal visitor never reaches it, but a
+        // script hammering pages would otherwise burn the free tier's daily CPU quota
+        if (path.StartsWith("/css/") || path.StartsWith("/js/") || path.StartsWith("/lib/") ||
+            path.StartsWith("/images/") || path.StartsWith("/uploads/") || path == "/robots.txt")
+            return RateLimitPartition.GetNoLimiter("static");
+
+        return RateLimitPartition.GetFixedWindowLimiter($"pages:{ip}", _ => new()
+        {
+            PermitLimit = 120,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        });
     });
 });
 
@@ -262,7 +299,7 @@ app.MapGet("/robots.txt", (SiteInfo site) => Results.Text(
     "text/plain"));
 
 // Stripe Webhook endpoint
-app.MapPost("/api/stripe/webhook", async (HttpContext http, ApplicationDbContext db, IOptions<StripeSettings> stripe) =>
+app.MapPost("/api/stripe/webhook", async (HttpContext http, IPaymentEventHandler events, IOptions<StripeSettings> stripe) =>
 {
     var json = await new StreamReader(http.Request.Body).ReadToEndAsync();
     var webhookSecret = stripe.Value.WebhookSecret;
@@ -283,38 +320,14 @@ app.MapPost("/api/stripe/webhook", async (HttpContext http, ApplicationDbContext
 
     if (stripeEvent.Type == "payment_intent.succeeded")
     {
-        var intent = stripeEvent.Data.Object as PaymentIntent;
-        if (intent == null) return Results.Ok();
-
-        var payment = await db.Payments
-            .Include(p => p.Order)
-            .FirstOrDefaultAsync(p => p.StripePaymentIntentId == intent.Id);
-
-        if (payment != null && payment.Status != PaymentStatus.Captured)
-        {
-            payment.Status = PaymentStatus.Captured;
-            payment.CapturedAt = DateTime.UtcNow;
-            payment.Order.Status = OrderStatus.Paid;
-            payment.Order.PaidAt = DateTime.UtcNow;
-            await db.SaveChangesAsync();
-        }
+        // Repeated or late deliveries are expected; the handler ignores what no longer applies
+        if (stripeEvent.Data.Object is PaymentIntent intent)
+            await events.PaymentSucceededAsync(intent.Id);
     }
     else if (stripeEvent.Type == "account.updated")
     {
-        var account = stripeEvent.Data.Object as Account;
-        if (account == null) return Results.Ok();
-
-        if (account.ChargesEnabled && account.PayoutsEnabled)
-        {
-            var profile = await db.UserProfiles
-                .FirstOrDefaultAsync(p => p.StripeAccountId == account.Id);
-
-            if (profile != null && !profile.StripeOnboardingComplete)
-            {
-                profile.StripeOnboardingComplete = true;
-                await db.SaveChangesAsync();
-            }
-        }
+        if (stripeEvent.Data.Object is Account { ChargesEnabled: true, PayoutsEnabled: true } account)
+            await events.SellerAccountReadyAsync(account.Id);
     }
 
     return Results.Ok();

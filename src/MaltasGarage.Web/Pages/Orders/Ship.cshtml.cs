@@ -17,13 +17,16 @@ public class ShipModel : PageModel
     private readonly ICurrentUserService _currentUser;
     private readonly IMessagingService _messaging;
     private readonly IEmailNotificationService _emailNotifications;
+    private readonly IOrderService _orderService;
 
-    public ShipModel(ApplicationDbContext context, ICurrentUserService currentUser, IMessagingService messaging, IEmailNotificationService emailNotifications)
+    public ShipModel(ApplicationDbContext context, ICurrentUserService currentUser, IMessagingService messaging,
+        IEmailNotificationService emailNotifications, IOrderService orderService)
     {
         _context = context;
         _currentUser = currentUser;
         _messaging = messaging;
         _emailNotifications = emailNotifications;
+        _orderService = orderService;
     }
 
     public OrderViewModel? Order { get; set; }
@@ -92,31 +95,21 @@ public class ShipModel : PageModel
         var userProfile = await _context.UserProfiles
             .FirstOrDefaultAsync(p => p.UserId == _currentUser.UserId);
 
-        var order = await _context.Orders
-            .Include(o => o.Listing)
-            .Include(o => o.Items)
-            .FirstOrDefaultAsync(o => o.Id == orderId);
+        var exists = await _context.Orders.AnyAsync(o => o.Id == orderId);
+        if (!exists) return NotFound();
+        if (userProfile == null) return Forbid();
 
-        if (order == null) return NotFound();
-        if (order.SellerId != userProfile?.Id) return Forbid();
-
-        _context.Shipments.Add(new Shipment
+        // Seller, status and delivery method are all checked by the service on every POST
+        Order order;
+        try
         {
-            Id = Guid.NewGuid(),
-            OrderId = orderId,
-            Method = DeliveryMethod.MaltaPost,
-            Carrier = "MaltaPost",
-            TrackingNumber = TrackingNumber,
-            Status = ShipmentStatus.Shipped,
-            ShippedAt = DateTime.UtcNow,
-            DeliveryDeadline = DateTime.UtcNow.AddDays(7),
-            CreatedAt = DateTime.UtcNow
-        });
-
-        order.Status = OrderStatus.Shipped;
-        order.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
+            order = await _orderService.MarkShippedAsync(orderId, userProfile.Id, TrackingNumber);
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
+            return RedirectToPage("/Orders/Details", new { orderId });
+        }
 
         var orderTitle = order.IsBundleOrder
             ? $"Bundle ({order.Items.Count} items)"

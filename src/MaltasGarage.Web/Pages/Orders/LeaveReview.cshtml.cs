@@ -112,6 +112,20 @@ public class LeaveReviewModel : PageModel
         if (order.BuyerId != userProfile.Id && order.SellerId != userProfile.Id)
             return Forbid();
 
+        // [Range(1, 5)] only takes effect when ModelState is checked
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = "Please choose a rating from 1 to 5.";
+            return RedirectToPage(new { orderId });
+        }
+
+        // Checked again on POST: the form can be submitted without ever opening the page
+        if (order.Status != OrderStatus.Completed)
+        {
+            TempData["Error"] = "Reviews can only be left after the order is completed.";
+            return RedirectToPage("/Orders/Details", new { orderId });
+        }
+
         if (order.Reviews.Any(r => r.FromUserId == userProfile.Id))
         {
             TempData["Error"] = "You have already reviewed this order.";

@@ -11,6 +11,11 @@
     </form>
 </div>
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger mb-3">@TempData["Error"]</div>
+}
+
 <div class="card">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
@@ -84,8 +89,9 @@
                                             onclick="return confirm('Ban this user?')">Ban</button>
                                 </form>
                             }
-                            <button class="btn btn-sm btn-outline-primary"
-                                    onclick="openEmailModal('@user.UserId', '@user.Email', '@Html.Raw(user.DisplayName?.Replace("'", "\\'") ?? "")')">
+                            @* Values travel as HTML-encoded data attributes, never as JavaScript source *@
+                            <button type="button" class="btn btn-sm btn-outline-primary js-email-user"
+                                    data-user-id="@user.UserId" data-email="@user.Email" data-name="@user.DisplayName">
                                 <i class="bi bi-envelope"></i>
                             </button>
                         </td>
@@ -154,5 +160,9 @@
             document.getElementById('emailMessage').value = '';
             new bootstrap.Modal(document.getElementById('emailModal')).show();
         }
+
+        document.querySelectorAll('.js-email-user').forEach(button =>
+            button.addEventListener('click', () =>
+                openEmailModal(button.dataset.userId, button.dataset.email, button.dataset.name)));
     </script>
 }
