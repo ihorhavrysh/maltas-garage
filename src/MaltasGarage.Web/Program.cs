@@ -240,7 +240,11 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     try
     {
-        db.Database.Migrate();
+        // The migrations are written for SQL Server; the web tests run the app on SQLite
+        if (db.Database.IsSqlServer())
+            db.Database.Migrate();
+        else
+            db.Database.EnsureCreated();
     }
     catch (Exception ex) when (DatabaseErrors.IsFreeLimitReached(ex))
     {
@@ -384,3 +388,6 @@ if (databaseReady)
 }
 
 app.Run();
+
+// Lets the web tests start the app with WebApplicationFactory<Program>
+public partial class Program;
