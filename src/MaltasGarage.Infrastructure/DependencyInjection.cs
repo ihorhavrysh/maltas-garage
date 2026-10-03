@@ -58,6 +58,7 @@ public static class DependencyInjection
 
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IPaymentEventHandler, PaymentEventHandler>();
+        services.AddScoped<IPurchaseCompletionService, PurchaseCompletionService>();
         services.AddScoped<IBiddingService, BiddingService>();
         services.AddScoped<IMessagingService, MessagingService>();
         services.AddScoped<IDisputeService, DisputeService>();

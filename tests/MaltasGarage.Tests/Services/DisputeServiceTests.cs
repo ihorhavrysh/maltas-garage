@@ -13,7 +13,7 @@ public class DisputeServiceTests
         var payment = new RecordingPaymentService();
         var messaging = new NoOpMessagingService();
         var email = new NoOpEmailNotificationService();
-        var orders = new OrderService(ctx, messaging, email, payment);
+        var orders = new OrderService(ctx, messaging, email, payment, TimeProvider.System);
         return (new DisputeService(ctx, orders, messaging, email), payment);
     }
 

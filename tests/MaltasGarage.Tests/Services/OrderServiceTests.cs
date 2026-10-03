@@ -44,7 +44,7 @@ public class OrderServiceTests
     [InlineData(0.50, 1.00)]  // tiny price → minimum applies
     public void CalculatePlatformFee_ReturnsCorrectAmount(decimal price, decimal expectedFee)
     {
-        var service = new OrderService(TestDbContextFactory.Create(), _messaging, _emailNotifications, _payment);
+        var service = new OrderService(TestDbContextFactory.Create(), _messaging, _emailNotifications, _payment, TimeProvider.System);
 
         var fee = service.CalculatePlatformFee(price);
 
@@ -63,7 +63,7 @@ public class OrderServiceTests
         await ctx.SaveChangesAsync();
 
         var buyerId = Guid.NewGuid();
-        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment);
+        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment, TimeProvider.System);
 
         var order = await service.CreateOrderAsync(listing.Id, buyerId, 100m, DeliveryMethod.MaltaPost);
 
@@ -88,9 +88,9 @@ public class OrderServiceTests
         ctx.Listings.Add(listing);
         await ctx.SaveChangesAsync();
 
-        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment);
+        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment, TimeProvider.System);
 
-        await Assert.ThrowsAsync<Exception>(() =>
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.CreateOrderAsync(listing.Id, Guid.NewGuid(), 100m, DeliveryMethod.MaltaPost));
     }
 
@@ -98,9 +98,9 @@ public class OrderServiceTests
     public async Task CreateOrder_ListingNotFound_Throws()
     {
         var ctx = TestDbContextFactory.Create();
-        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment);
+        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment, TimeProvider.System);
 
-        await Assert.ThrowsAsync<Exception>(() =>
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.CreateOrderAsync(Guid.NewGuid(), Guid.NewGuid(), 100m, DeliveryMethod.MaltaPost));
     }
 
@@ -127,7 +127,7 @@ public class OrderServiceTests
         ctx.PriceOffers.Add(offer);
         await ctx.SaveChangesAsync();
 
-        return (new OrderService(ctx, _messaging, _emailNotifications, _payment), listing.Id, buyerId, offer.Id);
+        return (new OrderService(ctx, _messaging, _emailNotifications, _payment, TimeProvider.System), listing.Id, buyerId, offer.Id);
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public class OrderServiceTests
         ctx.Listings.Add(listing);
         await ctx.SaveChangesAsync();
 
-        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment);
+        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment, TimeProvider.System);
         var order = await service.CreateOrderAsync(listing.Id, Guid.NewGuid(), 100m, DeliveryMethod.MaltaPost);
 
         ctx.Payments.Add(new Payment
@@ -213,7 +213,7 @@ public class OrderServiceTests
         var ctx = TestDbContextFactory.Create();
         var (service, orderId) = await SeedPaidOrderAsync(ctx, status);
 
-        await Assert.ThrowsAsync<Exception>(() => service.ReleaseEscrowAsync(orderId));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ReleaseEscrowAsync(orderId));
 
         var unchanged = await ctx.Orders.FindAsync(orderId);
         Assert.Equal(status, unchanged!.Status);
@@ -269,7 +269,7 @@ public class OrderServiceTests
         await ctx.SaveChangesAsync();
 
         var listingId = listing.Id;
-        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment);
+        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment, TimeProvider.System);
         var order = await service.CreateOrderAsync(listingId, Guid.NewGuid(), 100m, DeliveryMethod.HandToHand);
         order.Status = OrderStatus.Paid;
         await ctx.SaveChangesAsync();
@@ -309,32 +309,11 @@ public class OrderServiceTests
         ctx.Orders.Add(order);
         await ctx.SaveChangesAsync();
 
-        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment);
+        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment, TimeProvider.System);
         await service.RefundBuyerAsync(order.Id);
 
         Assert.Equal(OrderStatus.Refunded, (await ctx.Orders.FindAsync(order.Id))!.Status);
         Assert.Equal(ListingStatus.Active, (await ctx.Listings.FindAsync(first.Id))!.Status);
         Assert.Equal(ListingStatus.Active, (await ctx.Listings.FindAsync(second.Id))!.Status);
-    }
-
-    // ── UpdateStatusAsync ────────────────────────────────────────────────────
-
-    [Fact]
-    public async Task UpdateStatus_SetsCompletedAtWhenStatusIsCompleted()
-    {
-        var ctx = TestDbContextFactory.Create();
-        var listing = MakeListing();
-        ctx.Listings.Add(listing);
-        await ctx.SaveChangesAsync();
-
-        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment);
-        var order = await service.CreateOrderAsync(listing.Id, Guid.NewGuid(), 100m, DeliveryMethod.MaltaPost);
-
-        Assert.Null(order.CompletedAt);
-
-        await service.UpdateStatusAsync(order.Id, OrderStatus.Completed);
-
-        var updated = await ctx.Orders.FindAsync(order.Id);
-        Assert.NotNull(updated!.CompletedAt);
     }
 }

@@ -262,9 +262,8 @@ public class ListingModel : PageModel
             return RedirectToPage(new { id });
         }
 
-        // Cancel any pending offers from other buyers
-        await _priceOfferService.CancelPendingOffersForListingAsync(id);
-
+        // Other buyers' offers are cancelled once the order exists (PaymentComplete), not here:
+        // a buyer who opens checkout and walks away must not cancel everyone else's offers
         return RedirectToPage("/Checkout", new { listingId = id });
     }
 }

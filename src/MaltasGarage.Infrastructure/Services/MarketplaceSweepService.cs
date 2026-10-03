@@ -21,14 +21,23 @@ namespace MaltasGarage.Infrastructure.Services;
 /// </summary>
 public class MarketplaceSweepService : BackgroundService
 {
-    public static readonly TimeSpan Interval = TimeSpan.FromMinutes(15);
-
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<MarketplaceSweepService> _logger;
 
-    public MarketplaceSweepService(IServiceProvider serviceProvider, ILogger<MarketplaceSweepService> logger)
+    /// <summary>Time between sweeps, from <c>App:SweepIntervalMinutes</c> (15 by default).</summary>
+    public TimeSpan Interval { get; }
+
+    public MarketplaceSweepService(IServiceProvider serviceProvider, IOptions<AppSettings> settings,
+        ILogger<MarketplaceSweepService> logger)
+        : this(serviceProvider, TimeSpan.FromMinutes(settings.Value.SweepIntervalMinutes), logger)
+    {
+    }
+
+    // Tests pass a short interval directly
+    public MarketplaceSweepService(IServiceProvider serviceProvider, TimeSpan interval, ILogger<MarketplaceSweepService> logger)
     {
         _serviceProvider = serviceProvider;
+        Interval = interval;
         _logger = logger;
     }
 

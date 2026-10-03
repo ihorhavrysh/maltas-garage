@@ -92,7 +92,7 @@ public class IndexModel : PageModel
 
         listing.Status = ListingStatus.Cancelled;
         await _context.SaveChangesAsync();
-        await _priceOfferService.CancelPendingOffersForListingAsync(listingId);
+        await _priceOfferService.CancelOpenOffersForListingAsync(listingId);
         await _bundleOfferService.CancelBundleOffersForListingAsync(listingId);
 
         TempData["Success"] = "Listing removed.";

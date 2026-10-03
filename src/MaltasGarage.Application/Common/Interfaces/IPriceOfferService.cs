@@ -8,6 +8,6 @@ public interface IPriceOfferService
     Task AcceptOfferAsync(Guid offerId, Guid sellerProfileId);
     Task RejectOfferAsync(Guid offerId, Guid sellerProfileId);
     Task ExpireOfferAsync(Guid offerId);
-    Task CancelPendingOffersForListingAsync(Guid listingId);
+    Task CancelOpenOffersForListingAsync(Guid listingId);
     Task<PriceOffer?> GetActiveOfferForBuyerAsync(Guid listingId, Guid buyerProfileId);
 }

@@ -22,12 +22,18 @@ public class BiddingService : IBiddingService
         _        => 50m
     };
 
-    public BiddingService(ApplicationDbContext context, IMessagingService messaging, IEmailNotificationService emailNotifications)
+    private readonly TimeProvider _time;
+
+    public BiddingService(ApplicationDbContext context, IMessagingService messaging, IEmailNotificationService emailNotifications,
+        TimeProvider time)
     {
         _context = context;
         _messaging = messaging;
         _emailNotifications = emailNotifications;
+        _time = time;
     }
+
+    private DateTime Now => _time.GetUtcNow().UtcDateTime;
 
     public async Task<BidResult> PlaceBidAsync(Guid listingId, Guid bidderId, decimal amount, string? paymentIntentId = null)
     {
@@ -44,7 +50,7 @@ public class BiddingService : IBiddingService
         if (listing.Status != ListingStatus.AuctionPhase)
             return new BidResult { Success = false, Error = "Auction is not active" };
 
-        if (listing.SellByDate <= DateTime.UtcNow)
+        if (listing.SellByDate <= Now)
             return new BidResult { Success = false, Error = "Auction has ended" };
 
         if (listing.SellerId == bidderId)
@@ -80,13 +86,13 @@ public class BiddingService : IBiddingService
             Amount = amount,
             IsWinningBid = false,
             StripePaymentIntentId = paymentIntentId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = Now
         };
 
         _context.Bids.Add(bid);
 
         listing.CurrentPrice = amount;
-        listing.UpdatedAt = DateTime.UtcNow;
+        listing.UpdatedAt = Now;
 
         try
         {
@@ -121,36 +127,4 @@ public class BiddingService : IBiddingService
         return new BidResult { Success = true, NewHighBid = amount };
     }
 
-    public async Task<decimal?> GetCurrentBidAsync(Guid listingId)
-    {
-        var maxBid = await _context.Bids
-            .Where(b => b.ListingId == listingId)
-            .MaxAsync(b => (decimal?)b.Amount);
-
-        if (maxBid == null)
-        {
-            var listing = await _context.Listings.FindAsync(listingId);
-            return listing?.MinPrice;
-        }
-
-        return maxBid;
-    }
-
-    public async Task<List<Bid>> GetBidsForListingAsync(Guid listingId)
-    {
-        return await _context.Bids
-            .Include(b => b.Bidder)
-            .Where(b => b.ListingId == listingId)
-            .OrderByDescending(b => b.Amount)
-            .ToListAsync();
-    }
-
-    public async Task<Bid?> GetWinningBidAsync(Guid listingId)
-    {
-        return await _context.Bids
-            .Include(b => b.Bidder)
-            .Where(b => b.ListingId == listingId)
-            .OrderByDescending(b => b.Amount)
-            .FirstOrDefaultAsync();
-    }
 }

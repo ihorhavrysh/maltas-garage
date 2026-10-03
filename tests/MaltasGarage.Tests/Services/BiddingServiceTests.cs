@@ -45,7 +45,7 @@ public class BiddingServiceTests
         ctx.Listings.Add(listing);
         await ctx.SaveChangesAsync();
 
-        var service = new BiddingService(ctx, _messaging, _emailNotifications);
+        var service = new BiddingService(ctx, _messaging, _emailNotifications, TimeProvider.System);
         var result = await service.PlaceBidAsync(listing.Id, sellerId, 11m);
 
         Assert.False(result.Success);
@@ -60,7 +60,7 @@ public class BiddingServiceTests
         ctx.Listings.Add(listing);
         await ctx.SaveChangesAsync();
 
-        var service = new BiddingService(ctx, _messaging, _emailNotifications);
+        var service = new BiddingService(ctx, _messaging, _emailNotifications, TimeProvider.System);
         var result = await service.PlaceBidAsync(listing.Id, Guid.NewGuid(), 11m);
 
         Assert.False(result.Success);
@@ -75,7 +75,7 @@ public class BiddingServiceTests
         ctx.Listings.Add(listing);
         await ctx.SaveChangesAsync();
 
-        var service = new BiddingService(ctx, _messaging, _emailNotifications);
+        var service = new BiddingService(ctx, _messaging, _emailNotifications, TimeProvider.System);
         var result = await service.PlaceBidAsync(listing.Id, Guid.NewGuid(), 11m);
 
         Assert.False(result.Success);
@@ -91,7 +91,7 @@ public class BiddingServiceTests
         ctx.Listings.Add(listing);
         await ctx.SaveChangesAsync();
 
-        var service = new BiddingService(ctx, _messaging, _emailNotifications);
+        var service = new BiddingService(ctx, _messaging, _emailNotifications, TimeProvider.System);
         var result = await service.PlaceBidAsync(listing.Id, Guid.NewGuid(), 10m);
 
         Assert.False(result.Success);
@@ -106,7 +106,7 @@ public class BiddingServiceTests
         ctx.Listings.Add(listing);
         await ctx.SaveChangesAsync();
 
-        var service = new BiddingService(ctx, _messaging, _emailNotifications);
+        var service = new BiddingService(ctx, _messaging, _emailNotifications, TimeProvider.System);
         var result = await service.PlaceBidAsync(listing.Id, Guid.NewGuid(), 50m);
 
         Assert.False(result.Success);
@@ -122,7 +122,7 @@ public class BiddingServiceTests
         await ctx.SaveChangesAsync();
 
         var listingId = listing.Id;
-        var service = new BiddingService(ctx, _messaging, _emailNotifications);
+        var service = new BiddingService(ctx, _messaging, _emailNotifications, TimeProvider.System);
 
         var result = await service.PlaceBidAsync(listingId, Guid.NewGuid(), 15m);
 
@@ -145,7 +145,7 @@ public class BiddingServiceTests
         await ctx.SaveChangesAsync();
 
         var listingId = listing.Id;
-        var service = new BiddingService(ctx, _messaging, _emailNotifications);
+        var service = new BiddingService(ctx, _messaging, _emailNotifications, TimeProvider.System);
 
         // First bidder places €15
         await service.PlaceBidAsync(listingId, Guid.NewGuid(), 15m);
@@ -165,7 +165,7 @@ public class BiddingServiceTests
     public async Task PlaceBid_ListingNotFound_ReturnsError()
     {
         var ctx = TestDbContextFactory.Create();
-        var service = new BiddingService(ctx, _messaging, _emailNotifications);
+        var service = new BiddingService(ctx, _messaging, _emailNotifications, TimeProvider.System);
 
         var result = await service.PlaceBidAsync(Guid.NewGuid(), Guid.NewGuid(), 20m);
 

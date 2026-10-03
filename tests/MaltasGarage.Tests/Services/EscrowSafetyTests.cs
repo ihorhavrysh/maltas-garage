@@ -12,7 +12,7 @@ namespace MaltasGarage.Tests.Services;
 public class EscrowSafetyTests
 {
     private static OrderService CreateService(Infrastructure.Data.ApplicationDbContext ctx, RecordingPaymentService payment)
-        => new(ctx, new NoOpMessagingService(), new NoOpEmailNotificationService(), payment);
+        => new(ctx, new NoOpMessagingService(), new NoOpEmailNotificationService(), payment, TimeProvider.System);
 
     // ── Refunds ──────────────────────────────────────────────────────────────
 

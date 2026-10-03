@@ -23,9 +23,9 @@ public class ListingLifecycleServiceTests
     private ListingLifecycleService CreateService(ApplicationDbContext ctx, RecordingPaymentService? payments = null)
     {
         var paymentService = payments ?? new RecordingPaymentService();
-        var orders = new OrderService(ctx, _messaging, _email, paymentService);
+        var orders = new OrderService(ctx, _messaging, _email, paymentService, _clock);
         return new ListingLifecycleService(ctx,
-            new PriceOfferService(ctx, _messaging, _email),
+            new PriceOfferService(ctx, _messaging, _email, _clock),
             new BundleOfferService(ctx, _messaging, _email),
             orders, _messaging, _email, _clock, NullLogger<ListingLifecycleService>.Instance);
     }
@@ -235,7 +235,7 @@ public class ListingLifecycleServiceTests
         await ctx.SaveChangesAsync();
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => new PriceOfferService(ctx, _messaging, _email).AcceptOfferAsync(offer.Id, seller.Id));
+            () => new PriceOfferService(ctx, _messaging, _email, _clock).AcceptOfferAsync(offer.Id, seller.Id));
 
         Assert.Equal("This offer has expired.", ex.Message);
         Assert.Equal(PriceOfferStatus.Expired, (await ctx.PriceOffers.SingleAsync()).Status);

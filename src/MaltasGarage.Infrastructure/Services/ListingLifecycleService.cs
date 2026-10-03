@@ -202,7 +202,7 @@ public class ListingLifecycleService : IListingLifecycleService
         if (transition is Transition.AuctionOpened or Transition.AuctionClosed)
         {
             // Offers only make sense before the auction phase
-            await _priceOffers.CancelPendingOffersForListingAsync(listing.Id);
+            await _priceOffers.CancelOpenOffersForListingAsync(listing.Id);
             await _bundleOffers.CancelBundleOffersForListingAsync(listing.Id);
         }
 
@@ -233,7 +233,7 @@ public class ListingLifecycleService : IListingLifecycleService
     private async Task<int> ExpireDueOffersAsync(DateTime now, CancellationToken cancellationToken)
     {
         var priceOfferIds = await _context.PriceOffers
-            .Where(o => o.Status == PriceOfferStatus.Pending && o.ExpiresAt <= now && !o.Listing.IsShowcase)
+            .Where(o => (o.Status == PriceOfferStatus.Pending || o.Status == PriceOfferStatus.Accepted) && o.ExpiresAt <= now && !o.Listing.IsShowcase)
             .Select(o => o.Id)
             .ToListAsync(cancellationToken);
 

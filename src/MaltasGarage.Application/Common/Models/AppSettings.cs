@@ -16,4 +16,11 @@ public class AppSettings
 
     /// <summary>Optional Google Analytics measurement id (G-...). No tracking when empty.</summary>
     public string? GoogleAnalyticsId { get; set; }
+
+    /// <summary>
+    /// How often the background sweep catches up on time-based changes while the app is awake.
+    /// Pages evaluate listings on read, so this only affects what nobody has looked at.
+    /// </summary>
+    [Range(1, 1440)]
+    public int SweepIntervalMinutes { get; set; } = 15;
 }
