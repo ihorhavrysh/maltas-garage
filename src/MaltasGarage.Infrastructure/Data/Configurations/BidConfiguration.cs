@@ -27,5 +27,10 @@ public class BidConfiguration : IEntityTypeConfiguration<Bid>
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(b => new { b.ListingId, b.Amount });
+
+        // BidComplete looks a bid up by its PaymentIntent; nvarchar(max) could not be indexed
+        builder.Property(b => b.StripePaymentIntentId)
+            .HasMaxLength(100);
+        builder.HasIndex(b => b.StripePaymentIntentId);
     }
 }

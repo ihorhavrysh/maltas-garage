@@ -1,5 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using MaltasGarage.Application.Common.Models;
+using MaltasGarage.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -10,11 +14,27 @@ public class LoginModel : PageModel
 {
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly ILogger<LoginModel> _logger;
+    private readonly ApplicationDbContext _context;
+    private readonly DemoSettings _demo;
 
-    public LoginModel(SignInManager<IdentityUser> signInManager, ILogger<LoginModel> logger)
+    public LoginModel(SignInManager<IdentityUser> signInManager, ILogger<LoginModel> logger,
+        ApplicationDbContext context, IOptions<DemoSettings> demo)
     {
         _signInManager = signInManager;
         _logger = logger;
+        _context = context;
+        _demo = demo.Value;
+    }
+
+    // Failed logins lock an account for a while (Identity: 5 attempts, 5 minutes). The shared
+    // demo accounts are the exception: their password is public, so locking them would let any
+    // visitor lock everyone else out by typing a wrong password five times
+    private async Task<bool> LockoutAppliesAsync(string email)
+    {
+        if (!_demo.Enabled) return true;
+
+        var user = await _signInManager.UserManager.FindByEmailAsync(email);
+        return user == null || !await _context.UserProfiles.AnyAsync(p => p.UserId == user.Id && p.IsDemoAccount);
     }
 
     [BindProperty]
@@ -63,7 +83,7 @@ public class LoginModel : PageModel
                 Input.Email,
                 Input.Password,
                 Input.RememberMe,
-                lockoutOnFailure: false);
+                lockoutOnFailure: await LockoutAppliesAsync(Input.Email));
 
             if (result.Succeeded)
             {

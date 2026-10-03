@@ -15,6 +15,7 @@ namespace MaltasGarage.Web.Filters;
 /// <item>Nobody can open Stripe Connect onboarding or the Express dashboard, because every
 /// demo seller shares one test connected account.</item>
 /// <item>Admins cannot ban, delete, demote or promote demo accounts.</item>
+/// <item>Demo accounts cannot change staff at all (the demo admin's password is public).</item>
 /// </list>
 /// </summary>
 public class DemoGuardPageFilter : IAsyncPageFilter
@@ -61,6 +62,15 @@ public class DemoGuardPageFilter : IAsyncPageFilter
         if (selfService && await IsDemoAccountAsync(db, http.User.FindFirstValue(ClaimTypes.NameIdentifier)))
         {
             context.Result = Block(context, "Demo accounts are shared, so their password, email and profile cannot be changed. Register your own account to try this.", "/Account/Settings");
+            return;
+        }
+
+        // The demo admin password is public, so staff management is read-only for demo accounts:
+        // otherwise any visitor could create managers, promote their own account or delete admins
+        if (isPost && path.StartsWithSegments("/Admin/Staff") &&
+            await IsDemoAccountAsync(db, http.User.FindFirstValue(ClaimTypes.NameIdentifier)))
+        {
+            context.Result = Block(context, "Staff management is read-only in the demo.", path.Value!);
             return;
         }
 

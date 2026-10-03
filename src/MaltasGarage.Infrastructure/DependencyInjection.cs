@@ -57,6 +57,7 @@ public static class DependencyInjection
             services.AddScoped<IImageService, LocalImageService>();
 
         services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IPaymentEventHandler, PaymentEventHandler>();
         services.AddScoped<IBiddingService, BiddingService>();
         services.AddScoped<IMessagingService, MessagingService>();
         services.AddScoped<IDisputeService, DisputeService>();

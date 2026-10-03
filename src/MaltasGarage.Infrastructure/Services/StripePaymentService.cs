@@ -105,7 +105,7 @@ public class StripePaymentService : IPaymentService
         {
             var options = new TransferCreateOptions
             {
-                Amount = (long)(sellerPayout * 100),
+                Amount = ToCents(sellerPayout),
                 Currency = "eur",
                 Destination = connectedAccountId,
                 TransferGroup = transferGroup
@@ -130,9 +130,10 @@ public class StripePaymentService : IPaymentService
         }
         catch (StripeException ex)
         {
-            _logger.LogError(ex, "Stripe Transfer failed — payout={Payout} destination={Dest} group={Group} | {Message}",
+            // Reported, not thrown: callers decide whether to retry later (the key makes that safe)
+            _logger.LogError(ex, "Stripe Transfer failed - payout={Payout} destination={Dest} group={Group} | {Message}",
                 sellerPayout, connectedAccountId, transferGroup, ex.Message);
-            throw;
+            return false;
         }
     }
 
@@ -192,15 +193,23 @@ public class StripePaymentService : IPaymentService
             var options = new RefundCreateOptions
             {
                 PaymentIntent = paymentIntentId,
-                Amount = amount.HasValue ? (long)(amount.Value * 100) : null
+                Amount = amount.HasValue ? ToCents(amount.Value) : null
             };
 
+            // A repeated request for the same refund (double click, retry, two admins) returns the
+            // first refund instead of paying the buyer twice
+            var key = amount.HasValue
+                ? $"refund-{paymentIntentId}-{ToCents(amount.Value)}"
+                : $"refund-{paymentIntentId}";
+
             var service = new RefundService();
-            await service.CreateAsync(options);
+            await service.CreateAsync(options, new RequestOptions { IdempotencyKey = key });
             return true;
         }
-        catch
+        catch (StripeException ex)
         {
+            _logger.LogError(ex, "Stripe refund failed for PaymentIntent {PaymentIntentId} (amount {Amount}): {Message}",
+                paymentIntentId, amount, ex.Message);
             return false;
         }
     }

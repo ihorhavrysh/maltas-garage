@@ -97,6 +97,16 @@ public class PaymentCompleteModel : PageModel
         }
         catch (Exception ex)
         {
+            // Two returns for the same payment (double click, refresh) race here: the other one
+            // already created this buyer's order. Refunding now would refund a valid order
+            _context.ChangeTracker.Clear();
+            var ownOrder = await _context.Orders
+                .Where(o => o.ListingId == listingId && o.BuyerId == userProfile.Id && o.Status != OrderStatus.Refunded)
+                .Select(o => (Guid?)o.Id)
+                .FirstOrDefaultAsync();
+            if (ownOrder != null)
+                return RedirectToPage("/Orders/Confirmation", new { orderId = ownOrder });
+
             // Payment was already captured — refund it since we can't create the order
             await _paymentService.RefundPaymentAsync(payment_intent);
             TempData["Error"] = ex.Message;

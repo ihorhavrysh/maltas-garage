@@ -38,6 +38,10 @@ public class EmailNotificationService : IEmailNotificationService
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
+    // Titles, names, messages and the contact form are written by users: encoded before they go
+    // into HTML, so nobody can put links or markup into an email sent from the marketplace
+    private static string H(string? value) => System.Net.WebUtility.HtmlEncode(value ?? string.Empty);
+
     private async Task<(string email, string name)?> GetContactAsync(Guid profileId)
     {
         var profile = await _context.UserProfiles.FindAsync(profileId);
@@ -71,7 +75,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "You've been outbid",
-                $"Hi {contact.Value.name},<br><br>Someone placed a higher bid of <strong>€{newBid:N0}</strong> on <strong>{listingTitle}</strong>.<br><br>Don't give up - place a new bid to stay in the running!",
+                $"Hi {H(contact.Value.name)},<br><br>Someone placed a higher bid of <strong>€{newBid:N0}</strong> on <strong>{H(listingTitle)}</strong>.<br><br>Don't give up - place a new bid to stay in the running!",
                 "Place a Bid", $"{_baseUrl}/Listing/{listingId}");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"You've been outbid on \"{listingTitle}\"", html);
         }
@@ -88,7 +92,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "New bid on your listing",
-                $"Hi {contact.Value.name},<br><br>A new bid of <strong>€{amount:N0}</strong> has been placed on your listing <strong>{listingTitle}</strong>.",
+                $"Hi {H(contact.Value.name)},<br><br>A new bid of <strong>€{amount:N0}</strong> has been placed on your listing <strong>{H(listingTitle)}</strong>.",
                 "View Listing", $"{_baseUrl}/Listing/{listingId}");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"New bid on \"{listingTitle}\"", html);
         }
@@ -105,7 +109,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "You won the auction!",
-                $"Hi {contact.Value.name},<br><br>Congratulations! You won the auction for <strong>{listingTitle}</strong> with a bid of <strong>€{amount:N0}</strong>.<br><br>View your order for next steps.",
+                $"Hi {H(contact.Value.name)},<br><br>Congratulations! You won the auction for <strong>{H(listingTitle)}</strong> with a bid of <strong>€{amount:N0}</strong>.<br><br>View your order for next steps.",
                 "View Order", $"{_baseUrl}/Orders/Details/{orderId}");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"You won the auction for \"{listingTitle}\"!", html);
         }
@@ -122,7 +126,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "You have a new order",
-                $"Hi {contact.Value.name},<br><br>Your item <strong>{listingTitle}</strong> has been purchased for <strong>€{amount:N0}</strong>.<br><br>Please ship or arrange handover as soon as possible.",
+                $"Hi {H(contact.Value.name)},<br><br>Your item <strong>{H(listingTitle)}</strong> has been purchased for <strong>€{amount:N0}</strong>.<br><br>Please ship or arrange handover as soon as possible.",
                 "View Order", $"{_baseUrl}/Orders/Details/{orderId}");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"New order: \"{listingTitle}\"", html);
         }
@@ -135,7 +139,7 @@ public class EmailNotificationService : IEmailNotificationService
         {
             var html = _template.Build(
                 "Welcome to Malta's Garage!",
-                $"Hi {displayName},<br><br>" +
+                $"Hi {H(displayName)},<br><br>" +
                 $"Welcome to Malta's Garage - Malta's local marketplace for buying and selling second-hand items.<br><br>" +
                 $"Please confirm your email address to secure your account. Without a confirmed email, you won't be able to reset your password if you ever lose access.<br>" +
                 $"Once confirmed, we recommend completing your profile to build trust with buyers and sellers:<br><br>" +
@@ -161,7 +165,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "Your auction has ended",
-                $"Hi {contact.Value.name},<br><br>Your auction for <strong>{listingTitle}</strong> has ended with no bids. The listing has been marked as expired.<br><br>You can re-list the item at any time.",
+                $"Hi {H(contact.Value.name)},<br><br>Your auction for <strong>{H(listingTitle)}</strong> has ended with no bids. The listing has been marked as expired.<br><br>You can re-list the item at any time.",
                 "My Listings", $"{_baseUrl}/Account/MyListings");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"Auction ended with no bids: \"{listingTitle}\"", html);
         }
@@ -178,7 +182,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "Your order has been shipped",
-                $"Hi {contact.Value.name},<br><br>Good news! Your order <strong>{listingTitle}</strong> is on its way.<br><br>Tracking number: <strong>{trackingNumber}</strong><br><br>Once you receive your item, please confirm delivery in the app.",
+                $"Hi {H(contact.Value.name)},<br><br>Good news! Your order <strong>{H(listingTitle)}</strong> is on its way.<br><br>Tracking number: <strong>{H(trackingNumber)}</strong><br><br>Once you receive your item, please confirm delivery in the app.",
                 "Track Order", $"{_baseUrl}/Orders/Details/{orderId}");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"Your order \"{listingTitle}\" has been shipped", html);
         }
@@ -195,7 +199,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "Order completed - payment released",
-                $"Hi {contact.Value.name},<br><br>The order for <strong>{listingTitle}</strong> has been completed and payment has been released to your Stripe account.",
+                $"Hi {H(contact.Value.name)},<br><br>The order for <strong>{H(listingTitle)}</strong> has been completed and payment has been released to your Stripe account.",
                 "View Order", $"{_baseUrl}/Orders/Details/{orderId}");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"Payment released: \"{listingTitle}\"", html);
         }
@@ -212,7 +216,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "Your order is complete",
-                $"Hi {contact.Value.name},<br><br>Your order for <strong>{listingTitle}</strong> is now complete. We hope you enjoy your purchase!<br><br>If you're happy with the item, consider leaving a review for the seller.",
+                $"Hi {H(contact.Value.name)},<br><br>Your order for <strong>{H(listingTitle)}</strong> is now complete. We hope you enjoy your purchase!<br><br>If you're happy with the item, consider leaving a review for the seller.",
                 "View Order", $"{_baseUrl}/Orders/Details/{orderId}");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"Order complete: \"{listingTitle}\"", html);
         }
@@ -229,8 +233,8 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var previewText = preview.Length > 100 ? preview[..100] + "…" : preview;
             var html = _template.Build(
-                $"New message from {senderName}",
-                $"Hi {contact.Value.name},<br><br>You have a new message from <strong>{senderName}</strong>:<br><br><span style=\"padding:10px;background:#f8f9fa;display:block;border-left:3px solid #0d6efd;border-radius:2px;\"><em>{previewText}</em></span>",
+                $"New message from {H(senderName)}",
+                $"Hi {H(contact.Value.name)},<br><br>You have a new message from <strong>{H(senderName)}</strong>:<br><br><span style=\"padding:10px;background:#f8f9fa;display:block;border-left:3px solid #0d6efd;border-radius:2px;\"><em>{H(previewText)}</em></span>",
                 "View Message", $"{_baseUrl}/Messages?c={conversationId}");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"New message from {senderName}", html);
         }
@@ -247,7 +251,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "New offer on your listing",
-                $"Hi {contact.Value.name},<br><br>A buyer has made an offer of <strong>€{amount:N0}</strong> on your listing <strong>{listingTitle}</strong>.<br><br>You have 24 hours to accept or decline.",
+                $"Hi {H(contact.Value.name)},<br><br>A buyer has made an offer of <strong>€{amount:N0}</strong> on your listing <strong>{H(listingTitle)}</strong>.<br><br>You have 24 hours to accept or decline.",
                 "View Offer", $"{_baseUrl}/Listing/{listingId}");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"New offer on \"{listingTitle}\"", html);
         }
@@ -264,7 +268,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "Your offer was accepted!",
-                $"Hi {contact.Value.name},<br><br>Great news! The seller accepted your offer of <strong>€{amount:N0}</strong> for <strong>{listingTitle}</strong>.<br><br>Open the chat to complete your purchase.",
+                $"Hi {H(contact.Value.name)},<br><br>Great news! The seller accepted your offer of <strong>€{amount:N0}</strong> for <strong>{H(listingTitle)}</strong>.<br><br>Open the chat to complete your purchase.",
                 "Complete Purchase", $"{_baseUrl}/Listing/{listingId}");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"Offer accepted: \"{listingTitle}\"", html);
         }
@@ -281,7 +285,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "Your offer was not accepted",
-                $"Hi {contact.Value.name},<br><br>Unfortunately your offer on <strong>{listingTitle}</strong> was not accepted. You can try a different price or browse other listings.",
+                $"Hi {H(contact.Value.name)},<br><br>Unfortunately your offer on <strong>{H(listingTitle)}</strong> was not accepted. You can try a different price or browse other listings.",
                 "Browse Listings", $"{_baseUrl}/Listings");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"Offer update: \"{listingTitle}\"", html);
         }
@@ -298,7 +302,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "New bundle offer",
-                $"Hi {contact.Value.name},<br><br>A buyer has made a bundle offer of <strong>€{amount:N0}</strong> for <strong>{itemCount} items</strong>.<br><br>You have 24 hours to accept or decline.",
+                $"Hi {H(contact.Value.name)},<br><br>A buyer has made a bundle offer of <strong>€{amount:N0}</strong> for <strong>{itemCount} items</strong>.<br><br>You have 24 hours to accept or decline.",
                 "View Offer", $"{_baseUrl}/Messages");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"New bundle offer: €{amount:N0} for {itemCount} items", html);
         }
@@ -315,7 +319,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "Your bundle offer was accepted!",
-                $"Hi {contact.Value.name},<br><br>Great news! The seller accepted your bundle offer of <strong>€{amount:N0}</strong> for <strong>{itemCount} items</strong>.<br><br>Open the chat to complete your purchase.",
+                $"Hi {H(contact.Value.name)},<br><br>Great news! The seller accepted your bundle offer of <strong>€{amount:N0}</strong> for <strong>{itemCount} items</strong>.<br><br>Open the chat to complete your purchase.",
                 "Open Chat", $"{_baseUrl}/Messages");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"Bundle offer accepted: €{amount:N0} for {itemCount} items", html);
         }
@@ -332,7 +336,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "Your bundle offer was not accepted",
-                $"Hi {contact.Value.name},<br><br>Unfortunately your bundle offer of <strong>€{amount:N0}</strong> for <strong>{itemCount} items</strong> was not accepted. You can try a different price or browse other listings.",
+                $"Hi {H(contact.Value.name)},<br><br>Unfortunately your bundle offer of <strong>€{amount:N0}</strong> for <strong>{itemCount} items</strong> was not accepted. You can try a different price or browse other listings.",
                 "Browse Listings", $"{_baseUrl}/Listings");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"Bundle offer update: €{amount:N0} for {itemCount} items", html);
         }
@@ -349,7 +353,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "Dispute update",
-                $"Hi {contact.Value.name},<br><br>{updateText}<br><br>Item: <strong>{listingTitle}</strong>",
+                $"Hi {H(contact.Value.name)},<br><br>{H(updateText)}<br><br>Item: <strong>{H(listingTitle)}</strong>",
                 "View Dispute", $"{_baseUrl}/Orders/DisputeView/{orderId}");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"Dispute update for \"{listingTitle}\"", html);
         }
@@ -366,7 +370,7 @@ public class EmailNotificationService : IEmailNotificationService
             if (contact == null) return;
             var html = _template.Build(
                 "Order confirmed",
-                $"Hi {contact.Value.name},<br><br>Thank you for your purchase! Your payment of <strong>€{amount:N0}</strong> for <strong>{listingTitle}</strong> has been received and is held in escrow.<br><br>Your funds will be released to the seller once you confirm receipt of the item.",
+                $"Hi {H(contact.Value.name)},<br><br>Thank you for your purchase! Your payment of <strong>€{amount:N0}</strong> for <strong>{H(listingTitle)}</strong> has been received and is held in escrow.<br><br>Your funds will be released to the seller once you confirm receipt of the item.",
                 "View Order", $"{_baseUrl}/Orders/Details/{orderId}");
             await _email.SendAsync(contact.Value.email, contact.Value.name, $"Order confirmed: \"{listingTitle}\"", html);
         }
@@ -378,10 +382,10 @@ public class EmailNotificationService : IEmailNotificationService
         try
         {
             var html = _template.Build(
-                $"Contact Form: {subject}",
-                $"<strong>From:</strong> {fromName} ({fromEmail})<br><br>" +
-                $"<strong>Subject:</strong> {subject}<br><br>" +
-                $"<strong>Message:</strong><br><br>{message.Replace("\n", "<br>")}");
+                $"Contact Form: {H(subject)}",
+                $"<strong>From:</strong> {H(fromName)} ({H(fromEmail)})<br><br>" +
+                $"<strong>Subject:</strong> {H(subject)}<br><br>" +
+                $"<strong>Message:</strong><br><br>{H(message).Replace("\n", "<br>")}");
             await _email.SendAsync(_supportEmail, "Support", $"[Contact] {subject}", html, replyTo: $"{fromName} <{fromEmail}>");
         }
         catch (Exception ex) { _logger.LogError(ex, "Failed to send contact form email"); }
@@ -399,7 +403,7 @@ public class EmailNotificationService : IEmailNotificationService
 
             var html = _template.Build(
                 subject,
-                $"Hi {displayName},<br><br>{messageBody.Replace("\n", "<br>")}",
+                $"Hi {H(displayName)},<br><br>{H(messageBody).Replace("\n", "<br>")}",
                 "View Dispute", $"{_baseUrl}/Orders/DisputeView/{orderId}");
 
             await _email.SendAsync(user.Email, displayName, subject, html);
@@ -420,10 +424,10 @@ public class EmailNotificationService : IEmailNotificationService
             var html = _template.Build(
                 "New dispute opened",
                 $"A dispute has been opened and requires attention.<br><br>" +
-                $"<strong>Item:</strong> {listingTitle}<br>" +
-                $"<strong>Buyer:</strong> {buyerName}<br>" +
-                $"<strong>Seller:</strong> {sellerName}<br>" +
-                $"<strong>Reason:</strong> {reason}",
+                $"<strong>Item:</strong> {H(listingTitle)}<br>" +
+                $"<strong>Buyer:</strong> {H(buyerName)}<br>" +
+                $"<strong>Seller:</strong> {H(sellerName)}<br>" +
+                $"<strong>Reason:</strong> {H(reason)}",
                 "View Dispute", $"{_baseUrl}/Orders/DisputeView/{orderId}");
 
             foreach (var staff in recipients)

@@ -17,6 +17,11 @@ public interface IOrderService
     Task<List<Order>> GetBuyerOrdersAsync(Guid buyerId);
     Task<List<Order>> GetSellerOrdersAsync(Guid sellerId);
     Task UpdateStatusAsync(Guid orderId, OrderStatus status);
+    /// <summary>
+    /// Marks a paid MaltaPost order as shipped by its seller. Throws for any other seller, status
+    /// or delivery method, so a disputed order can never start the auto-release clock.
+    /// </summary>
+    Task<Order> MarkShippedAsync(Guid orderId, Guid sellerId, string trackingNumber);
     Task ReleaseEscrowAsync(Guid orderId);
 
     /// <summary>

@@ -69,6 +69,21 @@ public class BundlePaymentCompleteModel : PageModel
         }
         catch (Exception ex)
         {
+            // A parallel return for the same payment may have created the order already; then
+            // this request must not refund it
+            _context.ChangeTracker.Clear();
+            var listingIds = await _context.BundleOfferItems
+                .Where(i => i.BundleOfferId == bundleOfferId)
+                .Select(i => i.ListingId)
+                .ToListAsync();
+            var ownOrder = await _context.Orders
+                .Where(o => o.IsBundleOrder && o.BuyerId == userProfile.Id && o.Status != OrderStatus.Refunded &&
+                            o.Items.Any(i => listingIds.Contains(i.ListingId)))
+                .Select(o => (Guid?)o.Id)
+                .FirstOrDefaultAsync();
+            if (ownOrder != null)
+                return RedirectToPage("/Orders/Confirmation", new { orderId = ownOrder });
+
             await _paymentService.RefundPaymentAsync(payment_intent);
             TempData["Error"] = ex.Message;
             return RedirectToPage("/Messages/Index");

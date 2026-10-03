@@ -79,13 +79,22 @@ public class IndexModel : PageModel
             return RedirectToPage();
         }
 
-        if (listing != null)
+        if (listing == null) return RedirectToPage();
+
+        // A sold listing belongs to an order, and an auction with bids holds bidders' money:
+        // cancelling either would strand payments with no order to refund or release them
+        var hasBids = await _context.Bids.AnyAsync(b => b.ListingId == listingId);
+        if (listing.Status is not (ListingStatus.Active or ListingStatus.AuctionPhase) || hasBids)
         {
-            listing.Status = ListingStatus.Cancelled;
-            await _context.SaveChangesAsync();
-            await _priceOfferService.CancelPendingOffersForListingAsync(listingId);
-            await _bundleOfferService.CancelBundleOffersForListingAsync(listingId);
+            TempData["Error"] = "Only active listings without bids can be removed. Resolve sold items through their order.";
+            return RedirectToPage();
         }
+
+        listing.Status = ListingStatus.Cancelled;
+        await _context.SaveChangesAsync();
+        await _priceOfferService.CancelPendingOffersForListingAsync(listingId);
+        await _bundleOfferService.CancelBundleOffersForListingAsync(listingId);
+
         TempData["Success"] = "Listing removed.";
         return RedirectToPage();
     }
