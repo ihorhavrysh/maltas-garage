@@ -20,8 +20,12 @@ public class IndexModel : PageModel
         _email = email;
     }
 
+    private const int PageSize = 50;
+
     public List<AdminUserRow> Users { get; set; } = new();
     public string? Search { get; set; }
+    public int PageNumber { get; set; } = 1;
+    public int TotalPages { get; set; } = 1;
 
     public class AdminUserRow
     {
@@ -36,45 +40,46 @@ public class IndexModel : PageModel
         public bool IsBanned { get; set; }
     }
 
-    public async Task OnGetAsync(string? search)
+    public async Task OnGetAsync(string? search, int p = 1)
     {
         ViewData["ActivePage"] = "Users";
         Search = search;
 
-        var profiles = await _context.UserProfiles
-            .OrderByDescending(p => p.CreatedAt)
-            .ToListAsync();
+        // One query, filtered and paged in the database: no lookup per profile, no loading
+        // every account to search them in memory
+        var now = DateTimeOffset.UtcNow;
+        var query =
+            from profile in _context.UserProfiles
+            join user in _context.Users on profile.UserId equals user.Id
+            select new { profile, user };
 
-        var rows = new List<AdminUserRow>();
-        foreach (var profile in profiles)
+        if (!string.IsNullOrWhiteSpace(search))
         {
-            var identityUser = await _userManager.FindByIdAsync(profile.UserId);
-            if (identityUser == null) continue;
-
-            var email = identityUser.Email ?? string.Empty;
-            if (!string.IsNullOrEmpty(search) &&
-                !email.Contains(search, StringComparison.OrdinalIgnoreCase) &&
-                !(profile.DisplayName?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false))
-                continue;
-
-            var isBanned = identityUser.LockoutEnd.HasValue &&
-                           identityUser.LockoutEnd.Value > DateTimeOffset.UtcNow;
-
-            rows.Add(new AdminUserRow
-            {
-                ProfileId = profile.Id,
-                UserId = profile.UserId,
-                DisplayName = profile.DisplayName,
-                Email = email,
-                JoinedDate = profile.CreatedAt,
-                TotalSales = profile.TotalSales,
-                Rating = profile.Rating,
-                StripeConnected = profile.StripeOnboardingComplete,
-                IsBanned = isBanned
-            });
+            var term = search.Trim();
+            query = query.Where(x => x.user.Email!.Contains(term) || x.profile.DisplayName!.Contains(term));
         }
 
-        Users = rows;
+        var total = await query.CountAsync();
+        TotalPages = Math.Max(1, (total + PageSize - 1) / PageSize);
+        PageNumber = Math.Clamp(p, 1, TotalPages);
+
+        Users = await query
+            .OrderByDescending(x => x.profile.CreatedAt)
+            .Skip((PageNumber - 1) * PageSize)
+            .Take(PageSize)
+            .Select(x => new AdminUserRow
+            {
+                ProfileId = x.profile.Id,
+                UserId = x.profile.UserId,
+                DisplayName = x.profile.DisplayName,
+                Email = x.user.Email,
+                JoinedDate = x.profile.CreatedAt,
+                TotalSales = x.profile.TotalSales,
+                Rating = x.profile.Rating,
+                StripeConnected = x.profile.StripeOnboardingComplete,
+                IsBanned = x.user.LockoutEnd != null && x.user.LockoutEnd > now
+            })
+            .ToListAsync();
     }
 
     public async Task<IActionResult> OnPostBanAsync(string userId)

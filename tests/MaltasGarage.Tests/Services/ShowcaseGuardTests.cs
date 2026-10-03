@@ -52,7 +52,7 @@ public class ShowcaseGuardTests
     public async Task PlaceBid_OnShowcase_IsRejectedAndPriceUnchanged()
     {
         var (ctx, listing, buyerId) = await SeedShowcaseAsync(ListingStatus.AuctionPhase);
-        var service = new BiddingService(ctx, _messaging, _emailNotifications);
+        var service = new BiddingService(ctx, _messaging, _emailNotifications, TimeProvider.System);
 
         var result = await service.PlaceBidAsync(listing.Id, buyerId, 60m);
 
@@ -66,7 +66,7 @@ public class ShowcaseGuardTests
     public async Task CreateOrder_OnShowcase_ThrowsAndListingStaysActive()
     {
         var (ctx, listing, buyerId) = await SeedShowcaseAsync(ListingStatus.Active);
-        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment);
+        var service = new OrderService(ctx, _messaging, _emailNotifications, _payment, TimeProvider.System);
 
         await Assert.ThrowsAsync<ShowcaseListingException>(
             () => service.CreateOrderAsync(listing.Id, buyerId, 100m, DeliveryMethod.MaltaPost));
@@ -79,7 +79,7 @@ public class ShowcaseGuardTests
     public async Task SubmitOffer_OnShowcase_Throws()
     {
         var (ctx, listing, buyerId) = await SeedShowcaseAsync(ListingStatus.Active);
-        var service = new PriceOfferService(ctx, _messaging, _emailNotifications);
+        var service = new PriceOfferService(ctx, _messaging, _emailNotifications, TimeProvider.System);
 
         await Assert.ThrowsAsync<ShowcaseListingException>(
             () => service.SubmitOfferAsync(listing.Id, buyerId, 80m));
@@ -102,12 +102,12 @@ public class ShowcaseGuardTests
         };
         ctx.PriceOffers.Add(offer);
         await ctx.SaveChangesAsync();
-        var service = new PriceOfferService(ctx, _messaging, _emailNotifications);
+        var service = new PriceOfferService(ctx, _messaging, _emailNotifications, TimeProvider.System);
 
         await Assert.ThrowsAsync<ShowcaseListingException>(() => service.AcceptOfferAsync(offer.Id, listing.SellerId));
         await Assert.ThrowsAsync<ShowcaseListingException>(() => service.RejectOfferAsync(offer.Id, listing.SellerId));
         await service.ExpireOfferAsync(offer.Id);
-        await service.CancelPendingOffersForListingAsync(listing.Id);
+        await service.CancelOpenOffersForListingAsync(listing.Id);
 
         Assert.Equal(PriceOfferStatus.Pending, (await ctx.PriceOffers.FindAsync(offer.Id))!.Status);
     }

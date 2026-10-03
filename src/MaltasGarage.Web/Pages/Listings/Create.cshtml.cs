@@ -107,7 +107,7 @@ public class CreateModel : PageModel
             }
 
             var blockedStatuses = relist
-                ? new[] { ListingStatus.Sold, ListingStatus.Cancelled, ListingStatus.AuctionPhase, ListingStatus.Active, ListingStatus.Draft }
+                ? new[] { ListingStatus.Sold, ListingStatus.Cancelled, ListingStatus.AuctionPhase, ListingStatus.Active }
                 : new[] { ListingStatus.Sold, ListingStatus.Cancelled, ListingStatus.AuctionPhase, ListingStatus.Expired };
 
             if (blockedStatuses.Contains(listing.Status))

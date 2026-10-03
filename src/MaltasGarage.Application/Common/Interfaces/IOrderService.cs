@@ -1,3 +1,4 @@
+using MaltasGarage.Application.Common.Models;
 using MaltasGarage.Domain.Entities;
 using MaltasGarage.Domain.Enums;
 
@@ -11,12 +12,9 @@ public interface IOrderService
     /// taken from the request. Throws when the offer cannot be used.
     /// </summary>
     Task<decimal> GetCheckoutPriceAsync(Guid listingId, Guid buyerId, Guid? offerId);
-    Task<Order> CreateOrderAsync(Guid listingId, Guid buyerId, decimal price, DeliveryMethod deliveryMethod);
-    Task<Order> CreateBundleOrderAsync(Guid bundleOfferId, Guid buyerId, decimal totalPrice, DeliveryMethod deliveryMethod);
-    Task<Order?> GetOrderAsync(Guid orderId);
-    Task<List<Order>> GetBuyerOrdersAsync(Guid buyerId);
-    Task<List<Order>> GetSellerOrdersAsync(Guid sellerId);
-    Task UpdateStatusAsync(Guid orderId, OrderStatus status);
+    /// <summary>Creates the order for one listing. With a payment the order is Paid and saved with it in one write.</summary>
+    Task<Order> CreateOrderAsync(Guid listingId, Guid buyerId, decimal price, DeliveryMethod? deliveryMethod, OrderPayment? payment = null);
+    Task<Order> CreateBundleOrderAsync(Guid bundleOfferId, Guid buyerId, decimal totalPrice, DeliveryMethod? deliveryMethod, OrderPayment? payment = null);
     /// <summary>
     /// Marks a paid MaltaPost order as shipped by its seller. Throws for any other seller, status
     /// or delivery method, so a disputed order can never start the auto-release clock.

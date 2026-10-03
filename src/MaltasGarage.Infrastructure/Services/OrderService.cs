@@ -1,4 +1,5 @@
 using MaltasGarage.Application.Common.Interfaces;
+using MaltasGarage.Application.Common.Models;
 using MaltasGarage.Domain.Common;
 using MaltasGarage.Domain.Entities;
 using MaltasGarage.Domain.Enums;
@@ -13,15 +14,19 @@ public class OrderService : IOrderService
     private readonly IMessagingService _messaging;
     private readonly IEmailNotificationService _emailNotifications;
     private readonly IPaymentService _payment;
+    private readonly TimeProvider _time;
 
     public OrderService(ApplicationDbContext context, IMessagingService messaging,
-        IEmailNotificationService emailNotifications, IPaymentService payment)
+        IEmailNotificationService emailNotifications, IPaymentService payment, TimeProvider time)
     {
         _context = context;
         _messaging = messaging;
         _emailNotifications = emailNotifications;
         _payment = payment;
+        _time = time;
     }
+
+    private DateTime Now => _time.GetUtcNow().UtcDateTime;
 
     public async Task<decimal> GetCheckoutPriceAsync(Guid listingId, Guid buyerId, Guid? offerId)
     {
@@ -37,44 +42,38 @@ public class OrderService : IOrderService
             offer.Status != PriceOfferStatus.Accepted)
             throw new InvalidOperationException("This offer is no longer valid.");
 
+        // An accepted offer must be paid within its window (PriceOfferService.AcceptedOfferPayWindow)
+        if (offer.ExpiresAt <= Now)
+            throw new InvalidOperationException("This offer has expired. Make a new offer or buy at the listed price.");
+
         return offer.Amount;
     }
 
-    public async Task<Order> CreateOrderAsync(Guid listingId, Guid buyerId, decimal price, DeliveryMethod deliveryMethod)
+    public async Task<Order> CreateOrderAsync(Guid listingId, Guid buyerId, decimal price, DeliveryMethod? deliveryMethod,
+        OrderPayment? payment = null)
     {
         var listing = await _context.Listings
-            .FirstOrDefaultAsync(l => l.Id == listingId);
-
-        if (listing == null)
-            throw new Exception("Listing not found");
+            .FirstOrDefaultAsync(l => l.Id == listingId)
+            ?? throw new InvalidOperationException("Listing not found.");
 
         listing.EnsureNotShowcase();
 
-        if (listing.Status == ListingStatus.Sold)
-            throw new Exception("Listing already sold");
+        if (listing.Status is not (ListingStatus.Active or ListingStatus.AuctionPhase))
+            throw new InvalidOperationException(listing.Status == ListingStatus.Sold
+                ? "Listing already sold."
+                : "This listing is no longer available.");
 
-        var platformFee = CalculatePlatformFee(price);
-        var sellerPayout = price - platformFee;
+        var order = NewOrder(buyerId, listing.SellerId, price, deliveryMethod, payment);
+        order.ListingId = listingId;
 
-        var order = new Order
-        {
-            Id = Guid.NewGuid(),
-            ListingId = listingId,
-            BuyerId = buyerId,
-            SellerId = listing.SellerId,
-            FinalPrice = price,
-            PlatformFee = platformFee,
-            SellerPayout = sellerPayout,
-            DeliveryMethod = deliveryMethod,
-            Status = OrderStatus.Pending,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        // Update listing status
         listing.Status = ListingStatus.Sold;
         listing.CurrentPrice = price;
 
         _context.Orders.Add(order);
+        await CompleteOfferAsync(payment);
+
+        // Order, payment, listing and offer in one SaveChanges: nothing half-done if it fails,
+        // and the listing's concurrency stamp stops a second buyer at the same moment
         await _context.SaveChangesAsync();
 
         await _messaging.CreateSystemMessageAsync(
@@ -91,51 +90,34 @@ public class OrderService : IOrderService
         return order;
     }
 
-    public async Task<Order> CreateBundleOrderAsync(Guid bundleOfferId, Guid buyerId, decimal totalPrice, DeliveryMethod deliveryMethod)
+    public async Task<Order> CreateBundleOrderAsync(Guid bundleOfferId, Guid buyerId, decimal totalPrice, DeliveryMethod? deliveryMethod,
+        OrderPayment? payment = null)
     {
         var bundleOffer = await _context.BundleOffers
             .Include(o => o.Items).ThenInclude(i => i.Listing)
             .FirstOrDefaultAsync(o => o.Id == bundleOfferId)
-            ?? throw new Exception("Bundle offer not found.");
+            ?? throw new InvalidOperationException("Bundle offer not found.");
 
         if (bundleOffer.Status != Domain.Enums.BundleOfferStatus.Accepted)
-            throw new Exception("Bundle offer is not accepted.");
+            throw new InvalidOperationException("Bundle offer is not accepted.");
 
         var listings = bundleOffer.Items.Select(i => i.Listing).ToList();
         listings.ForEach(l => l.EnsureNotShowcase());
 
         if (listings.Any(l => l.Status != ListingStatus.Active))
-            throw new Exception("One or more listings are no longer available.");
+            throw new InvalidOperationException("One or more listings are no longer available.");
 
-        var platformFee  = CalculatePlatformFee(totalPrice);
-        var sellerPayout = totalPrice - platformFee;
-
-        var order = new Order
-        {
-            Id             = Guid.NewGuid(),
-            IsBundleOrder  = true,
-            BuyerId        = buyerId,
-            SellerId       = bundleOffer.SellerId,
-            FinalPrice     = totalPrice,
-            PlatformFee    = platformFee,
-            SellerPayout   = sellerPayout,
-            DeliveryMethod = deliveryMethod,
-            Status         = OrderStatus.Pending,
-            CreatedAt      = DateTime.UtcNow
-        };
-
-        _context.Orders.Add(order);
-        await _context.SaveChangesAsync();
+        var order = NewOrder(buyerId, bundleOffer.SellerId, totalPrice, deliveryMethod, payment);
+        order.IsBundleOrder = true;
 
         foreach (var item in bundleOffer.Items)
         {
-            _context.OrderItems.Add(new OrderItem
+            order.Items.Add(new OrderItem
             {
                 Id        = Guid.NewGuid(),
-                OrderId   = order.Id,
                 ListingId = item.ListingId,
                 Price     = item.ListedPrice,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = Now
             });
 
             item.Listing.Status       = ListingStatus.Sold;
@@ -143,9 +125,10 @@ public class OrderService : IOrderService
         }
 
         bundleOffer.Status    = Domain.Enums.BundleOfferStatus.Completed;
-        bundleOffer.UpdatedAt = DateTime.UtcNow;
+        bundleOffer.UpdatedAt = Now;
 
-        await _context.SaveChangesAsync();
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();   // one transaction for the order, its items and the listings
 
         var itemTitles = string.Join(", ", listings.Take(2).Select(l => $"\"{l.Title}\""));
         if (listings.Count > 2) itemTitles += $" and {listings.Count - 2} more";
@@ -162,53 +145,72 @@ public class OrderService : IOrderService
         return order;
     }
 
-    public async Task<Order?> GetOrderAsync(Guid orderId)
+    // Pays the seller at most once per order. The Stripe idempotency key only lasts about a day,
+    // so the transfer id is saved the moment the transfer exists: a release that fails after it,
+    // or is retried days later, finds the id and does not pay again
+    private async Task<bool> PaySellerOnceAsync(Order order, decimal amount)
     {
-        return await _context.Orders
-            .Include(o => o.Listing).ThenInclude(l => l!.Images)
-            .Include(o => o.Items).ThenInclude(i => i.Listing).ThenInclude(l => l.Images)
-            .Include(o => o.Buyer)
-            .Include(o => o.Seller)
-            .Include(o => o.Payment)
-            .Include(o => o.Shipment)
-            .FirstOrDefaultAsync(o => o.Id == orderId);
-    }
+        var payment = order.Payment!;
+        if (payment.StripeTransferId != null)
+            return true;
 
-    public async Task<List<Order>> GetBuyerOrdersAsync(Guid buyerId)
-    {
-        return await _context.Orders
-            .Include(o => o.Listing).ThenInclude(l => l!.Images)
-            .Include(o => o.Items).ThenInclude(i => i.Listing)
-            .Include(o => o.Seller)
-            .Where(o => o.BuyerId == buyerId)
-            .OrderByDescending(o => o.CreatedAt)
-            .ToListAsync();
-    }
+        var transferId = await _payment.CreateTransferAsync(
+            amount, order.Seller.StripeAccountId!, order.Id.ToString(), payment.StripePaymentIntentId);
+        if (transferId == null)
+            return false;
 
-    public async Task<List<Order>> GetSellerOrdersAsync(Guid sellerId)
-    {
-        return await _context.Orders
-            .Include(o => o.Listing).ThenInclude(l => l!.Images)
-            .Include(o => o.Items).ThenInclude(i => i.Listing)
-            .Include(o => o.Buyer)
-            .Where(o => o.SellerId == sellerId)
-            .OrderByDescending(o => o.CreatedAt)
-            .ToListAsync();
-    }
-
-    public async Task UpdateStatusAsync(Guid orderId, OrderStatus status)
-    {
-        var order = await _context.Orders.FindAsync(orderId);
-        if (order == null)
-            throw new Exception("Order not found");
-
-        order.Status = status;
-        order.UpdatedAt = DateTime.UtcNow;
-
-        if (status == OrderStatus.Completed)
-            order.CompletedAt = DateTime.UtcNow;
-
+        payment.StripeTransferId = transferId;
         await _context.SaveChangesAsync();
+        return true;
+    }
+
+    // A paid order starts as Paid with its captured payment; without a payment it is Pending.
+    // Without a delivery method the buyer chooses one later on the order page
+    private Order NewOrder(Guid buyerId, Guid sellerId, decimal price, DeliveryMethod? deliveryMethod, OrderPayment? payment)
+    {
+        var platformFee = CalculatePlatformFee(price);
+        var order = new Order
+        {
+            Id = Guid.NewGuid(),
+            BuyerId = buyerId,
+            SellerId = sellerId,
+            FinalPrice = price,
+            PlatformFee = platformFee,
+            SellerPayout = price - platformFee,
+            DeliveryMethod = deliveryMethod ?? DeliveryMethod.HandToHand,
+            DeliveryMethodPending = deliveryMethod == null,
+            Status = payment == null ? OrderStatus.Pending : OrderStatus.Paid,
+            PaidAt = payment == null ? null : Now,
+            CreatedAt = Now
+        };
+
+        if (payment != null)
+        {
+            order.Payment = new Payment
+            {
+                Id = Guid.NewGuid(),
+                OrderId = order.Id,
+                StripePaymentIntentId = payment.PaymentIntentId,
+                Amount = price,
+                Status = PaymentStatus.Captured,
+                CreatedAt = Now,
+                CapturedAt = Now
+            };
+        }
+
+        return order;
+    }
+
+    private async Task CompleteOfferAsync(OrderPayment? payment)
+    {
+        if (payment?.OfferId == null) return;
+
+        var offer = await _context.PriceOffers.FindAsync(payment.OfferId.Value);
+        if (offer != null)
+        {
+            offer.Status = PriceOfferStatus.Completed;
+            offer.UpdatedAt = Now;
+        }
     }
 
     public async Task<Order> MarkShippedAsync(Guid orderId, Guid sellerId, string trackingNumber)
@@ -240,13 +242,12 @@ public class OrderService : IOrderService
             Carrier = "MaltaPost",
             TrackingNumber = trackingNumber.Trim(),
             Status = ShipmentStatus.Shipped,
-            ShippedAt = DateTime.UtcNow,
-            DeliveryDeadline = DateTime.UtcNow.AddDays(7),
-            CreatedAt = DateTime.UtcNow
+            ShippedAt = Now,
+            CreatedAt = Now
         });
 
         order.Status = OrderStatus.Shipped;
-        order.UpdatedAt = DateTime.UtcNow;
+        order.UpdatedAt = Now;
 
         await _context.SaveChangesAsync();
         return order;
@@ -258,18 +259,18 @@ public class OrderService : IOrderService
             .Include(o => o.Payment)
             .Include(o => o.Seller)
             .FirstOrDefaultAsync(o => o.Id == orderId)
-            ?? throw new Exception("Order not found");
+            ?? throw new InvalidOperationException("Order not found");
 
         if (order.Status == OrderStatus.Completed || order.Status == OrderStatus.Refunded)
-            throw new Exception("Order already resolved");
+            throw new InvalidOperationException("Order already resolved");
 
         // Escrow can only be released once the buyer has paid: Paid (hand-to-hand),
         // Shipped/Delivered (MaltaPost) or Disputed (resolved in favour of the seller).
-        if (order.Status is not (OrderStatus.Paid or OrderStatus.Shipped or OrderStatus.Delivered or OrderStatus.Disputed))
-            throw new Exception($"Cannot release escrow for order {orderId}: order status is {order.Status}");
+        if (order.Status is not (OrderStatus.Paid or OrderStatus.Shipped or OrderStatus.Disputed))
+            throw new InvalidOperationException($"Cannot release escrow for order {orderId}: order status is {order.Status}");
 
         if (order.Payment == null)
-            throw new Exception($"Cannot release escrow for order {orderId}: Payment is null");
+            throw new InvalidOperationException($"Cannot release escrow for order {orderId}: Payment is null");
 
         // No PaymentIntent means no money went through Stripe (seeded demo orders), so there is
         // nothing to transfer: release in the database only, as RefundBuyerAsync and
@@ -277,25 +278,19 @@ public class OrderService : IOrderService
         if (order.Payment.StripePaymentIntentId != null)
         {
             if (order.Seller?.StripeAccountId == null)
-                throw new Exception($"Cannot release escrow for order {orderId}: Seller StripeAccountId is null");
+                throw new InvalidOperationException($"Cannot release escrow for order {orderId}: Seller StripeAccountId is null");
             if (order.Payment.Status != PaymentStatus.Captured)
-                throw new Exception($"Cannot release escrow for order {orderId}: Payment.Status is {order.Payment.Status} (expected Captured)");
+                throw new InvalidOperationException($"Cannot release escrow for order {orderId}: Payment.Status is {order.Payment.Status} (expected Captured)");
 
-            // Transfer seller's payout — this is when money actually moves from platform to seller
-            var transferred = await _payment.CreateTransferAsync(
-                order.SellerPayout,
-                order.Seller.StripeAccountId,
-                orderId.ToString(),
-                order.Payment.StripePaymentIntentId);
-
-            if (!transferred)
-                throw new Exception($"Stripe transfer failed for order {orderId}.");
+            // Transfer the seller's payout - this is when money actually moves from platform to seller
+            if (!await PaySellerOnceAsync(order, order.SellerPayout))
+                throw new InvalidOperationException($"Stripe transfer failed for order {orderId}.");
         }
 
-        order.Payment.ReleasedAt = DateTime.UtcNow;
+        order.Payment.ReleasedAt = Now;
 
         order.Status = OrderStatus.Completed;
-        order.CompletedAt = DateTime.UtcNow;
+        order.CompletedAt = Now;
 
         if (order.Payment != null)
             order.Payment.Status = PaymentStatus.Released;
@@ -341,8 +336,7 @@ public class OrderService : IOrderService
                 bool transferred;
                 try
                 {
-                    transferred = await _payment.CreateTransferAsync(order.SellerPayout, order.Seller.StripeAccountId,
-                        order.Id.ToString(), order.Payment.StripePaymentIntentId);
+                    transferred = await PaySellerOnceAsync(order, order.SellerPayout);
                 }
                 catch (Exception)
                 {
@@ -392,7 +386,7 @@ public class OrderService : IOrderService
             .Include(o => o.Listing)
             .Include(o => o.Items).ThenInclude(i => i.Listing)
             .FirstOrDefaultAsync(o => o.Id == orderId)
-            ?? throw new Exception("Order not found");
+            ?? throw new InvalidOperationException("Order not found");
 
         // Only money that is still held in escrow can be refunded. Without this a second
         // resolution, a double click or a late request would refund an order twice
@@ -403,7 +397,7 @@ public class OrderService : IOrderService
         {
             var refunded = await _payment.RefundPaymentAsync(order.Payment.StripePaymentIntentId);
             if (!refunded)
-                throw new Exception($"Stripe refund failed for order {orderId}.");
+                throw new InvalidOperationException($"Stripe refund failed for order {orderId}.");
         }
 
         order.Status = OrderStatus.Refunded;
@@ -426,7 +420,7 @@ public class OrderService : IOrderService
             .Include(o => o.Payment)
             .Include(o => o.Seller)
             .FirstOrDefaultAsync(o => o.Id == orderId)
-            ?? throw new Exception("Order not found.");
+            ?? throw new InvalidOperationException("Order not found.");
 
         EnsureRefundable(order);
 
@@ -442,12 +436,12 @@ public class OrderService : IOrderService
             // Partial refund to buyer
             var refunded = await _payment.RefundPaymentAsync(order.Payment.StripePaymentIntentId, partialRefundAmount);
             if (!refunded)
-                throw new Exception($"Stripe partial refund failed for order {orderId}.");
+                throw new InvalidOperationException($"Stripe partial refund failed for order {orderId}.");
 
             // Transfer the rest of the seller payout. If it fails the order stays open, so the
             // resolution can be repeated: the refund and the transfer are both idempotent
             if (adjustedPayout > 0 && order.Seller?.StripeAccountId != null &&
-                !await _payment.CreateTransferAsync(adjustedPayout, order.Seller.StripeAccountId, orderId.ToString(), order.Payment.StripePaymentIntentId))
+                !await PaySellerOnceAsync(order, adjustedPayout))
                 throw new InvalidOperationException($"The buyer was refunded, but the transfer to the seller failed for order {orderId}. Try resolving again.");
         }
 
@@ -455,12 +449,12 @@ public class OrderService : IOrderService
 
         // Partial refund: transaction is complete, item is not re-listed
         order.Status = OrderStatus.Completed;
-        order.CompletedAt = DateTime.UtcNow;
+        order.CompletedAt = Now;
 
         if (order.Payment != null)
         {
             order.Payment.Status = PaymentStatus.PartialRefund;
-            order.Payment.ReleasedAt = DateTime.UtcNow;
+            order.Payment.ReleasedAt = Now;
         }
 
         var sellerProfile = await _context.UserProfiles.FindAsync(order.SellerId);
@@ -472,7 +466,7 @@ public class OrderService : IOrderService
 
     private static void EnsureRefundable(Order order)
     {
-        if (order.Status is not (OrderStatus.Paid or OrderStatus.Shipped or OrderStatus.Delivered or OrderStatus.Disputed))
+        if (order.Status is not (OrderStatus.Paid or OrderStatus.Shipped or OrderStatus.Disputed))
             throw new InvalidOperationException($"Order {order.Id} cannot be refunded: its status is {order.Status}.");
         if (order.Payment != null && order.Payment.Status != PaymentStatus.Captured)
             throw new InvalidOperationException($"Order {order.Id} cannot be refunded: the payment is {order.Payment.Status}.");

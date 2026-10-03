@@ -53,7 +53,6 @@ public class SalesModel : PageModel
         PendingOrders  = all.Where(o => o.Status == OrderStatus.Pending).ToList();
         ActiveOrders   = all.Where(o => o.Status is OrderStatus.Paid
                                          or OrderStatus.Shipped
-                                         or OrderStatus.Delivered
                                          or OrderStatus.Disputed).ToList();
         CompletedOrders = all.Where(o => o.Status == OrderStatus.Completed).ToList();
 

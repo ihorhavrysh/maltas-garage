@@ -14,8 +14,6 @@ public class Shipment : BaseEntity
     public ShipmentStatus Status { get; set; } = ShipmentStatus.AwaitingShipment;
 
     public DateTime? ShippedAt { get; set; }
-    public DateTime? DeliveredAt { get; set; }
-    public DateTime? DeliveryDeadline { get; set; } // ShippedAt + 7 days
 
     // Navigation properties
     public Order Order { get; set; } = null!;

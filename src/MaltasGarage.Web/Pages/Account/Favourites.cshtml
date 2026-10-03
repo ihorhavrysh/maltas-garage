@@ -167,7 +167,7 @@
         document.querySelectorAll('.fav-remove-btn').forEach(btn => {
             btn.addEventListener('click', async function () {
                 const listingId = this.dataset.listingId;
-                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+                const token = document.querySelector('meta[name="request-verification-token"]')?.content ?? '';
 
                 const res = await fetch('/Api/ToggleFavourite', {
                     method: 'POST',

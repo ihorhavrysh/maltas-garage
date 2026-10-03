@@ -1,3 +1,4 @@
+using MaltasGarage.Application.Common.Interfaces;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -11,11 +12,14 @@ public class IndexModel : PageModel
 {
     private readonly UserManager<IdentityUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly IAccountDeletionService _deletion;
 
-    public IndexModel(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+    public IndexModel(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager,
+        IAccountDeletionService deletion)
     {
         _userManager = userManager;
         _roleManager = roleManager;
+        _deletion = deletion;
     }
 
     public List<ManagerRow> Managers { get; set; } = new();
@@ -138,8 +142,15 @@ public class IndexModel : PageModel
             }
         }
 
+        // The same path as a user deleting their own account: a profile with orders or reviews
+        // is anonymised, not left behind pointing at a login that no longer exists
         var email = user.Email;
-        await _userManager.DeleteAsync(user);
+        if (!await _deletion.DeleteAsync(user.Id))
+        {
+            TempData["Error"] = $"{email} still has open orders or auctions and cannot be deleted yet.";
+            return RedirectToPage();
+        }
+
         TempData["Success"] = $"Account {email} has been deleted.";
         return RedirectToPage();
     }

@@ -29,7 +29,6 @@ public class BundleCheckoutModel : PageModel
 
     public Domain.Entities.BundleOffer? BundleOffer { get; set; }
     public string? ClientSecret { get; set; }
-    public string? SellerStripeAccountId { get; set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -75,10 +74,9 @@ public class BundleCheckoutModel : PageModel
             return RedirectToPage("/Messages/Index");
         }
 
-        SellerStripeAccountId = BundleOffer.Seller.StripeAccountId;
 
         // The metadata lets BundlePaymentComplete check what this payment was for and who made it
-        var result = await _paymentService.CreatePaymentIntentAsync(BundleOffer.OfferAmount, SellerStripeAccountId,
+        var result = await _paymentService.CreatePaymentIntentAsync(BundleOffer.OfferAmount,
             PaymentMetadata.For(PaymentMetadata.Bundle, BundleOffer.Id, userProfile.Id));
         if (!result.Success)
         {

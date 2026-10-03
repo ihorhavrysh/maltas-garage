@@ -28,7 +28,7 @@ public class SitemapModel : PageModel
             .ToListAsync();
 
         var listings = await _context.Listings
-            .Where(l => l.Status == ListingStatus.Active || l.Status == ListingStatus.AuctionPhase)
+            .OnSale(DateTime.UtcNow)
             .Select(l => new { l.Id, LastMod = l.UpdatedAt ?? l.CreatedAt })
             .ToListAsync();
 

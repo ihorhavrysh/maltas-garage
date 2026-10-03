@@ -20,7 +20,6 @@
         (OrderStatus.Paid,      DeliveryMethod.HandToHand,  false)      => ("bg-warning text-dark", "Arrange Meetup"),
         (OrderStatus.Paid,      _, _)                                   => ("bg-warning text-dark", "Ship Now"),
         (OrderStatus.Shipped,   _, _)                                   => ("bg-info text-dark",    "Shipped - Awaiting Confirmation"),
-        (OrderStatus.Delivered, _, _)                                   => ("bg-info text-dark",    "Delivered"),
         (OrderStatus.Completed, _, _)                                   => ("bg-primary",           "Completed"),
         (OrderStatus.Disputed,  _, _)                                   => ("bg-danger",            "Under Dispute"),
         (OrderStatus.Refunded,  _, _)                                   => ("bg-secondary",         "Refunded"),

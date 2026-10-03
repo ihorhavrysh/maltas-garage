@@ -8,11 +8,9 @@
         ("Paid", "HandToHand", false)   => ("bg-primary",           "Awaiting Meetup"),
         ("Paid", _, _)                  => ("bg-primary",           "Awaiting Shipment"),
         ("Shipped", _, _)               => ("bg-info text-dark",    "In Transit"),
-        ("Delivered", _, _)             => ("bg-info text-dark",    "Delivered"),
         ("Completed", _, _)             => ("bg-primary",           "Completed"),
         ("Disputed", _, _)              => ("bg-danger",            "Under Dispute"),
         ("Refunded", _, _)              => ("bg-secondary",         "Refunded"),
-        ("Cancelled", _, _)             => ("bg-dark",              "Cancelled"),
         _                               => ("bg-warning text-dark", Model.Status)
     };
 }

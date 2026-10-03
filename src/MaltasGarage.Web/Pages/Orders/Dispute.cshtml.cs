@@ -47,7 +47,7 @@ public class DisputeModel : PageModel
 
         if (order == null) return NotFound();
         if (order.BuyerId != userProfile.Id) return Forbid();
-        if (order.Dispute != null && order.Dispute.Status != "Withdrawn") return RedirectToPage("DisputeView", new { orderId });
+        if (order.Dispute != null && order.Dispute.Status != DisputeStatus.Withdrawn) return RedirectToPage("DisputeView", new { orderId });
         if (order.Status != OrderStatus.Paid && order.Status != OrderStatus.Shipped)
             return RedirectToPage("Details", new { orderId });
 
@@ -84,7 +84,7 @@ public class DisputeModel : PageModel
                     if (file.Length == 0 || file.Length > 5 * 1024 * 1024) continue;
 
                     using var stream = file.OpenReadStream();
-                    var result = await _imageService.UploadAsync(stream, file.FileName, "disputes");
+                    var result = await _imageService.UploadAsync(stream, file.FileName, DisputeFileModel.Folder);
 
                     if (result.Success)
                     {

@@ -23,9 +23,9 @@ public class ListingLifecycleServiceTests
     private ListingLifecycleService CreateService(ApplicationDbContext ctx, RecordingPaymentService? payments = null)
     {
         var paymentService = payments ?? new RecordingPaymentService();
-        var orders = new OrderService(ctx, _messaging, _email, paymentService);
+        var orders = new OrderService(ctx, _messaging, _email, paymentService, _clock);
         return new ListingLifecycleService(ctx,
-            new PriceOfferService(ctx, _messaging, _email),
+            new PriceOfferService(ctx, _messaging, _email, _clock),
             new BundleOfferService(ctx, _messaging, _email),
             orders, _messaging, _email, _clock, NullLogger<ListingLifecycleService>.Instance);
     }
@@ -191,6 +191,45 @@ public class ListingLifecycleServiceTests
     }
 
     [Fact]
+    public async Task BidRacingTheAuctionClose_IsRejected()
+    {
+        // The bid request loaded the auction a moment before it ended; the sweep closes it before
+        // the bid is saved. The listing's concurrency stamp must stop the late bid, otherwise the
+        // order goes to one bidder while another one's money is held for a bid that never wins
+        using var connection = new Microsoft.Data.Sqlite.SqliteConnection("DataSource=:memory:");
+        connection.Open();
+        var setup = TestDbContextFactory.CreateRelational(connection);
+        var category = new Category { Id = Guid.NewGuid(), Name = "Sports", Slug = "sports" };
+        setup.Categories.Add(category);
+        var (seller, buyer) = await SeedUsersAsync(setup);
+        var lateBidder = new UserProfile { Id = Guid.NewGuid(), UserId = "late-bidder" };
+        setup.UserProfiles.Add(lateBidder);
+        var listing = NewListing(seller, ListingStatus.AuctionPhase, TimeSpan.FromSeconds(30));
+        listing.CategoryId = category.Id;
+        setup.Listings.Add(listing);
+        setup.Bids.Add(NewBid(listing, buyer, 300m));
+        await setup.SaveChangesAsync();
+
+        // The bid request's clock is still before the end; it holds the listing it loaded
+        var bidClock = new TestTimeProvider { Now = _clock.Now };
+        var bidCtx = TestDbContextFactory.CreateRelational(connection);
+        await bidCtx.Listings.Include(l => l.Bids).SingleAsync(l => l.Id == listing.Id);
+
+        // Meanwhile the auction ends and the sweep closes it
+        _clock.Advance(TimeSpan.FromMinutes(1));
+        await CreateService(TestDbContextFactory.CreateRelational(connection)).SweepAsync();
+
+        var result = await new BiddingService(bidCtx, _messaging, _email, bidClock)
+            .PlaceBidAsync(listing.Id, lateBidder.Id, 350m, "pi_late");
+
+        Assert.False(result.Success);
+        Assert.Contains("changed while you were bidding", result.Error);   // stopped by the stamp, not by a rule
+        var verify = TestDbContextFactory.CreateRelational(connection);
+        Assert.False(await verify.Bids.AnyAsync(b => b.BidderId == lateBidder.Id));
+        Assert.Equal(buyer.Id, (await verify.Orders.SingleAsync()).BuyerId);
+    }
+
+    [Fact]
     public async Task EscrowAutoRelease_IsIdempotent_AndAlwaysUsesTheOrderAsTransferKey()
     {
         var ctx = TestDbContextFactory.Create(_db);
@@ -235,7 +274,7 @@ public class ListingLifecycleServiceTests
         await ctx.SaveChangesAsync();
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => new PriceOfferService(ctx, _messaging, _email).AcceptOfferAsync(offer.Id, seller.Id));
+            () => new PriceOfferService(ctx, _messaging, _email, _clock).AcceptOfferAsync(offer.Id, seller.Id));
 
         Assert.Equal("This offer has expired.", ex.Message);
         Assert.Equal(PriceOfferStatus.Expired, (await ctx.PriceOffers.SingleAsync()).Status);

@@ -115,7 +115,7 @@ public class BidModel : PageModel
         }
 
         // The metadata lets BidComplete check what this payment was for and who made it
-        var (_, clientSecret) = await _paymentService.CreateBidPaymentAsync(amount, listing.Seller.StripeAccountId,
+        var (_, clientSecret) = await _paymentService.CreateBidPaymentAsync(amount,
             PaymentMetadata.For(PaymentMetadata.Bid, listingId, userProfile.Id));
 
         ListingTitle = listing.Title;

@@ -1,3 +1,4 @@
+using MaltasGarage.Web.Services;
 using MaltasGarage.Domain.Entities;
 using MaltasGarage.Domain.Enums;
 using MaltasGarage.Infrastructure.Data;
@@ -90,7 +91,7 @@ public class CategoryModel : PageModel
         // Build query
         var query = _context.Listings
             .Include(l => l.Images)
-            .Where(l => l.Status == ListingStatus.Active || l.Status == ListingStatus.AuctionPhase);
+            .OnSale(DateTime.UtcNow);
 
         // Filter by category or subcategory
         if (!string.IsNullOrEmpty(sub))

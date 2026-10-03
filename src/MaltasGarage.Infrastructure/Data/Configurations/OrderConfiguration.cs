@@ -41,8 +41,8 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         // Relationships
         builder.HasOne(o => o.Listing)
-            .WithOne(l => l.Order)
-            .HasForeignKey<Order>(o => o.ListingId)
+            .WithMany(l => l.Orders)
+            .HasForeignKey(o => o.ListingId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 

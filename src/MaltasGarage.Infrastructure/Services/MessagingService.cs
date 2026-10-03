@@ -17,7 +17,7 @@ public class MessagingService : IMessagingService
         _emailNotifications = emailNotifications;
     }
 
-    public async Task<Conversation> GetOrCreateConversationAsync(Guid buyerId, Guid sellerId, Guid orderId)
+    public async Task<Conversation> GetOrCreateConversationAsync(Guid buyerId, Guid sellerId)
     {
         var conversation = await _context.Conversations
             .FirstOrDefaultAsync(c => c.BuyerId == buyerId && c.SellerId == sellerId);
@@ -60,10 +60,13 @@ public class MessagingService : IMessagingService
             .FirstOrDefaultAsync(c => c.Id == conversationId);
 
         if (conversation != null)
-        {
             conversation.UpdatedAt = DateTime.UtcNow;
 
-            // Notify the recipient (the other party)
+        await _context.SaveChangesAsync();
+
+        // Email only once the message is stored: a failed save must not announce a message nobody can read
+        if (conversation != null)
+        {
             var recipientId = conversation.BuyerId == fromUserId ? conversation.SellerId : conversation.BuyerId;
             var senderName = fromUserId == conversation.BuyerId
                 ? (conversation.Buyer?.DisplayName ?? "Someone")
@@ -71,8 +74,6 @@ public class MessagingService : IMessagingService
             var preview = body.Length > 80 ? body[..80] + "…" : body;
             await _emailNotifications.NotifyNewChatMessageAsync(recipientId, senderName, preview, conversationId);
         }
-
-        await _context.SaveChangesAsync();
     }
 
     public async Task MarkConversationReadAsync(Guid conversationId, Guid userId)
@@ -116,19 +117,5 @@ public class MessagingService : IMessagingService
 
         if (unread.Count > 0)
             await _context.SaveChangesAsync();
-    }
-
-    public async Task<int> GetUnreadCountAsync(Guid userProfileId)
-    {
-        var unreadChats = await _context.ChatMessages
-            .CountAsync(m =>
-                m.FromUserId != userProfileId &&
-                !m.IsRead &&
-                (m.Conversation.BuyerId == userProfileId || m.Conversation.SellerId == userProfileId));
-
-        var unreadSystem = await _context.SystemMessages
-            .CountAsync(m => m.UserId == userProfileId && !m.IsRead);
-
-        return unreadChats + unreadSystem;
     }
 }

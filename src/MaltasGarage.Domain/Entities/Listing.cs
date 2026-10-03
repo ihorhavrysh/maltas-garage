@@ -29,7 +29,7 @@ public class Listing : BaseEntity, IConcurrencyStamped
     // Auction
     public bool AuctionEnabled { get; set; } = true;
 
-    public ListingStatus Status { get; set; } = ListingStatus.Draft;
+    public ListingStatus Status { get; set; } = ListingStatus.Active;
 
     // Demo: permanent showcase listings are read-only for everyone and are skipped by
     // the expiry and completion jobs. See EnsureNotShowcase().
@@ -48,7 +48,8 @@ public class Listing : BaseEntity, IConcurrencyStamped
     public Category Category { get; set; } = null!;
     public ICollection<ListingImage> Images { get; set; } = new List<ListingImage>();
     public ICollection<Bid> Bids { get; set; } = new List<Bid>();
-    public Order? Order { get; set; }
+    // Usually one; a refunded order puts the item back on sale, so it can be bought again
+    public ICollection<Order> Orders { get; set; } = new List<Order>();
 
     /// <summary>
     /// Guard for every mutating path (buy, bid, offer, edit, delete, relist, admin removal).

@@ -1,7 +1,9 @@
+using MaltasGarage.Application.Common.Models;
 using MaltasGarage.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace MaltasGarage.Infrastructure.Data.Seed;
 
@@ -16,39 +18,40 @@ public static class AdminSeeder
     {
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
-        var configuration = services.GetRequiredService<IConfiguration>();
+        var seed = services.GetRequiredService<IOptions<SeedSettings>>().Value;
+        var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(AdminSeeder));
         var db = services.GetRequiredService<ApplicationDbContext>();
 
-        if (!await roleManager.RoleExistsAsync("Admin"))
-            await roleManager.CreateAsync(new IdentityRole("Admin"));
+        foreach (var role in new[] { "Admin", "Manager" })
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+                LogFailure(logger, $"create role {role}", await roleManager.CreateAsync(new IdentityRole(role)));
+        }
 
-        if (!await roleManager.RoleExistsAsync("Manager"))
-            await roleManager.CreateAsync(new IdentityRole("Manager"));
-
-        var adminEmail = configuration["Seed:AdminEmail"];
-        var adminPassword = configuration["Seed:AdminPassword"];
-        if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
+        if (!seed.HasAdmin)
             return;
 
-        var existing = await userManager.FindByEmailAsync(adminEmail);
+        var existing = await userManager.FindByEmailAsync(seed.AdminEmail!);
         if (existing != null)
         {
             if (!await userManager.IsInRoleAsync(existing, "Admin"))
-                await userManager.AddToRoleAsync(existing, "Admin");
+                LogFailure(logger, "add the seed admin to Admin", await userManager.AddToRoleAsync(existing, "Admin"));
             return;
         }
 
         var admin = new IdentityUser
         {
-            UserName = adminEmail,
-            Email = adminEmail,
+            UserName = seed.AdminEmail,
+            Email = seed.AdminEmail,
             EmailConfirmed = true
         };
 
-        var result = await userManager.CreateAsync(admin, adminPassword);
-        if (!result.Succeeded) return;
+        // A password that fails the policy used to leave the site without an admin and no hint why
+        var created = await userManager.CreateAsync(admin, seed.AdminPassword!);
+        if (LogFailure(logger, "create the seed admin", created))
+            return;
 
-        await userManager.AddToRoleAsync(admin, "Admin");
+        LogFailure(logger, "add the seed admin to Admin", await userManager.AddToRoleAsync(admin, "Admin"));
 
         db.UserProfiles.Add(new UserProfile
         {
@@ -56,5 +59,15 @@ public static class AdminSeeder
             DisplayName = "Admin"
         });
         await db.SaveChangesAsync();
+    }
+
+    private static bool LogFailure(ILogger logger, string action, IdentityResult result)
+    {
+        if (result.Succeeded)
+            return false;
+
+        logger.LogError("Could not {Action}: {Errors}", action,
+            string.Join("; ", result.Errors.Select(e => e.Description)));
+        return true;
     }
 }

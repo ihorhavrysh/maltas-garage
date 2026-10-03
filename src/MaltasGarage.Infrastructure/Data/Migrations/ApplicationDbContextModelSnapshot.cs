@@ -249,12 +249,6 @@ namespace MaltasGarage.Infrastructure.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("ListingId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("OrderId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("SellerId")
                         .HasColumnType("uniqueidentifier");
 
@@ -262,8 +256,6 @@ namespace MaltasGarage.Infrastructure.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("OrderId");
 
                     b.HasIndex("SellerId");
 
@@ -324,8 +316,10 @@ namespace MaltasGarage.Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("PreviousOrderStatus")
-                        .HasColumnType("int");
+                    b.Property<string>("PreviousOrderStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Reason")
                         .IsRequired()
@@ -658,9 +652,7 @@ namespace MaltasGarage.Infrastructure.Data.Migrations
 
                     b.HasIndex("BuyerId");
 
-                    b.HasIndex("ListingId")
-                        .IsUnique()
-                        .HasFilter("[ListingId] IS NOT NULL");
+                    b.HasIndex("ListingId");
 
                     b.HasIndex("SellerId");
 
@@ -714,9 +706,6 @@ namespace MaltasGarage.Infrastructure.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("EscrowReleaseDate")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("OrderId")
@@ -836,9 +825,10 @@ namespace MaltasGarage.Infrastructure.Data.Migrations
 
                     b.HasIndex("FromUserId");
 
-                    b.HasIndex("OrderId");
-
                     b.HasIndex("ToUserId");
+
+                    b.HasIndex("OrderId", "FromUserId")
+                        .IsUnique();
 
                     b.ToTable("Reviews", (string)null);
                 });
@@ -854,12 +844,6 @@ namespace MaltasGarage.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeliveredAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeliveryDeadline")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Method")
@@ -1302,11 +1286,6 @@ namespace MaltasGarage.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MaltasGarage.Domain.Entities.Order", "Order")
-                        .WithMany()
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("MaltasGarage.Domain.Entities.UserProfile", "Seller")
                         .WithMany()
                         .HasForeignKey("SellerId")
@@ -1314,8 +1293,6 @@ namespace MaltasGarage.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Buyer");
-
-                    b.Navigation("Order");
 
                     b.Navigation("Seller");
                 });
@@ -1419,8 +1396,8 @@ namespace MaltasGarage.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.HasOne("MaltasGarage.Domain.Entities.Listing", "Listing")
-                        .WithOne("Order")
-                        .HasForeignKey("MaltasGarage.Domain.Entities.Order", "ListingId")
+                        .WithMany("Orders")
+                        .HasForeignKey("ListingId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MaltasGarage.Domain.Entities.UserProfile", "Seller")
@@ -1628,7 +1605,7 @@ namespace MaltasGarage.Infrastructure.Data.Migrations
 
                     b.Navigation("Images");
 
-                    b.Navigation("Order");
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("MaltasGarage.Domain.Entities.Order", b =>

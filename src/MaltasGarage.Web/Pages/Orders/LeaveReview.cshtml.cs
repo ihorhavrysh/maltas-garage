@@ -15,11 +15,13 @@ public class LeaveReviewModel : PageModel
 {
     private readonly ApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly IReviewService _reviews;
 
-    public LeaveReviewModel(ApplicationDbContext context, ICurrentUserService currentUser)
+    public LeaveReviewModel(ApplicationDbContext context, ICurrentUserService currentUser, IReviewService reviews)
     {
         _context = context;
         _currentUser = currentUser;
+        _reviews = reviews;
     }
 
     public OrderViewModel? Order { get; set; }
@@ -102,10 +104,7 @@ public class LeaveReviewModel : PageModel
         if (userProfile == null)
             return RedirectToPage("/Index");
 
-        var order = await _context.Orders
-            .Include(o => o.Reviews)
-            .FirstOrDefaultAsync(o => o.Id == orderId);
-
+        var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId);
         if (order == null)
             return NotFound();
 
@@ -119,55 +118,19 @@ public class LeaveReviewModel : PageModel
             return RedirectToPage(new { orderId });
         }
 
-        // Checked again on POST: the form can be submitted without ever opening the page
-        if (order.Status != OrderStatus.Completed)
+        // The service checks the order again (completed, not reviewed yet): the form can be
+        // submitted without ever opening the page
+        try
         {
-            TempData["Error"] = "Reviews can only be left after the order is completed.";
+            await _reviews.LeaveReviewAsync(orderId, userProfile.Id, Rating, Comment);
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
             return RedirectToPage("/Orders/Details", new { orderId });
         }
-
-        if (order.Reviews.Any(r => r.FromUserId == userProfile.Id))
-        {
-            TempData["Error"] = "You have already reviewed this order.";
-            return RedirectToPage("/Orders/Details", new { orderId });
-        }
-
-        var isBuyer = order.BuyerId == userProfile.Id;
-        var toUserId = isBuyer ? order.SellerId : order.BuyerId;
-
-        _context.Reviews.Add(new Review
-        {
-            Id = Guid.NewGuid(),
-            OrderId = orderId,
-            FromUserId = userProfile.Id,
-            ToUserId = toUserId,
-            Rating = Rating,
-            Comment = Comment,
-            CreatedAt = DateTime.UtcNow
-        });
-
-        // Save review first, then recompute rating (so the new review is included in avg)
-        await _context.SaveChangesAsync();
-
-        await UpdateUserRatingAsync(toUserId);
-        await _context.SaveChangesAsync();
 
         TempData["Success"] = "Thank you for your review!";
         return RedirectToPage("/Orders/Details", new { orderId });
-    }
-
-    private async Task UpdateUserRatingAsync(Guid userId)
-    {
-        var ratings = await _context.Reviews
-            .Where(r => r.ToUserId == userId)
-            .Select(r => r.Rating)
-            .ToListAsync();
-
-        var user = await _context.UserProfiles.FindAsync(userId);
-        if (user != null && ratings.Count > 0)
-        {
-            user.Rating = Math.Round((decimal)ratings.Average(), 1);
-            user.TotalReviews = ratings.Count;
-        }
     }
 }

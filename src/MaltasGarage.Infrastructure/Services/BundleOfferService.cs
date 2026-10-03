@@ -53,7 +53,7 @@ public class BundleOfferService : IBundleOfferService
         if (existing != null)
             throw new InvalidOperationException("You already have an active bundle offer with this seller.");
 
-        var conversation = await _messaging.GetOrCreateConversationAsync(buyerProfileId, sellerId, Guid.Empty);
+        var conversation = await _messaging.GetOrCreateConversationAsync(buyerProfileId, sellerId);
 
         var bundleOffer = new BundleOffer
         {

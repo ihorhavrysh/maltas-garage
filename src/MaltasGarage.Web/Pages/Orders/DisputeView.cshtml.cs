@@ -1,3 +1,4 @@
+using MaltasGarage.Web.Services;
 using MaltasGarage.Application.Common.Interfaces;
 using MaltasGarage.Domain.Entities;
 using MaltasGarage.Domain.Enums;
@@ -45,7 +46,7 @@ public class DisputeViewModel : PageModel
         var userProfile = await _context.UserProfiles
             .FirstOrDefaultAsync(p => p.UserId == _currentUser.UserId);
 
-        bool isAdminOrManager = User.IsInRole("Admin") || User.IsInRole("Manager");
+        bool isAdminOrManager = User.IsStaff();
 
         if (userProfile == null && !isAdminOrManager)
             return RedirectToPage("/Index");
@@ -98,7 +99,7 @@ public class DisputeViewModel : PageModel
 
     public async Task<IActionResult> OnPostMarkUnderReviewAsync(Guid orderId)
     {
-        if (!User.IsInRole("Admin") && !User.IsInRole("Manager")) return Forbid();
+        if (!User.IsStaff()) return Forbid();
 
         await _disputeService.MarkUnderReviewAsync(orderId);
 
@@ -108,7 +109,7 @@ public class DisputeViewModel : PageModel
 
     public async Task<IActionResult> OnPostResolveAsync(Guid orderId, string resolution, string? adminNotes, decimal? partialRefundAmount)
     {
-        if (!User.IsInRole("Admin") && !User.IsInRole("Manager")) return Forbid();
+        if (!User.IsStaff()) return Forbid();
 
         var dispute = await _context.Disputes.FirstOrDefaultAsync(d => d.OrderId == orderId);
         if (dispute == null) return NotFound();
@@ -132,7 +133,7 @@ public class DisputeViewModel : PageModel
 
     public async Task<IActionResult> OnPostEmailPartyAsync(Guid orderId, string recipientUserId, string subject, string messageBody)
     {
-        if (!User.IsInRole("Admin") && !User.IsInRole("Manager")) return Forbid();
+        if (!User.IsStaff()) return Forbid();
 
         if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(messageBody))
         {

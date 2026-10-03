@@ -8,29 +8,37 @@
 @{
     int unreadChats = 0;
     int unreadSystem = 0;
-    MaltasGarage.Domain.Entities.UserProfile? headerProfile = null;
+    string? headerName = null;
+    bool hasProfile = false;
     bool isSignedIn = SignInManager.IsSignedIn(User);
-    bool isAdminOrManager = User.IsInRole("Admin") || User.IsInRole("Manager");
+    bool isAdminOrManager = User.IsStaff();
     string query = Context.Request.Query["q"].ToString();
 
     if (isSignedIn && !string.IsNullOrEmpty(CurrentUserService.UserId))
     {
-        headerProfile = await DbContext.UserProfiles
-            .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.UserId == CurrentUserService.UserId);
-        if (headerProfile != null)
+        // One round trip for the name and both counters: this runs on every page
+        var header = await DbContext.UserProfiles
+            .Where(p => p.UserId == CurrentUserService.UserId)
+            .Select(p => new
+            {
+                p.DisplayName,
+                UnreadChats = DbContext.ChatMessages.Count(m =>
+                    m.FromUserId != p.Id && !m.IsRead &&
+                    (m.Conversation.BuyerId == p.Id || m.Conversation.SellerId == p.Id)),
+                UnreadSystem = DbContext.SystemMessages.Count(m => m.UserId == p.Id && !m.IsRead)
+            })
+            .FirstOrDefaultAsync();
+
+        if (header != null)
         {
-            unreadChats = await DbContext.ChatMessages
-                .CountAsync(m =>
-                    m.FromUserId != headerProfile.Id &&
-                    !m.IsRead &&
-                    (m.Conversation.BuyerId == headerProfile.Id || m.Conversation.SellerId == headerProfile.Id));
-            unreadSystem = await DbContext.SystemMessages
-                .CountAsync(m => m.UserId == headerProfile.Id && !m.IsRead);
+            hasProfile = true;
+            headerName = header.DisplayName;
+            unreadChats = header.UnreadChats;
+            unreadSystem = header.UnreadSystem;
         }
     }
 
-    var displayName = headerProfile?.DisplayName ?? "Account";
+    var displayName = headerName ?? "Account";
     var initials = string.Concat(displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
     static string Badge(int count) => count > 9 ? "9+" : count.ToString();
 }
@@ -58,7 +66,7 @@
                     <a class="btn btn-ghost btn-sm hide-md" href="/Identity/Account/Login">Log in</a>
                     <a class="btn btn-primary btn-sm" href="/Identity/Account/Register">Sign up</a>
                 }
-                else if (headerProfile != null && !isAdminOrManager)
+                else if (hasProfile && !isAdminOrManager)
                 {
                     <a class="btn btn-outline-primary btn-sm hide-md" href="/Listings/Create">
                         <i class="bi bi-plus-lg" aria-hidden="true"></i>Sell an item

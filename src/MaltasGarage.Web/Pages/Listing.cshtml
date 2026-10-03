@@ -139,11 +139,11 @@
                         </div>
 
                         <div class="countdown" role="timer" aria-live="off" aria-label="Time left"
-                             x-data="countdown('@DateTime.SpecifyKind(listing.SellByDate, DateTimeKind.Utc).ToString("o")')" :class="{ 'is-urgent': urgent }">
-                            <div class="countdown-unit"><strong x-text="d">@((int)remaining.TotalDays)</strong><span>days</span></div>
-                            <div class="countdown-unit"><strong x-text="h">@remaining.Hours.ToString("00")</strong><span>hours</span></div>
-                            <div class="countdown-unit"><strong x-text="m">@remaining.Minutes.ToString("00")</strong><span>min</span></div>
-                            <div class="countdown-unit"><strong x-text="s">@remaining.Seconds.ToString("00")</strong><span>sec</span></div>
+                             data-ends-at="@DateTime.SpecifyKind(listing.SellByDate, DateTimeKind.Utc).ToString("o")">
+                            <div class="countdown-unit"><strong data-unit="d">@((int)remaining.TotalDays)</strong><span>days</span></div>
+                            <div class="countdown-unit"><strong data-unit="h">@remaining.Hours.ToString("00")</strong><span>hours</span></div>
+                            <div class="countdown-unit"><strong data-unit="m">@remaining.Minutes.ToString("00")</strong><span>min</span></div>
+                            <div class="countdown-unit"><strong data-unit="s">@remaining.Seconds.ToString("00")</strong><span>sec</span></div>
                         </div>
                         <div class="small mb-2" style="color:#CFC6B8">Ends @listing.SellByDate.ToString("ddd d MMM yyyy, HH:mm") UTC</div>
 
@@ -436,28 +436,30 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/lib/sweetalert2/sweetalert2.all.min.js" asp-append-version="true"></script>
     <script>
-        // Live auction countdown (Alpine). The server renders the initial values, so the
-        // numbers are right without JavaScript too; at zero the page reloads to show the result.
-        function countdown(endsAt) {
-            const end = new Date(endsAt).getTime();
+        // Live auction countdown. The server renders the initial values, so the numbers are
+        // right without JavaScript too; at zero the page reloads to show the result.
+        (function () {
+            const box = document.querySelector('.countdown[data-ends-at]');
+            if (!box) return;
+            const end = new Date(box.dataset.endsAt).getTime();
             const pad = n => String(n).padStart(2, '0');
-            return {
-                d: '0', h: '00', m: '00', s: '00', urgent: false,
-                init() { this.tick(); this.timer = setInterval(() => this.tick(), 1000); },
-                tick() {
-                    const left = Math.max(0, end - Date.now());
-                    const total = Math.floor(left / 1000);
-                    this.d = String(Math.floor(total / 86400));
-                    this.h = pad(Math.floor(total % 86400 / 3600));
-                    this.m = pad(Math.floor(total % 3600 / 60));
-                    this.s = pad(total % 60);
-                    this.urgent = left < 3600 * 1000;
-                    if (left === 0) { clearInterval(this.timer); setTimeout(() => location.reload(), 1500); }
-                }
+            const unit = name => box.querySelector('[data-unit="' + name + '"]');
+            const [d, h, m, s] = ['d', 'h', 'm', 's'].map(unit);
+            const tick = () => {
+                const left = Math.max(0, end - Date.now());
+                const total = Math.floor(left / 1000);
+                d.textContent = String(Math.floor(total / 86400));
+                h.textContent = pad(Math.floor(total % 86400 / 3600));
+                m.textContent = pad(Math.floor(total % 3600 / 60));
+                s.textContent = pad(total % 60);
+                box.classList.toggle('is-urgent', left < 3600 * 1000);
+                if (left === 0) { clearInterval(timer); setTimeout(() => location.reload(), 1500); }
             };
-        }
+            const timer = setInterval(tick, 1000);
+            tick();
+        })();
 
         // Gallery thumbnails
         (function () {
@@ -484,7 +486,7 @@
                 return;
             }
             const btn = this;
-            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+            const token = document.querySelector('meta[name="request-verification-token"]')?.content ?? '';
             const res = await fetch('/Api/ToggleFavourite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },

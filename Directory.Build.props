@@ -1,0 +1,7 @@
+<Project>
+  <!-- packages.lock.json pins every package, transitive ones included, so CI restores exactly
+       what was tested and can cache the packages by the lock files' hash -->
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+</Project>

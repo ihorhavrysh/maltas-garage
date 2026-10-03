@@ -42,7 +42,6 @@ if (!builder.Environment.IsDevelopment())
 }
 
 // Add services to the container.
-builder.Services.AddRazorPages();
 
 // Add Infrastructure (Database, etc.)
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -96,7 +95,7 @@ builder.Services.Configure<SecurityStampValidatorOptions>(options =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("RequireAdminOrManagerRole", policy => policy.RequireRole("Admin", "Manager"));
+    options.AddPolicy("RequireAdminOrManagerRole", policy => policy.RequireRole(StaffRoles.Admin, StaffRoles.Manager));
 });
 
 // HSTS: 1 year (non-development only). No IncludeSubDomains/Preload: the demo runs on a
@@ -231,11 +230,28 @@ app.UseRequestLocalization(new RequestLocalizationOptions
     RequestCultureProviders = new List<IRequestCultureProvider>()
 });
 
-// Apply pending EF Core migrations automatically on startup
+// Apply pending EF Core migrations automatically on startup. A free database that has used its
+// monthly allowance stays paused until the 1st: the app then starts anyway and every page
+// explains it (Error page), instead of crashing and restarting in a loop that burns CPU quota.
+// Migrations and seeding run on the next start after the database is back
+var databaseReady = true;
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate();
+    try
+    {
+        // The migrations are written for SQL Server; the web tests run the app on SQLite
+        if (db.Database.IsSqlServer())
+            db.Database.Migrate();
+        else
+            db.Database.EnsureCreated();
+    }
+    catch (Exception ex) when (DatabaseErrors.IsFreeLimitReached(ex))
+    {
+        databaseReady = false;
+        app.Logger.LogCritical("Database paused until {ResumesAt}: monthly free allowance used. Starting without migrations and seeding.",
+            DatabaseErrors.ResumesAtUtc(DateTime.UtcNow));
+    }
 }
 
 // Configure the HTTP request pipeline.
@@ -245,11 +261,24 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseSecurityHeaders();
 app.UseStatusCodePagesWithReExecute("/Error", "?statusCode={0}");
 
 if (!app.Environment.IsDevelopment())
     app.UseResponseCompression();
 app.UseHttpsRedirection();
+
+// Dispute evidence is not public: it is served by /Orders/DisputeFile after an access check
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments($"{LocalUploadStorage.RequestPath}/{MaltasGarage.Web.Pages.Orders.DisputeFileModel.Folder}"))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+    await next();
+});
+
 app.UseStaticFiles(new StaticFileOptions
 {
     // Only fingerprinted URLs (asp-append-version adds ?v=hash) may be cached forever;
@@ -283,9 +312,12 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 
-// robots.txt is generated so the sitemap URL follows App:BaseUrl
+// robots.txt is generated so the sitemap URL follows App:BaseUrl. The demo asks crawlers to stay
+// away: every crawl wakes the free database for at least an hour of its monthly allowance
 app.MapGet("/robots.txt", (SiteInfo site) => Results.Text(
-    string.Join('\n',
+    demoEnabled
+        ? "User-agent: *\nDisallow: /\n"
+        : string.Join('\n',
         "User-agent: *",
         "Allow: /",
         "Disallow: /Admin/",
@@ -299,7 +331,8 @@ app.MapGet("/robots.txt", (SiteInfo site) => Results.Text(
     "text/plain"));
 
 // Stripe Webhook endpoint
-app.MapPost("/api/stripe/webhook", async (HttpContext http, IPaymentEventHandler events, IOptions<StripeSettings> stripe) =>
+app.MapPost("/api/stripe/webhook", async (HttpContext http, IPaymentEventHandler events,
+    IPurchaseCompletionService purchases, IOptions<StripeSettings> stripe) =>
 {
     var json = await new StreamReader(http.Request.Body).ReadToEndAsync();
     var webhookSecret = stripe.Value.WebhookSecret;
@@ -321,8 +354,14 @@ app.MapPost("/api/stripe/webhook", async (HttpContext http, IPaymentEventHandler
     if (stripeEvent.Type == "payment_intent.succeeded")
     {
         // Repeated or late deliveries are expected; the handler ignores what no longer applies
-        if (stripeEvent.Data.Object is PaymentIntent intent)
-            await events.PaymentSucceededAsync(intent.Id);
+        // A buyer who closes the tab after paying never comes back to the payment page; the order
+        // (or bid) is then created from here. Whichever of the two runs second finds it done
+        if (stripeEvent.Data.Object is PaymentIntent intent &&
+            !await events.PaymentSucceededAsync(intent.Id) &&
+            intent.Metadata?.ContainsKey(PaymentMetadata.Purpose) == true)
+        {
+            await purchases.CompleteAsync(new ConfirmedPayment(intent.Id, intent.AmountReceived / 100m, intent.Metadata));
+        }
     }
     else if (stripeEvent.Type == "account.updated")
     {
@@ -334,8 +373,9 @@ app.MapPost("/api/stripe/webhook", async (HttpContext http, IPaymentEventHandler
 });
 
 // Seed database
-using (var scope = app.Services.CreateScope())
+if (databaseReady)
 {
+    using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await CategorySeeder.SeedCategoriesAsync(context);
     await AdminSeeder.SeedAdminAsync(scope.ServiceProvider);
@@ -348,3 +388,6 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+// Lets the web tests start the app with WebApplicationFactory<Program>
+public partial class Program;

@@ -5,13 +5,13 @@ using MaltasGarage.Domain.Enums;
 namespace MaltasGarage.Tests.Stubs;
 
 /// <summary>
-/// No-op stub for IMessagingService — does nothing, suitable for unit tests
+/// No-op stub for IMessagingService - does nothing, suitable for unit tests
 /// that don't care about notifications.
 /// </summary>
 public class NoOpMessagingService : IMessagingService
 {
-    public Task<Conversation> GetOrCreateConversationAsync(Guid buyerId, Guid sellerId, Guid orderId)
-        => Task.FromResult(new Conversation { Id = Guid.NewGuid(), BuyerId = buyerId, SellerId = sellerId, OrderId = orderId });
+    public Task<Conversation> GetOrCreateConversationAsync(Guid buyerId, Guid sellerId)
+        => Task.FromResult(new Conversation { Id = Guid.NewGuid(), BuyerId = buyerId, SellerId = sellerId });
 
     public Task SendMessageAsync(Guid conversationId, Guid fromUserId, string body)
         => Task.CompletedTask;
@@ -24,7 +24,4 @@ public class NoOpMessagingService : IMessagingService
 
     public Task MarkSystemMessagesReadAsync(Guid userId)
         => Task.CompletedTask;
-
-    public Task<int> GetUnreadCountAsync(Guid userProfileId)
-        => Task.FromResult(0);
 }

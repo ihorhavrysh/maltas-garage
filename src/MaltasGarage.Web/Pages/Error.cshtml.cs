@@ -2,7 +2,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Data.SqlClient;
+using MaltasGarage.Web.Services;
 
 namespace MaltasGarage.Web.Pages;
 
@@ -21,6 +21,13 @@ public class ErrorModel : PageModel
     /// </summary>
     public bool DatabaseWakingUp { get; set; }
 
+    /// <summary>
+    /// The free database used its monthly allowance and is paused until the 1st. The page then
+    /// explains that instead of reloading itself, which would only waste the CPU quota.
+    /// </summary>
+    public bool DatabasePausedForMonth { get; set; }
+    public DateTime DatabaseResumesAtUtc { get; set; }
+
     private readonly ILogger<ErrorModel> _logger;
 
     public ErrorModel(ILogger<ErrorModel> logger)
@@ -34,7 +41,15 @@ public class ErrorModel : PageModel
         StatusCode = statusCode ?? 500;
 
         var error = HttpContext.Features.Get<IExceptionHandlerFeature>()?.Error;
-        if (error != null && IsDatabaseUnavailable(error))
+        if (DatabaseErrors.IsFreeLimitReached(error))
+        {
+            DatabasePausedForMonth = true;
+            DatabaseResumesAtUtc = DatabaseErrors.ResumesAtUtc(DateTime.UtcNow);
+            StatusCode = StatusCodes.Status503ServiceUnavailable;
+            Response.StatusCode = StatusCode;
+            _logger.LogWarning("Database paused until {ResumesAt} (monthly free allowance used)", DatabaseResumesAtUtc);
+        }
+        else if (error != null && DatabaseErrors.IsUnavailable(error))
         {
             DatabaseWakingUp = true;
             StatusCode = StatusCodes.Status503ServiceUnavailable;
@@ -46,14 +61,4 @@ public class ErrorModel : PageModel
 
     // The exception handler re-executes with the original method, so failed POSTs land here
     public void OnPost(int? statusCode) => OnGet(statusCode);
-
-    private static bool IsDatabaseUnavailable(Exception error)
-    {
-        for (var e = error; e != null; e = e.InnerException)
-        {
-            if (e is SqlException or TimeoutException)
-                return true;
-        }
-        return false;
-    }
 }

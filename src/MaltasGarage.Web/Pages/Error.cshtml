@@ -1,5 +1,27 @@
 @page
 @model ErrorModel
+@if (Model.DatabasePausedForMonth)
+{
+    Layout = null;
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Demo paused - Malta's Garage</title>
+        <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+    </head>
+    <body class="bg-light d-flex align-items-center" style="min-height:100vh;">
+        <main class="container text-center py-5" style="max-width:640px;">
+            <h1 class="h3 mb-3">The demo database is paused for this month</h1>
+            <p class="text-muted mb-2">This portfolio demo runs on the free Azure SQL offer. Its monthly allowance is used up, so the database is paused and nothing is charged.</p>
+            <p class="text-muted mb-4">It comes back on <strong>@Model.DatabaseResumesAtUtc.ToString("d MMMM yyyy") at 00:00 UTC</strong>. Until then the code and screenshots are on GitHub.</p>
+            <a href="https://github.com/ihorhavrysh/maltas-garage" class="btn btn-success">View the code on GitHub</a>
+        </main>
+    </body>
+    </html>
+    return;
+}
 @if (Model.DatabaseWakingUp)
 {
     Layout = null;

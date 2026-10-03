@@ -102,6 +102,17 @@
     </div>
 </div>
 
+@if (Model.TotalPages > 1)
+{
+    <nav class="d-flex justify-content-between align-items-center mt-3" aria-label="Users pages">
+        <a class="btn btn-sm btn-outline-secondary @(Model.PageNumber <= 1 ? "disabled" : "")"
+           asp-route-search="@Model.Search" asp-route-p="@(Model.PageNumber - 1)">Previous</a>
+        <span class="small text-muted">Page @Model.PageNumber of @Model.TotalPages</span>
+        <a class="btn btn-sm btn-outline-secondary @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")"
+           asp-route-search="@Model.Search" asp-route-p="@(Model.PageNumber + 1)">Next</a>
+    </nav>
+}
+
 <!-- Email Modal -->
 <div class="modal fade" id="emailModal" tabindex="-1">
     <div class="modal-dialog">

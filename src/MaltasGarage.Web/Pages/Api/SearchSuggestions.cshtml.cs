@@ -1,3 +1,4 @@
+using MaltasGarage.Web.Services;
 using MaltasGarage.Domain.Enums;
 using MaltasGarage.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +24,7 @@ public class SearchSuggestionsModel : PageModel
         q = q.Trim();
 
         var query = _context.Listings
-            .Where(l => l.Status == ListingStatus.Active || l.Status == ListingStatus.AuctionPhase)
+            .OnSale(DateTime.UtcNow)
             .Where(l => l.Title.Contains(q));
 
         if (categoryId.HasValue)

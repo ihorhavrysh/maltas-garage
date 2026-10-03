@@ -88,7 +88,7 @@ demo data) and keep it as a portfolio project.
 | Images | SixLabors.ImageSharp, local disk or Azure Blob Storage |
 | Email | Resend API (a logging sender in development and in the demo) |
 | Frontend | Bootstrap 5, Bootstrap Icons, plain JavaScript |
-| Tests | xUnit, EF Core InMemory and SQLite |
+| Tests | xUnit, EF Core InMemory and SQLite, WebApplicationFactory |
 | Hosting | Azure App Service (Linux, Free F1), Azure SQL Database free offer |
 | CI/CD | GitHub Actions, OpenID Connect login to Azure, Docker Compose check |
 
@@ -206,14 +206,19 @@ dotnet test
 ```
 
 The suite covers the lifecycle transitions (auction closing, offer expiry, escrow release and
-their races), bidding rules, order and escrow logic, showcase guards and settings validation.
+their races), bidding rules, purchases finished by the return page or the webhook, order and
+escrow logic (refunds, one payout per order), reviews, image metadata stripping, showcase guards,
+settings validation, and page-level permission checks that run the whole app on SQLite.
+CI reports line coverage on each run.
 
 ## Deployment
 
 Every push to `main` runs [the CI/CD workflow](.github/workflows/ci-cd.yml): build, tests, a
 Docker Compose start-up check, then a deployment to Azure App Service. GitHub Actions logs in to
 Azure with OpenID Connect, so the repository holds no Azure credentials, and the job finishes with
-a smoke test against the live site.
+a smoke test against the live site. The deploy waits for the Docker Compose job, the one that
+migrates a real SQL Server database. The Azure resources are described in
+[`infra/main.bicep`](infra/main.bicep); known gaps are listed in [docs/open-items.md](docs/open-items.md).
 
 ## License
 

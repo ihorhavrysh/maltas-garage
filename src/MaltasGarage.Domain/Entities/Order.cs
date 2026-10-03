@@ -13,7 +13,7 @@ public class Order : BaseEntity, IConcurrencyStamped
     public Guid SellerId { get; set; }
 
     public decimal FinalPrice { get; set; }
-    public decimal PlatformFee { get; set; } // 10%
+    public decimal PlatformFee { get; set; } // 10%, at least EUR 1 (PlatformFee.Calculate)
     public decimal SellerPayout { get; set; } // FinalPrice - PlatformFee
 
     public OrderStatus Status { get; set; } = OrderStatus.Pending;

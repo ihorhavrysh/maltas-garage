@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 using MaltasGarage.Application.Common.Interfaces;
@@ -74,31 +75,41 @@ public class RegisterModel : PageModel
         if (ModelState.IsValid)
         {
             var user = new IdentityUser { UserName = Input.Email, Email = Input.Email };
-            var result = await _userManager.CreateAsync(user, Input.Password);
+            var userProfile = new UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                DisplayName = Input.Email.Split('@')[0],
+                CreatedAt = DateTime.UtcNow
+            };
+
+            // Demo: visitors can list items straight away, using the shared test-mode
+            // connected account instead of going through Stripe Connect onboarding.
+            if (_demo.Enabled)
+            {
+                userProfile.StripeAccountId = _demo.SellerStripeAccountId;
+                userProfile.StripeOnboardingComplete = true;
+            }
+
+            // The login and its profile are created together or not at all: a login without a
+            // profile cannot buy, sell or even be deleted from the account page
+            IdentityResult result = IdentityResult.Failed();
+            await _context.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+            {
+                _context.ChangeTracker.Clear();
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                result = await _userManager.CreateAsync(user, Input.Password);
+                if (!result.Succeeded)
+                    return;
+
+                _context.UserProfiles.Add(userProfile);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            });
 
             if (result.Succeeded)
             {
                 _logger.LogInformation("User created a new account.");
-
-                // Create UserProfile
-                var userProfile = new UserProfile
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = user.Id,
-                    DisplayName = Input.Email.Split('@')[0],
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                // Demo: visitors can list items straight away, using the shared test-mode
-                // connected account instead of going through Stripe Connect onboarding.
-                if (_demo.Enabled)
-                {
-                    userProfile.StripeAccountId = _demo.SellerStripeAccountId;
-                    userProfile.StripeOnboardingComplete = true;
-                }
-
-                _context.UserProfiles.Add(userProfile);
-                await _context.SaveChangesAsync();
 
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 var code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));

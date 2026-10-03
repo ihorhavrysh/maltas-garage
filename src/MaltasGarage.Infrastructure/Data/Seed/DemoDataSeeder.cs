@@ -303,7 +303,7 @@ public class DemoDataSeeder
             OpenedById = luca.Id,
             Reason = DisputeReason.ItemNotAsDescribed,
             Description = "The listing said no damage, but one armrest has a large tear that was not in the photos.",
-            Status = "Open",
+            Status = DisputeStatus.Open,
             PreviousOrderStatus = OrderStatus.Shipped,
             CreatedAt = _now.AddDays(-1)
         });
@@ -396,7 +396,6 @@ public class DemoDataSeeder
                 Id = Guid.NewGuid(),
                 BuyerId = buyer.Id,
                 SellerId = seller.Id,
-                ListingId = listing?.Id,
                 CreatedAt = _now.AddDays(-2),
                 UpdatedAt = _now.AddHours(-1)
             };
@@ -543,10 +542,8 @@ public class DemoDataSeeder
                 Method = delivery,
                 Carrier = "MaltaPost",
                 TrackingNumber = $"RR{Random.Shared.Next(100000000, 999999999)}MT",
-                Status = done ? ShipmentStatus.Delivered : ShipmentStatus.InTransit,
+                Status = ShipmentStatus.Shipped,
                 ShippedAt = shippedAt,
-                DeliveredAt = done ? shippedAt.AddDays(1) : null,
-                DeliveryDeadline = shippedAt.AddDays(7),
                 CreatedAt = shippedAt
             });
         }

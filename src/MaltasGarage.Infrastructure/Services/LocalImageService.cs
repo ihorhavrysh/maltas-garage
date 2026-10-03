@@ -1,46 +1,27 @@
 using MaltasGarage.Application.Common.Interfaces;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
+using Microsoft.Extensions.Logging;
 
 namespace MaltasGarage.Infrastructure.Services;
 
 public class LocalImageService : IImageService
 {
     private readonly LocalUploadStorage _storage;
-    private readonly string[] _allowedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
-    private const int MaxFileSizeBytes = 5 * 1024 * 1024; // 5 MB
-    private const int MaxDimension = 1920;
-    private const int ThumbnailWidth = 400;
-    private const int ThumbnailHeight = 300;
+    private readonly ILogger<LocalImageService> _logger;
 
-    public LocalImageService(LocalUploadStorage storage)
+    public LocalImageService(LocalUploadStorage storage, ILogger<LocalImageService> logger)
     {
         _storage = storage;
+        _logger = logger;
     }
 
     public async Task<ImageUploadResult> UploadAsync(Stream stream, string fileName, string folder)
     {
+        var invalid = ImageProcessor.Validate(stream, fileName);
+        if (invalid != null)
+            return new ImageUploadResult { Success = false, Error = invalid };
+
         try
         {
-            var extension = Path.GetExtension(fileName).ToLowerInvariant();
-            if (!_allowedExtensions.Contains(extension))
-            {
-                return new ImageUploadResult
-                {
-                    Success = false,
-                    Error = "Invalid file type. Allowed: JPG, PNG, WEBP"
-                };
-            }
-
-            if (stream.Length > MaxFileSizeBytes)
-            {
-                return new ImageUploadResult
-                {
-                    Success = false,
-                    Error = "File too large. Maximum size: 5MB"
-                };
-            }
-
             var uniqueId = Guid.NewGuid().ToString("N")[..8];
             var baseName = $"{uniqueId}.jpg";
             var thumbnailName = $"{uniqueId}_thumb.jpg";
@@ -48,28 +29,9 @@ public class LocalImageService : IImageService
             var uploadDir = _storage.FolderPath(folder);
             Directory.CreateDirectory(uploadDir);
 
-            stream.Position = 0;
-            using var image = await Image.LoadAsync(stream);
-
-            // Resize if too large, keep aspect ratio
-            if (image.Width > MaxDimension || image.Height > MaxDimension)
-            {
-                image.Mutate(x => x.Resize(new ResizeOptions
-                {
-                    Size = new Size(MaxDimension, MaxDimension),
-                    Mode = ResizeMode.Max
-                }));
-            }
-
-            await image.SaveAsJpegAsync(Path.Combine(uploadDir, baseName));
-
-            // Thumbnail: 400x300 crop from center
-            using var thumbnail = image.Clone(x => x.Resize(new ResizeOptions
-            {
-                Size = new Size(ThumbnailWidth, ThumbnailHeight),
-                Mode = ResizeMode.Crop
-            }));
-            await thumbnail.SaveAsJpegAsync(Path.Combine(uploadDir, thumbnailName));
+            await using (var main = File.Create(Path.Combine(uploadDir, baseName)))
+            await using (var thumb = File.Create(Path.Combine(uploadDir, thumbnailName)))
+                await ImageProcessor.ProcessAsync(stream, main, thumb);
 
             return new ImageUploadResult
             {
@@ -80,11 +42,9 @@ public class LocalImageService : IImageService
         }
         catch (Exception ex)
         {
-            return new ImageUploadResult
-            {
-                Success = false,
-                Error = $"Upload failed: {ex.Message}"
-            };
+            // The details are for the log; the user only needs to know to try another file
+            _logger.LogError(ex, "Image upload failed for file {FileName}", fileName);
+            return new ImageUploadResult { Success = false, Error = "The image could not be processed. Please try another file." };
         }
     }
 
@@ -98,18 +58,14 @@ public class LocalImageService : IImageService
             var path = _storage.PathFromUrl(url);
             if (path == null)
                 return Task.CompletedTask;
-            if (File.Exists(path))
-                File.Delete(path);
 
-            // Delete thumbnail too (same name with _thumb suffix)
-            var ext = Path.GetExtension(path);
-            var thumbPath = path.Replace(ext, $"_thumb{ext}");
-            if (File.Exists(thumbPath))
-                File.Delete(thumbPath);
+            File.Delete(path);                                  // no error when it is already gone
+            File.Delete(ImageProcessor.ThumbnailOf(path));
         }
-        catch
+        catch (Exception ex)
         {
-            // log but don't throw
+            // A file left behind is not worth failing the request for, but it is worth knowing about
+            _logger.LogWarning(ex, "Could not delete image {Url}", url);
         }
 
         return Task.CompletedTask;
