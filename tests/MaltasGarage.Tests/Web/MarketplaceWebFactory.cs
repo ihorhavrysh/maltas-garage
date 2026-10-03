@@ -53,13 +53,13 @@ public class MarketplaceWebFactory : WebApplicationFactory<Program>
             var sweep = services.Single(d => d.ImplementationType == typeof(MarketplaceSweepService));
             services.Remove(sweep);
 
-            services.AddAuthentication(TestAuthHandler.Scheme)
-                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.Scheme, _ => { });
+            services.AddAuthentication(TestAuthHandler.SchemeName)
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
             services.PostConfigure<AuthenticationOptions>(o =>
             {
-                o.DefaultScheme = TestAuthHandler.Scheme;
-                o.DefaultAuthenticateScheme = TestAuthHandler.Scheme;
-                o.DefaultChallengeScheme = TestAuthHandler.Scheme;
+                o.DefaultScheme = TestAuthHandler.SchemeName;
+                o.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+                o.DefaultChallengeScheme = TestAuthHandler.SchemeName;
             });
         });
     }
@@ -111,7 +111,7 @@ public class MarketplaceWebFactory : WebApplicationFactory<Program>
 
     private sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
-        public const string Scheme = "Test";
+        public const string SchemeName = "Test";
         private readonly UserManager<IdentityUser> _users;
 
         public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger,
@@ -133,8 +133,8 @@ public class MarketplaceWebFactory : WebApplicationFactory<Program>
                 new(ClaimTypes.Name, user.UserName!)
             };
             claims.AddRange((await _users.GetRolesAsync(user)).Select(r => new Claim(ClaimTypes.Role, r)));
-            var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, Scheme));
-            return AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme));
+            var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, SchemeName));
+            return AuthenticateResult.Success(new AuthenticationTicket(principal, SchemeName));
         }
     }
 }

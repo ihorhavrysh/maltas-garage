@@ -1,0 +1,24 @@
+# Weekly update PRs; CI has to pass before one can be merged
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      microsoft:
+        patterns: ["Microsoft.*", "System.*"]
+    ignore:
+      # ImageSharp 4 needs a license key in Release builds
+      - dependency-name: SixLabors.ImageSharp
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
