@@ -37,6 +37,11 @@ public class ToggleFavouriteModel : PageModel
             _context.Favourites.Remove(existing);
             isFavourited = false;
         }
+        else if (!await _context.Listings.AnyAsync(l => l.Id == listingId))
+        {
+            // An unknown id would otherwise fail on the foreign key with a 500
+            return new JsonResult(new { success = false, error = "Listing not found" });
+        }
         else
         {
             _context.Favourites.Add(new Favourite

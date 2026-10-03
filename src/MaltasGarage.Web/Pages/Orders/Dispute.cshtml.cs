@@ -84,7 +84,7 @@ public class DisputeModel : PageModel
                     if (file.Length == 0 || file.Length > 5 * 1024 * 1024) continue;
 
                     using var stream = file.OpenReadStream();
-                    var result = await _imageService.UploadAsync(stream, file.FileName, "disputes");
+                    var result = await _imageService.UploadAsync(stream, file.FileName, DisputeFileModel.Folder);
 
                     if (result.Success)
                     {

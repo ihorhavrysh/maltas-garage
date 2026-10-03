@@ -1,9 +1,12 @@
 @inject Microsoft.Extensions.Options.IOptions<MaltasGarage.Application.Common.Models.AppSettings> AppOptions
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    @* The token for fetch() calls: pages without a form of their own have one too *@
+    <meta name="request-verification-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
     <title>@ViewData["Title"] - Malta's Garage</title>
     <meta name="description" content="@(ViewData["Description"] ?? "Malta's Garage is Malta's online marketplace for second-hand items. Buy and sell used goods safely with escrow payments, auctions, and MaltaPost delivery.")" />
     @if (ViewData["Canonical"] != null)
@@ -82,9 +85,6 @@
 
     <!-- Bootstrap 5 JS Bundle (self-hosted) -->
     <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Alpine.js (for interactivity) -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 
     <!-- Custom JS -->
     <script src="~/js/site.js" asp-append-version="true"></script>

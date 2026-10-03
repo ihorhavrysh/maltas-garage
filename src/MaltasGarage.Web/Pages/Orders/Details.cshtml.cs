@@ -1,3 +1,4 @@
+using MaltasGarage.Web.Services;
 using MaltasGarage.Application.Common.Interfaces;
 using MaltasGarage.Domain.Enums;
 using MaltasGarage.Infrastructure.Data;
@@ -90,7 +91,7 @@ public class DetailsModel : PageModel
         var userProfile = await _context.UserProfiles
             .FirstOrDefaultAsync(p => p.UserId == _currentUser.UserId);
 
-        bool isAdminOrManager = User.IsInRole("Admin") || User.IsInRole("Manager");
+        bool isAdminOrManager = User.IsStaff();
 
         if (userProfile == null && !isAdminOrManager)
             return RedirectToPage("/Index");

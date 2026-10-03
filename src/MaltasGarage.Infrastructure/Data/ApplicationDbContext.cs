@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace MaltasGarage.Infrastructure.Data;
 
-public class ApplicationDbContext : IdentityDbContext<IdentityUser>, IApplicationDbContext
+public class ApplicationDbContext : IdentityDbContext<IdentityUser>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -35,6 +35,22 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>, IApplicatio
     public DbSet<SystemMessage> SystemMessages => Set<SystemMessage>();
     public DbSet<NotificationPreferences> NotificationPreferences => Set<NotificationPreferences>();
     public DbSet<DemoReset> DemoResets => Set<DemoReset>();
+
+    // Every DateTime is stored as UTC, but SQL Server hands it back as Kind=Unspecified, which
+    // ToLocalTime, JSON and "o" formatting then treat as local time. Read it back as UTC
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
+        configurationBuilder.Properties<DateTime?>().HaveConversion<UtcDateTimeConverter>();
+    }
+
+    private sealed class UtcDateTimeConverter : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>
+    {
+        public UtcDateTimeConverter()
+            : base(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc))
+        {
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

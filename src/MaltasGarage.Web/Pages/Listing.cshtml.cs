@@ -18,11 +18,16 @@ public class ListingModel : PageModel
     private readonly IPriceOfferService _priceOfferService;
     private readonly IListingLifecycleService _lifecycle;
     private readonly SiteInfo _site;
+    private readonly TimeProvider _time;
+    private readonly IListingRemovalService _removal;
 
     public ListingModel(ApplicationDbContext context, ICurrentUserService currentUser,
-        IPriceOfferService priceOfferService, IListingLifecycleService lifecycle, SiteInfo site)
+        IPriceOfferService priceOfferService, IListingLifecycleService lifecycle, SiteInfo site, TimeProvider time,
+        IListingRemovalService removal)
     {
+        _removal = removal;
         _site = site;
+        _time = time;
         _context = context;
         _currentUser = currentUser;
         _priceOfferService = priceOfferService;
@@ -124,12 +129,14 @@ public class ListingModel : PageModel
                 ActiveOffer = await _priceOfferService.GetActiveOfferForBuyerAsync(Listing.Id, userProfile.Id);
         }
 
-        var remaining = Listing.SellByDate - DateTime.UtcNow;
+        var remaining = Listing.SellByDate - _time.GetUtcNow().UtcDateTime;
         TimeLeft = remaining.TotalDays >= 1
             ? $"{(int)remaining.TotalDays}d left"
             : remaining.TotalHours >= 1
                 ? $"{(int)remaining.TotalHours}h left"
-                : "ending soon";
+                : remaining > TimeSpan.Zero
+                    ? "ending soon"
+                    : "ended";
 
         return Page();
     }
@@ -144,26 +151,15 @@ public class ListingModel : PageModel
 
         if (userProfile == null) return NotFound();
 
-        var listing = await _context.Listings
-            .Include(l => l.Bids)
-            .FirstOrDefaultAsync(l => l.Id == id && l.SellerId == userProfile.Id);
-
-        if (listing == null) return NotFound();
-
-        if (listing.IsShowcase)
+        try
         {
-            TempData["Error"] = ShowcaseListingException.DefaultMessage;
+            await _removal.DeleteAsync(id, userProfile.Id);
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
             return RedirectToPage(new { id });
         }
-
-        if (listing.Bids.Any())
-        {
-            TempData["Error"] = "Cannot delete a listing that already has bids.";
-            return RedirectToPage(new { id });
-        }
-
-        _context.Listings.Remove(listing);
-        await _context.SaveChangesAsync();
 
         return RedirectToPage("/Account/MyListings");
     }

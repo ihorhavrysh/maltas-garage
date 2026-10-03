@@ -95,7 +95,7 @@ builder.Services.Configure<SecurityStampValidatorOptions>(options =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("RequireAdminOrManagerRole", policy => policy.RequireRole("Admin", "Manager"));
+    options.AddPolicy("RequireAdminOrManagerRole", policy => policy.RequireRole(StaffRoles.Admin, StaffRoles.Manager));
 });
 
 // HSTS: 1 year (non-development only). No IncludeSubDomains/Preload: the demo runs on a
@@ -257,11 +257,24 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseSecurityHeaders();
 app.UseStatusCodePagesWithReExecute("/Error", "?statusCode={0}");
 
 if (!app.Environment.IsDevelopment())
     app.UseResponseCompression();
 app.UseHttpsRedirection();
+
+// Dispute evidence is not public: it is served by /Orders/DisputeFile after an access check
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments($"{LocalUploadStorage.RequestPath}/{MaltasGarage.Web.Pages.Orders.DisputeFileModel.Folder}"))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+    await next();
+});
+
 app.UseStaticFiles(new StaticFileOptions
 {
     // Only fingerprinted URLs (asp-append-version adds ?v=hash) may be cached forever;

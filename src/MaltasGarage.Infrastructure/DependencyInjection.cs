@@ -46,9 +46,6 @@ public static class DependencyInjection
             // strategy and are retried as a whole, so they never rely on savepoints
             .ConfigureWarnings(w => w.Ignore(SqlServerEventId.SavepointsDisabledBecauseOfMARS)));
 
-        services.AddScoped<IApplicationDbContext>(provider =>
-            provider.GetRequiredService<ApplicationDbContext>());
-
         // Image storage
         services.AddSingleton<LocalUploadStorage>();
         var storage = configuration.GetSection(StorageSettings.SectionName).Get<StorageSettings>() ?? new StorageSettings();
@@ -61,6 +58,8 @@ public static class DependencyInjection
         services.AddScoped<IPaymentEventHandler, PaymentEventHandler>();
         services.AddScoped<IPurchaseCompletionService, PurchaseCompletionService>();
         services.AddScoped<IReviewService, ReviewService>();
+        services.AddScoped<IListingRemovalService, ListingRemovalService>();
+        services.AddScoped<IAccountDeletionService, AccountDeletionService>();
         services.AddScoped<IBiddingService, BiddingService>();
         services.AddScoped<IMessagingService, MessagingService>();
         services.AddScoped<IDisputeService, DisputeService>();

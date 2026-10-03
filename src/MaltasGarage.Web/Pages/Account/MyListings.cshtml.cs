@@ -15,11 +15,13 @@ public class MyListingsModel : PageModel
 {
     private readonly ApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly IListingRemovalService _removal;
 
-    public MyListingsModel(ApplicationDbContext context, ICurrentUserService currentUser)
+    public MyListingsModel(ApplicationDbContext context, ICurrentUserService currentUser, IListingRemovalService removal)
     {
         _context = context;
         _currentUser = currentUser;
+        _removal = removal;
     }
 
     public UserProfile? Profile { get; set; }
@@ -66,26 +68,15 @@ public class MyListingsModel : PageModel
 
         if (profile == null) return NotFound();
 
-        var listing = await _context.Listings
-            .Include(l => l.Bids)
-            .FirstOrDefaultAsync(l => l.Id == id && l.SellerId == profile.Id);
-
-        if (listing == null) return NotFound();
-
-        if (listing.IsShowcase)
+        try
         {
-            TempData["Error"] = ShowcaseListingException.DefaultMessage;
+            await _removal.DeleteAsync(id, profile.Id);
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
             return RedirectToPage();
         }
-
-        if (listing.Bids.Any())
-        {
-            TempData["Error"] = "Cannot delete a listing that already has bids.";
-            return RedirectToPage();
-        }
-
-        _context.Listings.Remove(listing);
-        await _context.SaveChangesAsync();
 
         TempData["Success"] = "Listing deleted successfully.";
         return RedirectToPage();

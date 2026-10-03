@@ -1,3 +1,4 @@
+using MaltasGarage.Web.Services;
 using MaltasGarage.Domain.Enums;
 using MaltasGarage.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -34,7 +35,7 @@ public class IndexModel : PageModel
 
         var query = _context.Listings
             .Include(l => l.Images)
-            .Where(l => l.Status == ListingStatus.Active || l.Status == ListingStatus.AuctionPhase);
+            .OnSale(DateTime.UtcNow);
 
         if (!string.IsNullOrEmpty(Q))
             query = query.Where(l => l.Title.Contains(Q) || (l.Description != null && l.Description.Contains(Q)));

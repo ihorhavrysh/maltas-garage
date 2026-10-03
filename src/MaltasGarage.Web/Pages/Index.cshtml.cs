@@ -1,3 +1,4 @@
+using MaltasGarage.Web.Services;
 using MaltasGarage.Domain.Entities;
 using MaltasGarage.Domain.Enums;
 using MaltasGarage.Infrastructure.Data;
@@ -45,9 +46,7 @@ public class IndexModel : PageModel
             .ToListAsync();
 
         var now = DateTime.UtcNow;
-        var available = _context.Listings
-            .Where(l => l.Status == ListingStatus.Active || l.Status == ListingStatus.AuctionPhase)
-            .Where(l => l.SellByDate > now);
+        var available = _context.Listings.OnSale(now);
 
         EndingSoon = await ToCards(available
                 .Where(l => l.Status == ListingStatus.AuctionPhase)
