@@ -30,7 +30,7 @@ public class PurchaseCompletionServiceTests
     }
 
     private static async Task<(Listing Listing, UserProfile Buyer)> SeedListingAsync(
-        ApplicationDbContext ctx, ListingStatus status = ListingStatus.Active)
+        ApplicationDbContext ctx, ListingStatus status = ListingStatus.Active, Guid? categoryId = null)
     {
         var seller = new UserProfile { Id = Guid.NewGuid(), UserId = $"seller-{Guid.NewGuid():N}" };
         var buyer = new UserProfile { Id = Guid.NewGuid(), UserId = $"buyer-{Guid.NewGuid():N}" };
@@ -38,7 +38,7 @@ public class PurchaseCompletionServiceTests
         {
             Id = Guid.NewGuid(),
             SellerId = seller.Id,
-            CategoryId = Guid.NewGuid(),
+            CategoryId = categoryId ?? Guid.NewGuid(),
             Title = "Purchase listing",
             MinPrice = 50m,
             DesiredPrice = 100m,
@@ -192,6 +192,34 @@ public class PurchaseCompletionServiceTests
 
         Assert.True(result.Succeeded);
         Assert.Equal(("pi_old", (decimal?)null), Assert.Single(payment.Refunds));
+    }
+
+    [Fact]
+    public async Task RefundedListing_CanBeBoughtAgain()
+    {
+        // Real database: a refund puts the item back on sale, and the second order for the same
+        // listing must not hit a unique index on Orders.ListingId
+        using var connection = new Microsoft.Data.Sqlite.SqliteConnection("DataSource=:memory:");
+        connection.Open();
+        var ctx = TestDbContextFactory.CreateRelational(connection);
+        var category = new Category { Id = Guid.NewGuid(), Name = "Sports", Slug = "sports" };
+        ctx.Categories.Add(category);
+        await ctx.SaveChangesAsync();
+
+        var payment = new RecordingPaymentService();
+        var (listing, firstBuyer) = await SeedListingAsync(ctx, categoryId: category.Id);
+        var secondBuyer = new UserProfile { Id = Guid.NewGuid(), UserId = "second-buyer" };
+        ctx.UserProfiles.Add(secondBuyer);
+        await ctx.SaveChangesAsync();
+        var service = CreateService(ctx, payment);
+
+        var first = await service.CompleteAsync(Paid(PaymentMetadata.BuyNow, listing.Id, firstBuyer.Id, 100m, "pi_first"), DeliveryMethod.HandToHand);
+        await new OrderService(ctx, new NoOpMessagingService(), new NoOpEmailNotificationService(), payment, TimeProvider.System)
+            .RefundBuyerAsync(first.OrderId!.Value);
+        var second = await service.CompleteAsync(Paid(PaymentMetadata.BuyNow, listing.Id, secondBuyer.Id, 100m, "pi_second"), DeliveryMethod.HandToHand);
+
+        Assert.True(second.Succeeded, second.Error);
+        Assert.Equal(2, await ctx.Orders.CountAsync(o => o.ListingId == listing.Id));
     }
 
     [Fact]

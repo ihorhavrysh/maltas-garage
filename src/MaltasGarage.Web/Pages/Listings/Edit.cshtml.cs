@@ -89,7 +89,7 @@ public class EditModel : PageModel
             return RedirectToPage("/Listing", new { id = Id });
         }
 
-        if (listing.Status is not (ListingStatus.Active or ListingStatus.Draft))
+        if (listing.Status != ListingStatus.Active)
         {
             TempData["Error"] = "This listing can no longer be edited.";
             return RedirectToPage("/Listing", new { id = Id });

@@ -141,7 +141,7 @@ public class DetailsModel : PageModel
             TrackingNumber = order.Shipment?.TrackingNumber,
             CreatedAt = order.CreatedAt,
             HasDispute = order.Dispute != null,
-            DisputeStatus = order.Dispute?.Status,
+            DisputeStatus = order.Dispute?.Status.ToString(),
             DisputeId = order.Dispute?.Id,
             PaidAt = order.PaidAt,
             ShippedAt = order.Shipment?.ShippedAt,
@@ -215,7 +215,7 @@ public class DetailsModel : PageModel
 
         if (order.Status != Domain.Enums.OrderStatus.Paid ||
             order.DeliveryMethod != Domain.Enums.DeliveryMethod.MaltaPost ||
-            (order.Dispute != null && order.Dispute.Status != "Withdrawn") ||
+            (order.Dispute != null && order.Dispute.Status != DisputeStatus.Withdrawn) ||
             order.PaidAt == null ||
             order.PaidAt > DateTime.UtcNow.AddDays(-3))
         {
@@ -280,7 +280,6 @@ public class DetailsModel : PageModel
                 ("Shipped", _)           => "In Transit",
                 ("Completed", _)         => "Completed",
                 ("Disputed", _)          => "Under Dispute",
-                ("Cancelled", _)         => "Cancelled",
                 ("Refunded", _)          => "Refunded",
                 _                        => Order.Status
             };
@@ -295,7 +294,6 @@ public class DetailsModel : PageModel
                 ("Shipped", _)           => "Shipped - Awaiting Confirmation",
                 ("Completed", _)         => "Completed",
                 ("Disputed", _)          => "Under Dispute",
-                ("Cancelled", _)         => "Cancelled",
                 ("Refunded", _)          => "Refunded",
                 _                        => Order.Status
             };
@@ -311,7 +309,6 @@ public class DetailsModel : PageModel
         {
             "Completed" => "bg-primary",
             "Disputed"  => "bg-warning text-dark",
-            "Cancelled" => "bg-secondary",
             "Refunded"  => "bg-secondary",
             "Shipped"   => "bg-info text-dark",
             _           => "bg-primary"
@@ -336,7 +333,6 @@ public class DetailsModel : PageModel
                 ("Shipped", _)         => "Your item is on its way. Confirm receipt once it arrives, or payment releases automatically after 5 days.",
                 ("Completed", _)       => "Order completed. Thank you for your purchase!",
                 ("Disputed", _)        => "A dispute is open on this order. Our team is reviewing the case.",
-                ("Cancelled", _)       => "Order cancelled. Your refund has been initiated.",
                 _                      => ""
             };
         }

@@ -50,7 +50,6 @@ public ListingViewModel? Listing { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? ImageUrl { get; set; }
         public string SellerName { get; set; } = string.Empty;
-        public string? SellerStripeAccountId { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -103,8 +102,7 @@ public ListingViewModel? Listing { get; set; }
         {
             Title = listing.Title,
             ImageUrl = listing.Images.OrderBy(i => i.SortOrder).Select(i => i.ThumbnailUrl ?? i.Url).FirstOrDefault(),
-            SellerName = listing.Seller.DisplayName ?? "Seller",
-            SellerStripeAccountId = listing.Seller.StripeAccountId
+            SellerName = listing.Seller.DisplayName ?? "Seller"
         };
 
         try
@@ -119,7 +117,7 @@ public ListingViewModel? Listing { get; set; }
 
         // Create PaymentIntent - platform captures full amount, transfer to seller on escrow release.
         // The metadata lets PaymentComplete check what this payment was for and who made it.
-        var paymentResult = await _paymentService.CreatePaymentIntentAsync(Price, Listing.SellerStripeAccountId!,
+        var paymentResult = await _paymentService.CreatePaymentIntentAsync(Price,
             PaymentMetadata.For(PaymentMetadata.BuyNow, ListingId, userProfile.Id, OfferId));
 
         if (!paymentResult.Success)

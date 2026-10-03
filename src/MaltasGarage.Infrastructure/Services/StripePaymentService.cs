@@ -69,7 +69,7 @@ public class StripePaymentService : IPaymentService
         return account.ChargesEnabled && account.PayoutsEnabled;
     }
 
-    public async Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string connectedAccountId, IReadOnlyDictionary<string, string>? metadata = null)
+    public async Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, IReadOnlyDictionary<string, string>? metadata = null)
     {
         try
         {
@@ -99,7 +99,7 @@ public class StripePaymentService : IPaymentService
         }
     }
 
-    public async Task<bool> CreateTransferAsync(decimal sellerPayout, string connectedAccountId, string transferGroup, string? paymentIntentId = null)
+    public async Task<string?> CreateTransferAsync(decimal sellerPayout, string connectedAccountId, string transferGroup, string? paymentIntentId = null)
     {
         try
         {
@@ -125,19 +125,19 @@ public class StripePaymentService : IPaymentService
             var requestOptions = new RequestOptions { IdempotencyKey = $"escrow-release-{transferGroup}" };
 
             var service = new TransferService();
-            await service.CreateAsync(options, requestOptions);
-            return true;
+            var transfer = await service.CreateAsync(options, requestOptions);
+            return transfer.Id;
         }
         catch (StripeException ex)
         {
             // Reported, not thrown: callers decide whether to retry later (the key makes that safe)
             _logger.LogError(ex, "Stripe Transfer failed - payout={Payout} destination={Dest} group={Group} | {Message}",
                 sellerPayout, connectedAccountId, transferGroup, ex.Message);
-            return false;
+            return null;
         }
     }
 
-    public async Task<(string PaymentIntentId, string ClientSecret)> CreateBidPaymentAsync(decimal amount, string connectedAccountId, IReadOnlyDictionary<string, string>? metadata = null)
+    public async Task<(string PaymentIntentId, string ClientSecret)> CreateBidPaymentAsync(decimal amount, IReadOnlyDictionary<string, string>? metadata = null)
     {
         // Same pattern: capture on platform, transfer to seller on escrow release
         var options = new PaymentIntentCreateOptions

@@ -11,14 +11,15 @@ public interface IPaymentService
     /// Creates a PaymentIntent for an amount the server computed. <paramref name="metadata"/>
     /// (see <see cref="PaymentMetadata"/>) ties it to what is being paid for and by whom.
     /// </summary>
-    Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string connectedAccountId, IReadOnlyDictionary<string, string>? metadata = null);
+    Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, IReadOnlyDictionary<string, string>? metadata = null);
     /// <summary>
     /// Pays the seller their share. <paramref name="transferGroup"/> must be the order id: it is
-    /// also the idempotency key, so repeating the call for the same order never pays twice.
+    /// also the idempotency key, so repeating the call for the same order (within Stripe's ~24 h key
+    /// window) never pays twice. Returns the Stripe transfer id, or null when the transfer failed.
     /// </summary>
-    Task<bool> CreateTransferAsync(decimal sellerPayout, string connectedAccountId, string transferGroup, string? paymentIntentId = null);
+    Task<string?> CreateTransferAsync(decimal sellerPayout, string connectedAccountId, string transferGroup, string? paymentIntentId = null);
     Task<bool> RefundPaymentAsync(string paymentIntentId, decimal? amount = null);
-    Task<(string PaymentIntentId, string ClientSecret)> CreateBidPaymentAsync(decimal amount, string connectedAccountId, IReadOnlyDictionary<string, string>? metadata = null);
+    Task<(string PaymentIntentId, string ClientSecret)> CreateBidPaymentAsync(decimal amount, IReadOnlyDictionary<string, string>? metadata = null);
     /// <summary>
     /// The payment as Stripe reports it, or null when it has not succeeded. The amount and
     /// metadata come from Stripe, so they cannot be changed by the buyer.

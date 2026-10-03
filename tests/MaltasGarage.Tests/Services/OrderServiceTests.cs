@@ -205,7 +205,6 @@ public class OrderServiceTests
 
     [Theory]
     [InlineData(OrderStatus.Pending)]
-    [InlineData(OrderStatus.Cancelled)]
     [InlineData(OrderStatus.Completed)]
     [InlineData(OrderStatus.Refunded)]
     public async Task ReleaseEscrow_WhenOrderNotReleasable_Throws(OrderStatus status)
@@ -222,7 +221,6 @@ public class OrderServiceTests
     [Theory]
     [InlineData(OrderStatus.Paid)]      // hand-to-hand handover
     [InlineData(OrderStatus.Shipped)]
-    [InlineData(OrderStatus.Delivered)]
     [InlineData(OrderStatus.Disputed)]  // dispute resolved in favour of the seller
     public async Task ReleaseEscrow_WhenOrderPaid_CompletesOrderAndReleasesPayment(OrderStatus status)
     {

@@ -50,8 +50,7 @@ public class MyListingsModel : PageModel
         ActiveListings  = all.Where(l => l.Status == ListingStatus.Active).ToList();
         AuctionListings = all.Where(l => l.Status == ListingStatus.AuctionPhase).ToList();
         SoldListings    = all.Where(l => l.Status == ListingStatus.Sold).ToList();
-        OtherListings   = all.Where(l => l.Status is ListingStatus.Draft
-                                          or ListingStatus.Expired
+        OtherListings   = all.Where(l => l.Status is ListingStatus.Expired
                                           or ListingStatus.Cancelled).ToList();
 
         return Page();

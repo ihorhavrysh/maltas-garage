@@ -11,7 +11,7 @@ public class Dispute : BaseEntity
     public DisputeReason Reason { get; set; }
     public string? Description { get; set; }
 
-    public string Status { get; set; } = "Open"; // Open, UnderReview, Resolved, Withdrawn
+    public DisputeStatus Status { get; set; } = DisputeStatus.Open;
     public OrderStatus PreviousOrderStatus { get; set; }
     public DisputeResolution? Resolution { get; set; }
     public decimal? PartialRefundAmount { get; set; }

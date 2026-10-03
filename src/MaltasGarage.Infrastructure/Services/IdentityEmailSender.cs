@@ -53,7 +53,7 @@ public class IdentityEmailSender : IEmailSender<IdentityUser>
         var name = await GetDisplayNameAsync(user.Id);
         var html = _template.Build(
             "Your password reset code",
-            $"Hi {name},<br><br>Your Malta's Garage password reset code is:<br><br><div style=\"text-align:center;padding:20px;\"><strong style=\"font-size:28px;letter-spacing:6px;color:#1a1a2e;\">{resetCode}</strong></div><br>This code expires in 15 minutes. If you didn't request a reset, please ignore this email.");
+            $"Hi {name},<br><br>Your Malta's Garage password reset code is:<br><br><div style=\"text-align:center;padding:20px;\"><strong style=\"font-size:28px;letter-spacing:6px;color:#1a1a2e;\">{resetCode}</strong></div><br>This code expires in 24 hours. If you didn't request a reset, please ignore this email.");
         await _email.SendAsync(email, name, "Your Malta's Garage password reset code", html);
     }
 }

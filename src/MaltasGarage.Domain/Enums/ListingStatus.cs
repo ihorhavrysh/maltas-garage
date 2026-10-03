@@ -2,7 +2,6 @@ namespace MaltasGarage.Domain.Enums;
 
 public enum ListingStatus
 {
-    Draft = 0,
     Active = 1,
     AuctionPhase = 2,
     Sold = 3,

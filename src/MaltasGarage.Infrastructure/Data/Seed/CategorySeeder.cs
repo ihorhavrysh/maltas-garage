@@ -22,8 +22,10 @@ public static class CategorySeeder
         var existing = await context.Categories.ToListAsync();
         var desiredSlugs = desired.Select(d => d.Slug).ToHashSet();
 
-        // Remove categories no longer in the list
-        var toRemove = existing.Where(c => !desiredSlugs.Contains(c.Slug)).ToList();
+        // Remove categories no longer in the list. One that still has listings stays (the FK is
+        // Restrict, so removing it would stop the app from starting); move its listings first
+        var inUse = await context.Listings.Select(l => l.CategoryId).Distinct().ToListAsync();
+        var toRemove = existing.Where(c => !desiredSlugs.Contains(c.Slug) && !inUse.Contains(c.Id)).ToList();
         if (toRemove.Count > 0)
             context.Categories.RemoveRange(toRemove);
 

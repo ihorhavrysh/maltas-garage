@@ -32,7 +32,7 @@ public class DisputeService : IDisputeService
         if (order.BuyerId != openedById)
             throw new InvalidOperationException("Only the buyer can open a dispute.");
 
-        if (order.Dispute != null && order.Dispute.Status != "Withdrawn")
+        if (order.Dispute != null && order.Dispute.Status != DisputeStatus.Withdrawn)
             throw new InvalidOperationException("A dispute already exists for this order.");
 
         if (order.Status != OrderStatus.Paid && order.Status != OrderStatus.Shipped)
@@ -52,7 +52,7 @@ public class DisputeService : IDisputeService
             dispute.OpenedById = openedById;
             dispute.Reason = reason;
             dispute.Description = description;
-            dispute.Status = "Open";
+            dispute.Status = DisputeStatus.Open;
             dispute.Resolution = null;
             dispute.AdminNotes = null;
             dispute.ResolvedAt = null;
@@ -66,7 +66,7 @@ public class DisputeService : IDisputeService
                 OpenedById = openedById,
                 Reason = reason,
                 Description = description,
-                Status = "Open",
+                Status = DisputeStatus.Open,
                 PreviousOrderStatus = order.Status
             };
             _context.Disputes.Add(dispute);
@@ -116,9 +116,9 @@ public class DisputeService : IDisputeService
             .FirstOrDefaultAsync(d => d.OrderId == orderId)
             ?? throw new InvalidOperationException("Dispute not found.");
 
-        if (dispute.Status != "Open") return;
+        if (dispute.Status != DisputeStatus.Open) return;
 
-        dispute.Status = "UnderReview";
+        dispute.Status = DisputeStatus.UnderReview;
         await _context.SaveChangesAsync();
 
         var listingTitle = dispute.Order.Listing?.Title ?? "your item";
@@ -160,10 +160,10 @@ public class DisputeService : IDisputeService
         if (dispute.OpenedById != userId)
             throw new InvalidOperationException("Only the buyer who opened the dispute can withdraw it.");
 
-        if (dispute.Status != "Open" && dispute.Status != "UnderReview")
+        if (dispute.Status != DisputeStatus.Open && dispute.Status != DisputeStatus.UnderReview)
             throw new InvalidOperationException("This dispute cannot be withdrawn.");
 
-        dispute.Status = "Withdrawn";
+        dispute.Status = DisputeStatus.Withdrawn;
         dispute.ResolvedAt = DateTime.UtcNow;
 
         // Revert order status to what it was before the dispute was opened.
@@ -186,7 +186,7 @@ public class DisputeService : IDisputeService
 
         // A dispute is resolved once. A second POST (double click, two staff members, browser
         // back) must not refund or pay out again
-        if (dispute.Status != "Open" && dispute.Status != "UnderReview")
+        if (dispute.Status != DisputeStatus.Open && dispute.Status != DisputeStatus.UnderReview)
             throw new InvalidOperationException("This dispute has already been closed.");
 
         // Execute Stripe operation first — if it fails, dispute stays unresolved in DB
@@ -201,7 +201,7 @@ public class DisputeService : IDisputeService
         dispute.Resolution = resolution;
         dispute.PartialRefundAmount = resolution == DisputeResolution.PartialRefund ? partialRefundAmount : null;
         dispute.AdminNotes = adminNotes;
-        dispute.Status = "Resolved";
+        dispute.Status = DisputeStatus.Resolved;
         dispute.ResolvedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 

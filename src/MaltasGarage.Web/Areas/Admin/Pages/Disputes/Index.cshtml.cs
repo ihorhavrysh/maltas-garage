@@ -36,9 +36,9 @@ public class IndexModel : PageModel
 
         query = filter switch
         {
-            "resolved" => query.Where(d => d.Status == "Resolved" || d.Status == "Withdrawn"),
+            "resolved" => query.Where(d => d.Status == DisputeStatus.Resolved || d.Status == DisputeStatus.Withdrawn),
             "all"      => query,
-            _          => query.Where(d => d.Status == "Open" || d.Status == "UnderReview")
+            _          => query.Where(d => d.Status == DisputeStatus.Open || d.Status == DisputeStatus.UnderReview)
         };
 
         Disputes = await query.OrderByDescending(d => d.CreatedAt).ToListAsync();

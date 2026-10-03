@@ -16,6 +16,7 @@ public class DisputeConfiguration : IEntityTypeConfiguration<Dispute>
             .HasMaxLength(2000);
 
         builder.Property(d => d.Status)
+            .HasConversion<string>()
             .HasMaxLength(20)
             .IsRequired();
 
@@ -25,6 +26,10 @@ public class DisputeConfiguration : IEntityTypeConfiguration<Dispute>
         builder.Property(d => d.Reason)
             .HasConversion<string>()
             .HasMaxLength(30);
+
+        builder.Property(d => d.PreviousOrderStatus)
+            .HasConversion<string>()
+            .HasMaxLength(20);
 
         builder.Property(d => d.Resolution)
             .HasConversion<string>()

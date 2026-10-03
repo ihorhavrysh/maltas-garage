@@ -75,7 +75,7 @@ else
                                 </small>
                             </td>
                             <td>
-                                <span class="fw-semibold @(d.Status == "Open" ? "text-danger" : d.Status == "UnderReview" ? "text-warning" : d.Status == "Resolved" ? "text-success" : "text-secondary")">
+                                <span class="fw-semibold @(d.Status == DisputeStatus.Open ? "text-danger" : d.Status == DisputeStatus.UnderReview ? "text-warning" : d.Status == DisputeStatus.Resolved ? "text-success" : "text-secondary")">
                                     @d.Status
                                 </span>
                             </td>
@@ -87,7 +87,7 @@ else
                                         <i class="bi bi-eye"></i>
                                     </a>
 
-                                    @if (d.Status == "Open")
+                                    @if (d.Status == DisputeStatus.Open)
                                     {
                                         <form method="post" asp-page-handler="MarkUnderReview" class="d-inline">
                                             <input type="hidden" name="disputeId" value="@d.Id" />
@@ -97,7 +97,7 @@ else
                                         </form>
                                     }
 
-                                    @if (d.Status == "Open" || d.Status == "UnderReview")
+                                    @if (d.Status == DisputeStatus.Open || d.Status == DisputeStatus.UnderReview)
                                     {
                                         <button class="btn btn-sm btn-success" data-bs-toggle="modal"
                                                 data-bs-target="#resolveModal-@d.Id" title="Resolve">
@@ -107,7 +107,7 @@ else
                                 </div>
 
                                 <!-- Resolve Modal -->
-                                @if (d.Status == "Open" || d.Status == "UnderReview")
+                                @if (d.Status == DisputeStatus.Open || d.Status == DisputeStatus.UnderReview)
                                 {
                                     <div class="modal fade" id="resolveModal-@d.Id" tabindex="-1">
                                         <div class="modal-dialog">

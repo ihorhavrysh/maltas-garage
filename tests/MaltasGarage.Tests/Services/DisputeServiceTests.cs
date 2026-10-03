@@ -17,7 +17,7 @@ public class DisputeServiceTests
         return (new DisputeService(ctx, orders, messaging, email), payment);
     }
 
-    private static async Task<Order> SeedDisputedOrderAsync(Infrastructure.Data.ApplicationDbContext ctx, string status = "Open")
+    private static async Task<Order> SeedDisputedOrderAsync(Infrastructure.Data.ApplicationDbContext ctx, DisputeStatus status = DisputeStatus.Open)
     {
         var order = await EscrowTestData.SeedOrderAsync(ctx, OrderStatus.Disputed);
         ctx.Disputes.Add(new Dispute
@@ -42,7 +42,7 @@ public class DisputeServiceTests
 
         var dispute = await disputes.OpenDisputeAsync(order.Id, order.BuyerId, DisputeReason.ItemNotReceived, "Never arrived");
 
-        Assert.Equal("Open", dispute.Status);
+        Assert.Equal(DisputeStatus.Open, dispute.Status);
         Assert.Equal(OrderStatus.Shipped, dispute.PreviousOrderStatus);
         Assert.Equal(OrderStatus.Disputed, (await ctx.Orders.FindAsync(order.Id))!.Status);
     }
@@ -68,7 +68,7 @@ public class DisputeServiceTests
         await disputes.WithdrawDisputeAsync(order.Id, order.BuyerId);
 
         Assert.Equal(OrderStatus.Shipped, (await ctx.Orders.FindAsync(order.Id))!.Status);
-        Assert.Equal("Withdrawn", (await ctx.Disputes.SingleAsync(d => d.OrderId == order.Id)).Status);
+        Assert.Equal(DisputeStatus.Withdrawn, (await ctx.Disputes.SingleAsync(d => d.OrderId == order.Id)).Status);
     }
 
     [Fact]
@@ -89,9 +89,9 @@ public class DisputeServiceTests
     }
 
     [Theory]
-    [InlineData("Resolved")]
-    [InlineData("Withdrawn")]
-    public async Task Resolve_AClosedDispute_ThrowsAndMovesNoMoney(string status)
+    [InlineData(DisputeStatus.Resolved)]
+    [InlineData(DisputeStatus.Withdrawn)]
+    public async Task Resolve_AClosedDispute_ThrowsAndMovesNoMoney(DisputeStatus status)
     {
         var ctx = TestDbContextFactory.Create();
         var (disputes, payment) = CreateServices(ctx);
@@ -117,7 +117,7 @@ public class DisputeServiceTests
         Assert.Single(payment.Refunds);
         Assert.Equal(OrderStatus.Refunded, (await ctx.Orders.FindAsync(order.Id))!.Status);
         Assert.Equal(ListingStatus.Active, (await ctx.Listings.FindAsync(order.ListingId))!.Status);
-        Assert.Equal("Resolved", (await ctx.Disputes.FindAsync(disputeId))!.Status);
+        Assert.Equal(DisputeStatus.Resolved, (await ctx.Disputes.FindAsync(disputeId))!.Status);
     }
 
     [Fact]

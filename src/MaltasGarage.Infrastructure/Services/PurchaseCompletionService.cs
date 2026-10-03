@@ -75,7 +75,7 @@ public class PurchaseCompletionService : IPurchaseCompletionService
 
             _logger.LogWarning("Payment {PaymentIntentId} could not become an order and is refunded: {Message}",
                 payment.PaymentIntentId, ex.Message);
-            await _payments.RefundPaymentAsync(payment.PaymentIntentId);
+            await RefundAsync(payment.PaymentIntentId);
             return PurchaseResult.Failed(ex is DbUpdateException
                 ? "Someone else bought this item at the same moment. Your payment has been refunded."
                 : ex.Message + " Your payment has been refunded.");
@@ -100,7 +100,7 @@ public class PurchaseCompletionService : IPurchaseCompletionService
         if (outbidBid != null)
         {
             if (outbidBid.StripePaymentIntentId != null)
-                await _payments.RefundPaymentAsync(outbidBid.StripePaymentIntentId);
+                await RefundAsync(outbidBid.StripePaymentIntentId);
 
             await _messaging.CreateSystemMessageAsync(
                 outbidBid.BidderId,
@@ -153,14 +153,22 @@ public class PurchaseCompletionService : IPurchaseCompletionService
             if (await BidRecordedAsync(payment.PaymentIntentId))
                 return PurchaseResult.Done();
 
-            await _payments.RefundPaymentAsync(payment.PaymentIntentId);
+            await RefundAsync(payment.PaymentIntentId);
             return PurchaseResult.Failed((result.Error ?? "Your bid could not be placed.") + " Your payment has been refunded.");
         }
 
         if (previousTopBid?.StripePaymentIntentId != null)
-            await _payments.RefundPaymentAsync(previousTopBid.StripePaymentIntentId);
+            await RefundAsync(previousTopBid.StripePaymentIntentId);
 
         return PurchaseResult.Done();
+    }
+
+    // A refund Stripe refused is money the platform holds for nobody: it is logged as an error so
+    // it can be refunded by hand from the Stripe dashboard
+    private async Task RefundAsync(string paymentIntentId)
+    {
+        if (!await _payments.RefundPaymentAsync(paymentIntentId))
+            _logger.LogError("Refund of {PaymentIntentId} failed and has to be done by hand in Stripe", paymentIntentId);
     }
 
     private Task<bool> BidRecordedAsync(string paymentIntentId) =>

@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddValidatedOptions<StorageSettings>(configuration, StorageSettings.SectionName);
         services.AddValidatedOptions<EmailSettings>(configuration, EmailSettings.SectionName);
         services.AddValidatedOptions<DemoSettings>(configuration, DemoSettings.SectionName);
+        services.AddValidatedOptions<SeedSettings>(configuration, SeedSettings.SectionName);
 
         // Database
         var connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -59,6 +60,7 @@ public static class DependencyInjection
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IPaymentEventHandler, PaymentEventHandler>();
         services.AddScoped<IPurchaseCompletionService, PurchaseCompletionService>();
+        services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<IBiddingService, BiddingService>();
         services.AddScoped<IMessagingService, MessagingService>();
         services.AddScoped<IDisputeService, DisputeService>();

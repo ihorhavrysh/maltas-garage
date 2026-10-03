@@ -92,7 +92,7 @@ public class IndexModel : PageModel
             bool isSeller = order.SellerId == CurrentProfile.Id;
             if (!isBuyer && !isSeller) return Forbid();
 
-            var conv = await _messaging.GetOrCreateConversationAsync(order.BuyerId, order.SellerId, order.Id);
+            var conv = await _messaging.GetOrCreateConversationAsync(order.BuyerId, order.SellerId);
             return RedirectToPage(new { c = conv.Id, fromOrder = order.Id });
         }
 

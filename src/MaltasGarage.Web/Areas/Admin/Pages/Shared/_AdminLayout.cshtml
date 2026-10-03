@@ -2,7 +2,7 @@
 @inject MaltasGarage.Infrastructure.Data.ApplicationDbContext DbContext
 @{
     var openDisputeCount = await DbContext.Disputes
-        .CountAsync(d => d.Status == "Open" || d.Status == "UnderReview");
+        .CountAsync(d => d.Status == DisputeStatus.Open || d.Status == DisputeStatus.UnderReview);
     var active = ViewData["ActivePage"]?.ToString();
     var isAdmin = User.IsInRole("Admin");
 

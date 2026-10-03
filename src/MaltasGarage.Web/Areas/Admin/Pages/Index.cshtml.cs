@@ -61,7 +61,7 @@ public class IndexModel : PageModel
             .Where(o => o.Status == OrderStatus.Completed)
             .SumAsync(o => (decimal?)o.PlatformFee) ?? 0;
         OpenDisputes = await _context.Disputes
-            .CountAsync(d => d.Status == "Open" || d.Status == "UnderReview");
+            .CountAsync(d => d.Status == DisputeStatus.Open || d.Status == DisputeStatus.UnderReview);
 
         RecentOrders = await _context.Orders
             .Include(o => o.Listing)

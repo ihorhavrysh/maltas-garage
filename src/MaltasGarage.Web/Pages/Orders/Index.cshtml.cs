@@ -112,12 +112,12 @@ public class IndexModel : PageModel
         static int InProgressOrder(string s) => s switch { "Paid" => 0, "Shipped" => 1, _ => 2 };
 
         DisputedOrders   = vms.Where(o => o.Status == "Disputed").ToList();
-        InProgressOrders = vms.Where(o => o.Status is "Paid" or "Shipped" or "Delivered")
+        InProgressOrders = vms.Where(o => o.Status is "Paid" or "Shipped")
                               .OrderBy(o => InProgressOrder(o.Status))
                               .ThenByDescending(o => o.CreatedAt)
                               .ToList();
         CompletedOrders  = vms.Where(o => o.Status == "Completed").ToList();
-        OtherOrders      = vms.Where(o => o.Status is "Pending" or "Refunded" or "Cancelled").ToList();
+        OtherOrders      = vms.Where(o => o.Status is "Pending" or "Refunded").ToList();
 
         return Page();
     }

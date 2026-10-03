@@ -47,7 +47,7 @@ public class DisputeModel : PageModel
 
         if (order == null) return NotFound();
         if (order.BuyerId != userProfile.Id) return Forbid();
-        if (order.Dispute != null && order.Dispute.Status != "Withdrawn") return RedirectToPage("DisputeView", new { orderId });
+        if (order.Dispute != null && order.Dispute.Status != DisputeStatus.Withdrawn) return RedirectToPage("DisputeView", new { orderId });
         if (order.Status != OrderStatus.Paid && order.Status != OrderStatus.Shipped)
             return RedirectToPage("Details", new { orderId });
 

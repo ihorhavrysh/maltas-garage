@@ -34,5 +34,8 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(r => r.ToUserId);
+
+        // One review per side of an order; the page check alone loses to a double submit
+        builder.HasIndex(r => new { r.OrderId, r.FromUserId }).IsUnique();
     }
 }

@@ -55,7 +55,7 @@ public class PriceOfferService : IPriceOfferService
         if (existing != null)
             throw new InvalidOperationException("You already have an active offer on this listing.");
 
-        var conversation = await _messaging.GetOrCreateConversationAsync(buyerProfileId, listing.SellerId, Guid.Empty);
+        var conversation = await _messaging.GetOrCreateConversationAsync(buyerProfileId, listing.SellerId);
 
         var offer = new PriceOffer
         {

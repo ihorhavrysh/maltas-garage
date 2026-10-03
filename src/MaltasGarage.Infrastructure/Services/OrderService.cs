@@ -145,6 +145,25 @@ public class OrderService : IOrderService
         return order;
     }
 
+    // Pays the seller at most once per order. The Stripe idempotency key only lasts about a day,
+    // so the transfer id is saved the moment the transfer exists: a release that fails after it,
+    // or is retried days later, finds the id and does not pay again
+    private async Task<bool> PaySellerOnceAsync(Order order, decimal amount)
+    {
+        var payment = order.Payment!;
+        if (payment.StripeTransferId != null)
+            return true;
+
+        var transferId = await _payment.CreateTransferAsync(
+            amount, order.Seller.StripeAccountId!, order.Id.ToString(), payment.StripePaymentIntentId);
+        if (transferId == null)
+            return false;
+
+        payment.StripeTransferId = transferId;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     // A paid order starts as Paid with its captured payment; without a payment it is Pending.
     // Without a delivery method the buyer chooses one later on the order page
     private Order NewOrder(Guid buyerId, Guid sellerId, decimal price, DeliveryMethod? deliveryMethod, OrderPayment? payment)
@@ -224,7 +243,6 @@ public class OrderService : IOrderService
             TrackingNumber = trackingNumber.Trim(),
             Status = ShipmentStatus.Shipped,
             ShippedAt = Now,
-            DeliveryDeadline = Now.AddDays(7),
             CreatedAt = Now
         });
 
@@ -248,7 +266,7 @@ public class OrderService : IOrderService
 
         // Escrow can only be released once the buyer has paid: Paid (hand-to-hand),
         // Shipped/Delivered (MaltaPost) or Disputed (resolved in favour of the seller).
-        if (order.Status is not (OrderStatus.Paid or OrderStatus.Shipped or OrderStatus.Delivered or OrderStatus.Disputed))
+        if (order.Status is not (OrderStatus.Paid or OrderStatus.Shipped or OrderStatus.Disputed))
             throw new InvalidOperationException($"Cannot release escrow for order {orderId}: order status is {order.Status}");
 
         if (order.Payment == null)
@@ -264,14 +282,8 @@ public class OrderService : IOrderService
             if (order.Payment.Status != PaymentStatus.Captured)
                 throw new InvalidOperationException($"Cannot release escrow for order {orderId}: Payment.Status is {order.Payment.Status} (expected Captured)");
 
-            // Transfer seller's payout — this is when money actually moves from platform to seller
-            var transferred = await _payment.CreateTransferAsync(
-                order.SellerPayout,
-                order.Seller.StripeAccountId,
-                orderId.ToString(),
-                order.Payment.StripePaymentIntentId);
-
-            if (!transferred)
+            // Transfer the seller's payout - this is when money actually moves from platform to seller
+            if (!await PaySellerOnceAsync(order, order.SellerPayout))
                 throw new InvalidOperationException($"Stripe transfer failed for order {orderId}.");
         }
 
@@ -324,8 +336,7 @@ public class OrderService : IOrderService
                 bool transferred;
                 try
                 {
-                    transferred = await _payment.CreateTransferAsync(order.SellerPayout, order.Seller.StripeAccountId,
-                        order.Id.ToString(), order.Payment.StripePaymentIntentId);
+                    transferred = await PaySellerOnceAsync(order, order.SellerPayout);
                 }
                 catch (Exception)
                 {
@@ -430,7 +441,7 @@ public class OrderService : IOrderService
             // Transfer the rest of the seller payout. If it fails the order stays open, so the
             // resolution can be repeated: the refund and the transfer are both idempotent
             if (adjustedPayout > 0 && order.Seller?.StripeAccountId != null &&
-                !await _payment.CreateTransferAsync(adjustedPayout, order.Seller.StripeAccountId, orderId.ToString(), order.Payment.StripePaymentIntentId))
+                !await PaySellerOnceAsync(order, adjustedPayout))
                 throw new InvalidOperationException($"The buyer was refunded, but the transfer to the seller failed for order {orderId}. Try resolving again.");
         }
 
@@ -455,7 +466,7 @@ public class OrderService : IOrderService
 
     private static void EnsureRefundable(Order order)
     {
-        if (order.Status is not (OrderStatus.Paid or OrderStatus.Shipped or OrderStatus.Delivered or OrderStatus.Disputed))
+        if (order.Status is not (OrderStatus.Paid or OrderStatus.Shipped or OrderStatus.Disputed))
             throw new InvalidOperationException($"Order {order.Id} cannot be refunded: its status is {order.Status}.");
         if (order.Payment != null && order.Payment.Status != PaymentStatus.Captured)
             throw new InvalidOperationException($"Order {order.Id} cannot be refunded: the payment is {order.Payment.Status}.");

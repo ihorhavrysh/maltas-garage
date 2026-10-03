@@ -21,23 +21,23 @@
     @if (Model.Dispute != null)
     {
         <!-- Status banner -->
-        <div class="alert @(Model.Dispute.Status == "Resolved" ? "alert-success" : Model.Dispute.Status == "UnderReview" ? "alert-primary" : "alert-warning") mb-4">
+        <div class="alert @(Model.Dispute.Status == DisputeStatus.Resolved ? "alert-success" : Model.Dispute.Status == DisputeStatus.UnderReview ? "alert-primary" : "alert-warning") mb-4">
             <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-@(Model.Dispute.Status == "Resolved" ? "check-circle-fill" : "clock-history") fs-5"></i>
+                <i class="bi bi-@(Model.Dispute.Status == DisputeStatus.Resolved ? "check-circle-fill" : "clock-history") fs-5"></i>
                 <div>
                     <strong>
                         @(Model.Dispute.Status switch {
-                            "Open" => "Dispute Submitted",
-                            "UnderReview" => "Under Review",
-                            "Resolved" => "Dispute Resolved",
-                            _ => Model.Dispute.Status
+                            DisputeStatus.Open => "Dispute Submitted",
+                            DisputeStatus.UnderReview => "Under Review",
+                            DisputeStatus.Resolved => "Dispute Resolved",
+                            _ => Model.Dispute.Status.ToString()
                         })
                     </strong>
                     <div class="small">
                         @(Model.Dispute.Status switch {
-                            "Open" => "Your dispute has been submitted and is awaiting review by our team.",
-                            "UnderReview" => "Our team is actively reviewing this dispute.",
-                            "Resolved" => $"Resolved on {Model.Dispute.ResolvedAt?.ToString("dd MMM yyyy")}.",
+                            DisputeStatus.Open => "Your dispute has been submitted and is awaiting review by our team.",
+                            DisputeStatus.UnderReview => "Our team is actively reviewing this dispute.",
+                            DisputeStatus.Resolved => $"Resolved on {Model.Dispute.ResolvedAt?.ToString("dd MMM yyyy")}.",
                             _ => ""
                         })
                     </div>
@@ -77,7 +77,7 @@
                         <dd class="col-sm-8">@Model.Dispute.Description</dd>
                     }
 
-                    @if (Model.Dispute.Status == "Resolved" && Model.Dispute.Resolution.HasValue)
+                    @if (Model.Dispute.Status == DisputeStatus.Resolved && Model.Dispute.Resolution.HasValue)
                     {
                         <dt class="col-sm-4">Resolution</dt>
                         <dd class="col-sm-8">
@@ -146,15 +146,15 @@
                     <i class="bi bi-chat me-1"></i>Contact @(Model.IsBuyer ? "Seller" : "Buyer")
                 </a>
             }
-            @if (Model.IsBuyer && (Model.Dispute?.Status == "Open" || Model.Dispute?.Status == "UnderReview"))
+            @if (Model.IsBuyer && (Model.Dispute?.Status == DisputeStatus.Open || Model.Dispute?.Status == DisputeStatus.UnderReview))
             {
                 <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#withdrawModal">
                     <i class="bi bi-x-circle me-1"></i>Close Dispute
                 </button>
             }
-            @if (Model.IsAdminOrManager && (Model.Dispute?.Status == "Open" || Model.Dispute?.Status == "UnderReview"))
+            @if (Model.IsAdminOrManager && (Model.Dispute?.Status == DisputeStatus.Open || Model.Dispute?.Status == DisputeStatus.UnderReview))
             {
-                @if (Model.Dispute?.Status == "Open")
+                @if (Model.Dispute?.Status == DisputeStatus.Open)
                 {
                     <form method="post" asp-page-handler="MarkUnderReview" class="d-inline">
                         <input type="hidden" name="orderId" value="@Model.OrderId" />
@@ -169,7 +169,7 @@
             }
         </div>
 
-        @if (Model.IsBuyer && (Model.Dispute?.Status == "Open" || Model.Dispute?.Status == "UnderReview"))
+        @if (Model.IsBuyer && (Model.Dispute?.Status == DisputeStatus.Open || Model.Dispute?.Status == DisputeStatus.UnderReview))
         {
             <div class="modal fade" id="withdrawModal" tabindex="-1">
                 <div class="modal-dialog">
@@ -260,7 +260,7 @@
             </div>
         }
 
-        @if (Model.IsAdminOrManager && (Model.Dispute?.Status == "Open" || Model.Dispute?.Status == "UnderReview"))
+        @if (Model.IsAdminOrManager && (Model.Dispute?.Status == DisputeStatus.Open || Model.Dispute?.Status == DisputeStatus.UnderReview))
         {
             <!-- Admin: Resolve dispute modal -->
             <div class="modal fade" id="adminResolveModal" tabindex="-1">

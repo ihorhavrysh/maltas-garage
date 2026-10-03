@@ -114,6 +114,36 @@ public class EscrowSafetyTests
         Assert.Equal(OrderStatus.Completed, (await ctx.Orders.FindAsync(healthy.Id))!.Status);
     }
 
+    [Fact]
+    public async Task Release_StoresTheTransferId()
+    {
+        var ctx = TestDbContextFactory.Create();
+        var payment = new RecordingPaymentService();
+        var order = await EscrowTestData.SeedOrderAsync(ctx);
+
+        await CreateService(ctx, payment).ReleaseEscrowAsync(order.Id);
+
+        Assert.Equal($"tr_{order.Id}", (await ctx.Payments.SingleAsync(p => p.OrderId == order.Id)).StripeTransferId);
+    }
+
+    [Fact]
+    public async Task Release_WhenTheSellerWasAlreadyPaid_DoesNotTransferAgain()
+    {
+        // The transfer went through but the release did not finish; days later the Stripe
+        // idempotency key has expired, so only the stored transfer id prevents a second payout
+        var ctx = TestDbContextFactory.Create();
+        var payment = new RecordingPaymentService();
+        var order = await EscrowTestData.SeedOrderAsync(ctx, OrderStatus.Paid, DeliveryMethod.HandToHand);
+        order.Payment!.StripeTransferId = "tr_earlier";
+        await ctx.SaveChangesAsync();
+
+        var released = await CreateService(ctx, payment).AutoReleaseDueEscrowAsync(DateTime.UtcNow.AddDays(10));
+
+        Assert.Equal(1, released);
+        Assert.Empty(payment.TransferGroups);
+        Assert.Equal(OrderStatus.Completed, (await ctx.Orders.FindAsync(order.Id))!.Status);
+    }
+
     // ── Shipping ─────────────────────────────────────────────────────────────
 
     [Theory]
