@@ -121,7 +121,7 @@ jobs:
       id-token: write   # OpenID Connect: no long-lived Azure credentials in the repository
       contents: read
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: app
           path: ./publish
