@@ -7,6 +7,7 @@ using MaltasGarage.Infrastructure.Data.Seed;
 using MaltasGarage.Infrastructure.Services;
 using MaltasGarage.Web.Filters;
 using MaltasGarage.Web.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.FileProviders;
@@ -91,6 +92,24 @@ builder.Services.AddRazorPages()
 // against it every 5 minutes (the default is 30), so a banned user is signed out quickly
 builder.Services.Configure<SecurityStampValidatorOptions>(options =>
     options.ValidationInterval = TimeSpan.FromMinutes(5));
+
+// That re-check reads the database. When the database is unreachable (paused for the month or
+// resuming) the cookie is kept unchecked for this request: otherwise the check also fails while
+// the Error page is rendered, and signed-in visitors get a bare 500 instead of the paused page
+builder.Services.PostConfigure<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme, options =>
+{
+    var validate = options.Events.OnValidatePrincipal;
+    options.Events.OnValidatePrincipal = async context =>
+    {
+        try
+        {
+            await validate(context);
+        }
+        catch (Exception ex) when (DatabaseErrors.IsUnavailable(ex))
+        {
+        }
+    };
+});
 
 builder.Services.AddAuthorization(options =>
 {
