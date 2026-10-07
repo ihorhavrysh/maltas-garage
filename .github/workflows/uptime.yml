@@ -1,0 +1,40 @@
+name: Uptime
+
+# Opens the live demo once a day. A failed run is the alert: GitHub emails the owner about failed
+# scheduled workflows. Once a day is enough for a portfolio demo, and frequent pings would keep
+# the free F1 plan awake and use up its CPU quota
+on:
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  check:
+    name: Live demo responds
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # 200 is up. A 503 with the "paused" page is expected while the free database has used its
+      # monthly allowance. Anything else is retried, because the app and the database may need
+      # a minute to wake up
+      - name: Open the home page
+        env:
+          URL: https://maltas-garage-demo.azurewebsites.net/
+        run: |
+          for attempt in 1 2 3; do
+            code=$(curl -s -o page.html -w '%{http_code}' -m 120 "$URL" || true)
+            if [ "$code" = "200" ]; then
+              echo "Up (HTTP 200)"
+              exit 0
+            fi
+            if [ "$code" = "503" ] && grep -q "demo database is paused" page.html; then
+              echo "Database paused for the month (expected)"
+              exit 0
+            fi
+            echo "Attempt $attempt: HTTP $code"
+            sleep 60
+          done
+          echo "::error::The live demo did not respond with 200 after 3 attempts"
+          exit 1
